@@ -245,7 +245,7 @@ const fmt1 = v => v===null||v===undefined ? "–" : v.toFixed(1).replace(".",","
 /* ---------- Navigation ---------- */
 let view = "dash", wSel = 0, dSel = 0, cSel = 0, flash = "", confirmWipe = false, transfer = null;
 const TABS = [["dash","Dashboard"],["track","Tracker"],["week","Check-in"],["start","Start"],["data","Daten"]];
-function go(v){if(v==="week"&&view!=="week") cSel=firstOpenCi(); view=v; flash=""; confirmWipe=false; transfer=null; render(); window.scrollTo(0,0);}
+function go(v){if(v==="week"&&view!=="week") cSel=firstOpenCi(); if(v==="track"&&view!=="track"&&!ciOpen(wSel)){wSel=firstOpenCi(); dSel=0;} view=v; flash=""; confirmWipe=false; transfer=null; render(); window.scrollTo(0,0);}
 
 let lastView=null;
 function render(){
@@ -316,7 +316,7 @@ function ciOpen(w){for(let i=0;i<w;i++){if(!(S.ci[i]&&S.ci[i].done)) return fals
 function firstOpenCi(){for(let w=0;w<S.plan;w++){if(!(S.ci[w]&&S.ci[w].done)) return w;} return S.plan-1;}
 function ciReady(w){const c=S.ci[w]||{}; return !!(c.zuf&&c.str&&weekScore(w).L!==null);}
 function weekChips(sel,attr){let h=`<div class="chips" data-scroll="w" role="group" aria-label="Woche">`;
-  for(let w=0;w<8;w++){const isCi=attr==="ck", locked= isCi ? !ciOpen(w) : w>=S.plan,
+  for(let w=0;w<8;w++){const isCi=attr==="ck", locked= !ciOpen(w),
     has= isCi ? !!(S.ci[w]&&S.ci[w].done) : weekData(w).n>0;
     h+=`<button class="chip${has?" done":""}" data-${attr}="${w}" aria-pressed="${sel===w}" ${locked?"disabled":""}>Woche ${w+1}${has?`<span class="ck">${CHECK}</span>`:""}</button>`;}
   return h+"</div>";}
@@ -342,7 +342,8 @@ function vTrack(){const d=S.days[idx(wSel,dSel)]||{}, wd=weekData(wSel), ws=week
     <div class="kv"><span>Aktive Tage</span><b class="num">${wd.a} / ${wd.n}</b></div><div class="kv"><span>Ø Schlaf</span><b class="num">${fmt1(avg(wd.h))} h</b></div>
     <div class="row" style="border-top:1px solid var(--line);padding-top:12px"><span class="lbl">Loop-Score</span><b class="num" style="font-size:30px;color:var(--coral-t);letter-spacing:-.03em">${ws.L}</b></div>`
     :`<p class="empty">Noch keine Einträge in dieser Woche. Hak ab, was heute geklappt hat.</p>`}
-    <p class="note">Leer heißt nicht gemacht. Ein vergessener Tag zählt nicht gegen dich.</p></div></div>`;}
+    <p class="note">Leer heißt nicht gemacht. Ein vergessener Tag zählt nicht gegen dich.</p>
+    ${wSel+1<S.plan&&!ciOpen(wSel+1)?`<div class="q" style="border-top:1px solid var(--line);padding-top:12px"><span class="note" style="margin:0">Woche ${wSel+2} öffnet sich, sobald du den Wochen-Check-in für Woche ${wSel+1} abgeschlossen hast.</span><button class="btn ghost" data-go="week" style="align-self:flex-start">Zum Wochen-Check-in</button></div>`:""}</div></div>`;}
 
 /* ---------- Wochen-Check-in ---------- */
 const ZUF=["gar nicht","eher nicht","teils","zufrieden","sehr zufrieden"], STR=["entspannt","eher ruhig","normal","angespannt","sehr gestresst"];
@@ -467,7 +468,7 @@ function bind(){
   document.querySelectorAll("[data-step]").forEach(b=>b.onclick=()=>{const [scope,k]=b.dataset.step.split("."), tgt= scope==="start"?(S.start=S.start||{}):(S.days[idx(wSel,dSel)]=S.days[idx(wSel,dSel)]||{});
     const cur=isNum(tgt[k])?tgt[k]:7; tgt[k]= isNum(tgt[k]) ? Math.min(12,Math.max(3,cur+ +b.dataset.d)) : 7; save(); render();});
   document.querySelectorAll("[data-tg]").forEach(b=>b.onclick=()=>{const id=idx(wSel,dSel); const d=S.days[id]=S.days[id]||{}; d[b.dataset.tg]=!d[b.dataset.tg]; save(); render();});
-  document.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{wSel=+b.dataset.wk; dSel=0; render();});
+  document.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{if(!ciOpen(+b.dataset.wk)) return; wSel=+b.dataset.wk; dSel=0; render();});
   document.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>{dSel=+b.dataset.day; render();});
   document.querySelectorAll("[data-ck]").forEach(b=>b.onclick=()=>{if(!ciOpen(+b.dataset.ck)) return; cSel=+b.dataset.ck; render();});
   const note=document.getElementById("note"); if(note) note.oninput=()=>{const id=idx(wSel,dSel); (S.days[id]=S.days[id]||{}).n=note.value; save();};
