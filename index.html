@@ -41,6 +41,10 @@
   --hero:#0F0C0A; --hero-ink:#F7EFE6; --hero-soft:#E5D2C0; --hero-tile:#2B231E;
   --field:#332A24; --sel:#F7EFE6; --sel-ink:#2B231E; --shadow:none; color-scheme:dark}
 *{box-sizing:border-box}
+*{-webkit-tap-highlight-color:transparent}
+button,label,input,textarea{touch-action:manipulation}
+html,body{width:100%;max-width:100%;overflow-x:hidden;overscroll-behavior-x:none}
+main,.top,.wrap{max-width:100%;overflow-x:clip}
 html,body{background:var(--bg)}
 body{color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
 button,input,textarea{font:inherit;color:inherit}
@@ -92,12 +96,25 @@ h2{margin:0;font-size:17px;letter-spacing:-.02em;font-weight:700}
 .dot{width:10px;height:10px;border-radius:50%;flex:none}
 
 /* Controls */
-.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chips{position:relative;display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;border:0;background:var(--card);color:var(--ink);border-radius:999px;padding:8px 14px;font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;box-shadow:var(--shadow)}
 .chip[aria-pressed="true"]{background:var(--sel);color:var(--sel-ink)}
 .chip[disabled]{opacity:.4;cursor:not-allowed}
-.chip .mk{width:6px;height:6px;border-radius:50%;background:var(--coral)}
+.chip.done{background:var(--sand)}
+.chip.done[aria-pressed="true"]{background:var(--sel)}
+.chip .ck{width:16px;height:16px;border-radius:50%;background:var(--coral);display:grid;place-items:center}
+.chip .ck svg,.dayb .ck svg{width:10px;height:10px;stroke:#fff;stroke-width:3.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.dayb{border:0;background:var(--card);color:var(--ink);border-radius:14px;padding:8px 0 7px;display:flex;flex-direction:column;align-items:center;gap:3px;box-shadow:var(--shadow);min-width:0}
+.dayb small{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.dayb b{font-size:17px;font-variant-numeric:tabular-nums;line-height:1}
+.dayb .ck{width:16px;height:16px;border-radius:50%;display:grid;place-items:center;background:transparent;border:1.5px solid var(--line)}
+.dayb.done{background:var(--sand)}
+.dayb.done .ck{background:var(--coral);border-color:var(--coral)}
+.dayb[aria-pressed="true"]{background:var(--sel);color:var(--sel-ink)}
+.dayb[aria-pressed="true"] small{color:var(--sel-ink);opacity:.75}
+.dayb[aria-pressed="true"]:not(.done) .ck{border-color:var(--sel-ink);opacity:.5}
 .toggle{display:flex;align-items:center;gap:12px;width:100%;border:0;background:var(--field);border-radius:14px;padding:14px;text-align:left;min-height:58px}
 .toggle .tx{flex:1;font-weight:600}
 .toggle .tx small{display:block;font-weight:400;color:var(--muted);font-size:12.5px}
@@ -116,7 +133,7 @@ h2{margin:0;font-size:17px;letter-spacing:-.02em;font-weight:700}
 .step button{width:44px;height:44px;border-radius:12px;border:0;background:var(--field);font-size:20px;font-weight:600}
 .step output{min-width:86px;text-align:center;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
 .step output.low{color:var(--muted)}
-textarea,input[type=text]{width:100%;border:0;background:var(--field);border-radius:12px;padding:12px 14px;resize:vertical}
+textarea,input[type=text]{width:100%;border:0;background:var(--field);border-radius:12px;padding:12px 14px;resize:vertical;font-size:16px}
 textarea::placeholder,input::placeholder{color:var(--muted);font-style:italic}
 .btn{border:0;border-radius:999px;padding:12px 18px;font-weight:700;background:var(--sel);color:var(--sel-ink)}
 .btn.ghost{background:var(--field);color:var(--ink)}
@@ -161,7 +178,7 @@ td.diff{font-weight:700;font-size:17px;color:var(--coral-t)}
 .qr img,.qr svg{display:block;width:220px;max-width:100%;height:auto}
 .mono{font-family:var(--f-mono);font-size:12px;word-break:break-all;background:var(--field);border-radius:10px;padding:10px;max-height:90px;overflow:auto}
 .steps-list{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14px}
-@media (prefers-reduced-motion:no-preference){.view{animation:fade .25s ease}@keyframes fade{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}}
+@media (prefers-reduced-motion:no-preference){.view.enter{animation:fade .2s ease}@keyframes fade{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}}
 </style>
 </head>
 <body>
@@ -230,15 +247,25 @@ let view = "dash", wSel = 0, dSel = 0, cSel = 0, flash = "", confirmWipe = false
 const TABS = [["dash","Dashboard"],["track","Tracker"],["week","Check-in"],["start","Start"],["data","Daten"]];
 function go(v){view=v; flash=""; confirmWipe=false; transfer=null; render(); window.scrollTo(0,0);}
 
+let lastView=null;
 function render(){
   const app=document.getElementById("app");
+  const keep={}; app.querySelectorAll("[data-scroll]").forEach(el=>keep[el.dataset.scroll]=el.scrollLeft);
+  const winY=window.scrollY;
   if(!S.plan){app.innerHTML=onboarding(); bindOnboarding(); return;}
   const nav = TABS.map(([k,l])=>`<button data-go="${k}" ${view===k?'aria-current="page"':''}>${l}</button>`).join("");
   const tabs = TABS.map(([k,l])=>`<button data-go="${k}" ${view===k?'aria-current="page"':''}>${ICON[k]}<span>${l}</span></button>`).join("");
   const body = {dash:vDash,track:vTrack,week:vWeek,start:vStart,data:vData}[view]();
   app.innerHTML = `<header class="top"><div class="top-in"><span><img class="logo-l" src="${LOGO_L}" alt="innen kultur"><img class="logo-d" src="${LOGO_D}" alt="innen kultur"></span>
     <nav class="nav-d" aria-label="Bereiche">${nav}</nav><span class="plan">${S.plan===8?"Komplett":"Basis"}${S.demo?" · Demo":""}</span></div></header>
-    <main><div class="wrap view">${body}</div></main><nav class="tabs" aria-label="Bereiche">${tabs}</nav>`;
+    <main><div class="wrap view${lastView!==view?" enter":""}">${body}</div></main><nav class="tabs" aria-label="Bereiche">${tabs}</nav>`;
+  const changed=lastView!==view; lastView=view;
+  app.querySelectorAll("[data-scroll]").forEach(el=>{
+    if(!changed && keep[el.dataset.scroll]!==undefined) el.scrollLeft=keep[el.dataset.scroll];
+    const on=el.querySelector('[aria-pressed="true"]'); if(on){const l=on.offsetLeft, r=l+on.offsetWidth; if(l<el.scrollLeft) el.scrollLeft=l-16; else if(r>el.scrollLeft+el.clientWidth) el.scrollLeft=r-el.clientWidth+16;}
+  });
+  if(!changed) window.scrollTo(0,winY);
+  document.documentElement.scrollLeft=0; document.body.scrollLeft=0;
   bind();
 }
 
@@ -285,13 +312,13 @@ function stepper(name,val){const v=isNum(val)?val:null;
   return `<div class="step"><button type="button" data-step="${name}" data-d="-0.5" aria-label="weniger">−</button><output class="${v!==null&&v<7?"low":""}">${v===null?"– h":fmt1(v)+" h"}</output><button type="button" data-step="${name}" data-d="0.5" aria-label="mehr">+</button></div>`;}
 
 /* ---------- Tracker ---------- */
-function weekChips(sel,attr){let h=`<div class="chips" role="group" aria-label="Woche">`;
+function weekChips(sel,attr){let h=`<div class="chips" data-scroll="w" role="group" aria-label="Woche">`;
   for(let w=0;w<8;w++){const locked=w>=S.plan, has=weekData(w).n>0||(S.ci[w]&&(S.ci[w].zuf||S.ci[w].rec));
-    h+=`<button class="chip" data-${attr}="${w}" aria-pressed="${sel===w}" ${locked?"disabled":""}>Woche ${w+1}${has?'<span class="mk"></span>':''}</button>`;}
+    h+=`<button class="chip${has?" done":""}" data-${attr}="${w}" aria-pressed="${sel===w}" ${locked?"disabled":""}>Woche ${w+1}${has?`<span class="ck">${CHECK}</span>`:""}</button>`;}
   return h+"</div>";}
 function vTrack(){const d=S.days[idx(wSel,dSel)]||{}, wd=weekData(wSel), ws=weekScore(wSel);
-  let days=`<div class="chips" role="group" aria-label="Tag">`;
-  for(let i=0;i<7;i++){days+=`<button class="chip" data-day="${i}" aria-pressed="${dSel===i}">Tag ${i+1}${entered(S.days[idx(wSel,i)])?'<span class="mk"></span>':''}</button>`;}
+  let days=`<div class="days" role="group" aria-label="Tag">`;
+  for(let i=0;i<7;i++){const dn=entered(S.days[idx(wSel,i)]); days+=`<button class="dayb${dn?" done":""}" data-day="${i}" aria-pressed="${dSel===i}" aria-label="Tag ${i+1}${dn?", erfasst":""}"><small>Tag</small><b>${i+1}</b><span class="ck">${dn?CHECK:""}</span></button>`;}
   days+="</div>";
   const tg=(k,p,t,sub)=>`<button type="button" class="toggle" data-tg="${k}" aria-pressed="${!!d[k]}"><span class="dot" style="background:${P[p]}"></span><span class="tx">${t}<small>${sub}</small></span><span class="box">${CHECK}</span></button>`;
   return `<div class="head"><span class="eyebrow">○ Tracker · jeden Abend · 20 Sekunden</span><h1>Woche ${wSel+1} · <em>Tag ${dSel+1}</em></h1></div>
