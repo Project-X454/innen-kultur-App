@@ -13,13 +13,14 @@
 <meta name="description" content="Innen Kultur Loop-Tracker – deine Daten bleiben auf deinem Gerät.">
 <title>Innen Kultur Loop</title>
 <meta name="theme-color" content="#F7EFE6">
+<meta name="color-scheme" content="light">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@500&family=Instrument+Serif:ital@1&family=Inter:wght@400;500;600;700&display=swap">
 <style>
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:0}body{margin:0}[hidden]{display:none!important}img{max-width:100%}
 /* Layout: App-Shell – mobil eine Spalte mit Tab-Leiste unten, ab 900px Navigation oben und Karten nebeneinander. Farben aus dem CI-Leitfaden. */
-:root{
+:root{color-scheme:light;
   --bg:#F7EFE6; --card:#FFFFFF; --ink:#2B231E; --muted:#8A5A3A; --soft:#5C4535;
   --coral:#E9765B; --coral-t:#C2553D; --sand:#F0E0CD; --line:#EFE3D5;
   --hero:#2B231E; --hero-ink:#F7EFE6; --hero-soft:#F0E0CD; --hero-tile:#3A2F28;
@@ -30,16 +31,6 @@
   --f-mono:"Geist Mono",ui-monospace,"SF Mono",Menlo,monospace;
   --r-card:20px; --r-ctl:12px;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#1A1512; --card:#26201B; --ink:#F7EFE6; --muted:#D2AE90; --soft:#E5D2C0;
-  --coral:#EE8468; --coral-t:#F29A80; --sand:#3A2F28; --line:#352C26;
-  --hero:#0F0C0A; --hero-ink:#F7EFE6; --hero-soft:#E5D2C0; --hero-tile:#2B231E;
-  --field:#332A24; --sel:#F7EFE6; --sel-ink:#2B231E; --shadow:none; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#1A1512; --card:#26201B; --ink:#F7EFE6; --muted:#D2AE90; --soft:#E5D2C0;
-  --coral:#EE8468; --coral-t:#F29A80; --sand:#3A2F28; --line:#352C26;
-  --hero:#0F0C0A; --hero-ink:#F7EFE6; --hero-soft:#E5D2C0; --hero-tile:#2B231E;
-  --field:#332A24; --sel:#F7EFE6; --sel-ink:#2B231E; --shadow:none; color-scheme:dark}
 *{box-sizing:border-box}
 *{-webkit-tap-highlight-color:transparent}
 button,label,input,textarea{touch-action:manipulation}
@@ -51,14 +42,12 @@ button,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--coral);outline-offset:2px}
 .logo-d{display:none}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .logo-l{display:none}:root:not([data-theme="light"]) .logo-d{display:block}}
-:root[data-theme="dark"] .logo-l{display:none}:root[data-theme="dark"] .logo-d{display:block}
 
 /* Shell */
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
-.top-in{max-width:1080px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.top-in{max-width:1240px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .top img{height:26px;width:auto}
 .plan{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--sand);padding:5px 10px;border-radius:999px;white-space:nowrap}
 .nav-d{display:none;gap:4px}
@@ -66,7 +55,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .nav-d button{padding:8px 14px;border-radius:999px;font-weight:600;font-size:14px}
 .nav-d button[aria-current="page"]{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
 main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:4px 110px}
-.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-top:1px solid var(--line);
   display:grid;grid-template-columns:repeat(5,1fr);padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
 .tabs button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:6px 0;border-radius:10px}
@@ -179,10 +168,86 @@ td.diff{font-weight:700;font-size:17px;color:var(--coral-t)}
 .mono{font-family:var(--f-mono);font-size:12px;word-break:break-all;background:var(--field);border-radius:10px;padding:10px;max-height:90px;overflow:auto}
 .steps-list{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14px}
 @media (prefers-reduced-motion:no-preference){.view.enter{animation:fade .2s ease}@keyframes fade{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}}
+
+/* Querformat: Wochentabelle ab 760px, Tageskarte darunter */
+.wide-only{display:none}
+@media (min-width:760px){.wide-only{display:flex}.narrow-only{display:none!important}}
+.wk{width:100%;border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums}
+.wk th{font-family:var(--f-mono);font-weight:500;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:center;padding:0 4px 8px;vertical-align:bottom}
+.wk th.grp{border-top:3px solid var(--c);padding-top:6px;text-align:left;color:var(--muted)}
+.wk th:first-child,.wk td:first-child{text-align:left}
+.wk td{border-top:1px solid var(--line);padding:8px 4px;text-align:center;vertical-align:middle;font-size:14px}
+.wk td.tag{font-weight:700;white-space:nowrap}
+.wk tr.bil td{background:var(--sand);border-top:0;font-weight:700;font-size:15px}
+.wk tr.bil td:first-child{border-radius:12px 0 0 12px;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;color:var(--muted);font-weight:500}
+.wk tr.bil td:last-child{border-radius:0 12px 12px 0}
+.tbox{width:34px;height:34px;border-radius:10px;border:1.5px solid var(--line);background:var(--field);display:inline-grid;place-items:center;padding:0}
+.tbox svg{width:16px;height:16px;stroke:var(--sel-ink);stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round;opacity:0}
+.tbox[aria-pressed="true"]{background:var(--sel);border-color:var(--sel)}
+.tbox[aria-pressed="true"] svg{opacity:1}
+.wk input,.wk select{font:inherit;font-size:16px;border:0;background:var(--field);border-radius:10px;height:36px;text-align:center;color:var(--ink);width:100%;max-width:64px}
+.wk input.h{max-width:70px;font-weight:700}
+.wk input.h.low{color:var(--muted)}
+.wk input.nt{max-width:none;text-align:left;padding:0 10px;font-size:14px}
+.wk select{appearance:none;-webkit-appearance:none;font-weight:700;max-width:52px}
+.wk-scroll{overflow-x:auto}
+/* Erklär-Box und Erklär-Seiten */
+.explain-box{background:var(--sand);border-radius:var(--r-card);padding:16px;display:flex;flex-direction:column;gap:10px}
+.ex-list{display:grid;gap:8px;grid-template-columns:1fr}
+@media (min-width:760px){.ex-list{grid-template-columns:repeat(3,1fr)}}
+.ex-item{border:0;background:var(--card);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;text-align:left;min-height:58px;width:100%}
+.ex-item b{display:block;font-size:15px}
+.ex-item span.s{font-size:12.5px;color:var(--muted)}
+.ex-item svg{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;margin-left:auto}
+.ex-link{border:0;background:none;padding:0;color:var(--coral-t);font-weight:600;font-size:13px;text-align:left;align-self:flex-start}
+.back{display:flex;align-items:center;gap:10px;border:0;background:none;padding:0;color:var(--muted);font-weight:600;font-size:14px}
+.back i{width:40px;height:40px;border-radius:12px;background:var(--card);display:grid;place-items:center;font-style:normal}
+.back svg{width:18px;height:18px;stroke:var(--ink);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.video{background:var(--hero);border-radius:18px;aspect-ratio:16/9;max-width:100%;position:relative;display:flex;align-items:flex-end;padding:14px;gap:8px}
+.video .play{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);width:58px;height:58px;border-radius:50%;background:var(--coral);display:grid;place-items:center}
+.video .play svg{width:22px;height:22px;fill:#fff}
+.video .cap{color:var(--hero-soft);font-size:13px;font-weight:600}
+.video .soon{margin-left:auto;font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);background:var(--sand);padding:4px 8px;border-radius:999px}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tags span{background:var(--field);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (min-width:760px){.mini{grid-template-columns:repeat(3,1fr)}}
+.mini div{background:var(--field);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:3px}
+.mini b{font-size:14px}.mini span{font-size:12.5px;color:var(--soft)}
+.cardfile{display:flex;gap:12px;align-items:center}
+.cardfile .a6{width:40px;height:52px;border-radius:6px;background:var(--card);border:1px solid var(--line);flex:none;display:grid;place-items:center;font-family:var(--f-mono);font-size:9px;color:var(--muted)}
+/* Kühlschrank-Karte: nur im Druck/PDF sichtbar */
+#print{display:none}
+@page{size:105mm 148mm;margin:0}
+@media print{
+  html,body{background:#fff!important}
+  body>*:not(#print){display:none!important}
+  #print{display:block}
+  body::before{display:none}
+}
+.fc{width:105mm;height:148mm;box-sizing:border-box;padding:7mm 7mm 5mm;background:#fff;color:#2B231E;font-family:var(--f-body);display:flex;flex-direction:column;gap:3mm;border-top:3mm solid var(--c);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.fc .hd{display:flex;justify-content:space-between;align-items:center}
+.fc .hd img{height:5mm;width:auto}
+.fc .hd span,.fc .k{font-family:var(--f-mono);font-size:6.5pt;letter-spacing:.1em;text-transform:uppercase;color:#8A5A3A}
+.fc h1{font-size:19pt}
+.fc .sub{font-size:8.5pt;color:#5C4535;margin:0}
+.fc .rows{display:flex;flex-direction:column;gap:2.4mm;flex:1}
+.fc .rw{display:grid;grid-template-columns:29mm 1fr;gap:3mm;align-items:end}
+.fc .rw b{display:block;font-size:9pt}.fc .rw small{font-size:7pt;color:#8A5A3A}
+.fc .ln{border-bottom:.4mm solid #E6D3BF;height:6mm}
+.fc .shop{background:#F7EFE6;border-radius:3mm;padding:2.5mm 3mm;display:flex;flex-direction:column;gap:1.5mm}
+.fc .shop .ln{height:4.5mm}
+.fc .grid2{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm 4mm}
+.fc .grid2 div{display:flex;flex-direction:column;gap:1.3mm}
+.fc .ck{display:flex;gap:2mm;align-items:center;font-size:8.5pt}
+.fc .ck i{width:3mm;height:3mm;border:.4mm solid #B07A55;border-radius:.8mm}
+.fc .tip{background:#F7EFE6;border-radius:3mm;padding:2.5mm 3mm;font-size:8pt;line-height:1.4;color:#5C4535}
+.fc .ft{font-size:6.5pt;color:#8A5A3A}
 </style>
 </head>
 <body>
 <div id="app"></div>
+<div id="print"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script>
@@ -245,7 +310,7 @@ const fmt1 = v => v===null||v===undefined ? "–" : v.toFixed(1).replace(".",","
 /* ---------- Navigation ---------- */
 let view = "dash", wSel = 0, dSel = 0, cSel = 0, flash = "", confirmWipe = false, transfer = null;
 const TABS = [["dash","Dashboard"],["track","Tracker"],["week","Check-in"],["start","Start"],["data","Daten"]];
-function go(v){if(v==="week"&&view!=="week") cSel=firstOpenCi(); if(v==="track"&&view!=="track"&&!ciOpen(wSel)){wSel=firstOpenCi(); dSel=0;} view=v; flash=""; confirmWipe=false; transfer=null; render(); window.scrollTo(0,0);}
+function go(v){explain=null; if(v==="week"&&view!=="week") cSel=firstOpenCi(); if(v==="track"&&view!=="track"&&!ciOpen(wSel)){wSel=firstOpenCi(); dSel=0;} view=v; flash=""; confirmWipe=false; transfer=null; render(); window.scrollTo(0,0);}
 
 let lastView=null;
 function render(){
@@ -255,7 +320,7 @@ function render(){
   if(!S.plan){app.innerHTML=onboarding(); bindOnboarding(); return;}
   const nav = TABS.map(([k,l])=>`<button data-go="${k}" ${view===k?'aria-current="page"':''}>${l}</button>`).join("");
   const tabs = TABS.map(([k,l])=>`<button data-go="${k}" ${view===k?'aria-current="page"':''}>${ICON[k]}<span>${l}</span></button>`).join("");
-  const body = {dash:vDash,track:vTrack,week:vWeek,start:vStart,data:vData}[view]();
+  const body = (view==="start"&&explain) ? vExplain() : {dash:vDash,track:vTrack,week:vWeek,start:vStart,data:vData}[view]();
   app.innerHTML = `<header class="top"><div class="top-in"><span><img class="logo-l" src="${LOGO_L}" alt="innen kultur"><img class="logo-d" src="${LOGO_D}" alt="innen kultur"></span>
     <nav class="nav-d" aria-label="Bereiche">${nav}</nav><span class="plan">${S.plan===8?"Komplett":"Basis"}${S.demo?" · Demo":""}</span></div></header>
     <main><div class="wrap view${lastView!==view?" enter":""}">${body}</div></main><nav class="tabs" aria-label="Bereiche">${tabs}</nav>`;
@@ -290,6 +355,60 @@ function planFor(code){const c=(code||"").trim().toUpperCase(); if(/^KOMPLETT-[A
 function unlock(code){const p=planFor(code); if(!p){const e=document.getElementById("ob-err")||null; if(e) e.hidden=false; return false;}
   S.code=code.trim().toUpperCase(); S.plan=p; save(); view=S.start?"dash":"start"; render(); return true;}
 
+
+/* ---------- Begriffe erklärt ---------- */
+const CHEV='<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>';
+const EX={
+  pflanzen:{p:"e",pill:"Ernährung & Darm",title:'Der <em>Pflanzen-Teller</em>',short:"Was ist ein Pflanzen-Teller?",sub:"Video · Erklärung · Kühlschrank-Karte",
+    rule:'Eine Mahlzeit, bei der mindestens die <b>Hälfte des Tellers</b> aus Pflanzen besteht. Einmal am Tag reicht für den Haken.',
+    groupsLabel:"Das zählt als Pflanze",tags:["Gemüse","Obst","Hülsenfrüchte","Vollkorn","Nüsse & Samen","Kräuter"],
+    examples:"Linsen-Bowl mit Ofengemüse · Vollkornbrot mit Hummus und Gurke · Haferflocken mit Beeren und Nüssen",card:"pflanzen",cardText:"Pflanzen-Gruppen und deine Einkaufs-Basics zum Ausfüllen"},
+  ferment:{p:"e",pill:"Ernährung & Darm",title:'Was zählt als <em>fermentiert?</em>',short:"Was zählt als fermentiert?",sub:"Video · Lebensmittel · Kühlschrank-Karte",
+    rule:'Lebensmittel, die mit Bakterien oder Hefen haltbar gemacht wurden. Schon eine <b>kleine Portion</b> am Tag reicht für den Haken.',
+    groupsLabel:"Beispiele",mini:[["Milchprodukte","Naturjoghurt, Kefir, Skyr"],["Gemüse","Sauerkraut, Kimchi, milchsaure Gurken"],["Soja & Co.","Miso, Tempeh, Natto"],["Getränke & Brot","Kombucha, Kwas, echter Sauerteig"]],
+    tip:'<b>Einkaufs-Tipp:</b> Aus dem Kühlregal und „nicht pasteurisiert“. Sauerkraut aus der Dose ist meist erhitzt.',card:"ferment",cardText:"Fermentiertes im Überblick und deine Einkaufsliste"},
+  aktiv:{p:"b",pill:"Bewegung",title:'Was zählt als <em>aktiv?</em>',short:"Was zählt als aktiv?",sub:"Video · Spazieren bis Kraft",
+    rule:'Mindestens <b>30 Minuten</b> Bewegung am Tag, bei der du etwas schneller atmest. Aufgeteilt zählt auch, z. B. 3 × 10 Minuten.',
+    groupsLabel:"Das zählt alles",mini:[["Spazieren","zügig, auch der Weg zur Arbeit"],["Fahrrad","Pendeln, Tour, Ergometer"],["Cardio","Laufen, Schwimmen, Rudern"],["Kraft","Studio, Eigengewicht, Kurse"],["Mobility","Yoga, Pilates, Dehnen"],["Alltag","Garten, Treppen, mit Kindern toben"]]}
+};
+let explain=null;
+function explainBox(){return `<div class="explain-box"><div class="row"><h2>Kurz erklärt</h2><span class="lbl">3 Begriffe · antippen</span></div>
+  <div class="ex-list">${Object.keys(EX).map(k=>{const e=EX[k];return `<button type="button" class="ex-item" data-explain="${k}"><span class="dot" style="background:${P[e.p]}"></span><span><b>${e.short}</b><span class="s">${e.sub}</span></span>${CHEV}</button>`;}).join("")}</div></div>`;}
+function vExplain(){const e=EX[explain];
+  return `<button type="button" class="back" data-explain-close><i><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></i>Zurück zum Start-Check</button>
+  <div class="head"><span class="eyebrow" style="color:${e.p==="e"?"var(--coral-t)":"var(--muted)"}">● ${e.pill}</span><h1>${e.title}</h1></div>
+  <div class="grid g2">
+   <div class="grid" style="align-content:start">
+    <div class="video"><span class="play"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></span><span class="cap">Erklärvideo · ca. 1 Minute</span><span class="soon">folgt bald</span></div>
+    <div class="card"><h2>So zählt es</h2><p class="lead" style="margin:0">${e.rule}</p></div>
+   </div>
+   <div class="grid" style="align-content:start">
+    <div class="card"><span class="lbl">${e.groupsLabel}</span>
+     ${e.tags?`<div class="tags">${e.tags.map(t=>`<span>${esc(t)}</span>`).join("")}</div><span class="lbl">Beispiele</span><p style="margin:0;font-size:14px">${e.examples}</p>`:""}
+     ${e.mini?`<div class="mini">${e.mini.map(([a,b])=>`<div><b>${esc(a)}</b><span>${esc(b)}</span></div>`).join("")}</div>`:""}
+     ${e.tip?`<p class="note" style="margin:0;color:var(--soft)">${e.tip}</p>`:""}
+    </div>
+    ${e.card?`<div class="card sand"><div class="cardfile"><span class="a6">A6</span><div><b>Kühlschrank-Karte</b><div class="note">${e.cardText}</div></div></div>
+     <button class="btn" data-print="${e.card}">Karte als PDF speichern</button><p class="note" style="margin:0">Im Druck-Dialog „Als PDF sichern“ wählen oder direkt drucken.</p></div>`:""}
+   </div>
+  </div>`;}
+function cardHTML(k){const logo=`<img src="${LOGO_L}" alt="innen kultur">`;
+  if(k==="pflanzen"){const rows=[["Gemüse","Brokkoli, Paprika, Spinat"],["Obst","Beeren, Äpfel, Bananen"],["Hülsenfrüchte","Linsen, Kichererbsen"],["Vollkorn","Haferflocken, Quinoa"],["Nüsse & Samen","Walnüsse, Leinsamen"],["Kräuter","Petersilie, Basilikum"]];
+    return `<div class="fc" style="--c:#E9765B"><div class="hd">${logo}<span>Kühlschrank-Karte</span></div>
+    <div><h1>Meine <em>Pflanzen-Basics</em></h1><p class="sub">Einmal am Tag: die Hälfte des Tellers aus Pflanzen. Trag ein, was bei dir immer da sein soll.</p></div>
+    <div class="rows">${rows.map(([a,b])=>`<div class="rw"><span><b>${esc(a)}</b><small>${esc(b)}</small></span><span class="ln"></span></div>`).join("")}</div>
+    <div class="shop"><span class="k">Diese Woche einkaufen</span><span class="ln"></span><span class="ln"></span></div>
+    <span class="ft">innen-kultur.de · Loop-Tracker · Ernährung &amp; Darm</span></div>`;}
+  const g=[["Milchprodukte",["Naturjoghurt","Kefir","Skyr"]],["Gemüse",["Sauerkraut (Kühlregal)","Kimchi","Milchsaure Gurken"]],["Soja & Co.",["Miso","Tempeh"]],["Getränke & Brot",["Kombucha","Echter Sauerteig"]]];
+  return `<div class="fc" style="--c:#B07A55"><div class="hd">${logo}<span>Kühlschrank-Karte</span></div>
+    <div><h1>Mein <em>Fermentiertes</em></h1><p class="sub">Eine kleine Portion am Tag reicht. Hak ab, was du magst, und ergänze deine Favoriten.</p></div>
+    <div class="grid2">${g.map(([a,l])=>`<div><span class="k">${esc(a)}</span>${l.map(x=>`<span class="ck"><i></i>${esc(x)}</span>`).join("")}</div>`).join("")}</div>
+    <div class="tip"><b style="color:#2B231E">Beim Einkauf:</b> Kühlregal und „nicht pasteurisiert“ wählen. Erhitzte Konserven zählen meist nicht.</div>
+    <div class="rows" style="gap:1.5mm"><span class="k">Meine Favoriten · einkaufen</span><span class="ln" style="height:5mm"></span><span class="ln" style="height:5mm"></span><span class="ln" style="height:5mm"></span></div>
+    <span class="ft">innen-kultur.de · Loop-Tracker · Ernährung &amp; Darm</span></div>`;}
+function printCard(k){const el=document.getElementById("print"); el.innerHTML=cardHTML(k);
+  const imgs=[...el.querySelectorAll("img")]; Promise.all(imgs.map(i=>i.complete?1:new Promise(r=>{i.onload=i.onerror=r;}))).then(()=>setTimeout(()=>window.print(),150));}
+
 /* ---------- Start-Check ---------- */
 const SQ=[["t","e","An wie vielen Tagen hattest du einen Pflanzen-Teller?"],["f","e","An wie vielen Tagen hast du etwas Fermentiertes gegessen?"],
   ["a","b","An wie vielen Tagen warst du mindestens 30 Minuten aktiv?"],["s","s","In wie vielen Nächten hast du mindestens 7 Stunden geschlafen?"]];
@@ -297,10 +416,12 @@ const FEEL=[["er","Wie erholt wachst du meistens auf?"],["en","Wie ist deine Ene
 function seg(name,val,from,to,cls=""){let h=`<div class="seg ${cls}" role="group">`;
   for(let i=from;i<=to;i++) h+=`<button type="button" data-set="${name}" data-v="${i}" aria-pressed="${val===i}">${i}</button>`; return h+"</div>";}
 function vStart(){const s=S.start||{}, sc=startScores();
-  const qs=SQ.map(([k,p,q])=>`<div class="q"><span><span class="dot" style="display:inline-block;background:${P[p]};margin-right:8px"></span>${q}</span>${seg("start."+k,s[k],0,7,"s8")}<div class="seg-cap"><span>0 Tage</span><span>7 Tage</span></div></div>`).join("");
+  const EXQ={t:"pflanzen",f:"ferment",a:"aktiv"};
+  const qs=SQ.map(([k,p,q])=>`<div class="q"><span><span class="dot" style="display:inline-block;background:${P[p]};margin-right:8px"></span>${q}</span>${seg("start."+k,s[k],0,7,"s8")}<div class="seg-cap"><span>0 Tage</span><span>7 Tage</span></div>${EXQ[k]?`<button type="button" class="ex-link" data-explain="${EXQ[k]}">Unsicher, was zählt? Kurz erklärt</button>`:""}</div>`).join("");
   const fl=FEEL.map(([k,q])=>`<div class="q"><span>${q}</span>${seg("start."+k,s[k],1,5)}<div class="seg-cap"><span>1 · schlecht</span><span>5 · sehr gut</span></div></div>`).join("");
   return `<div class="head"><span class="eyebrow">○ Start-Check · einmal vor Woche 1 · 2 Minuten</span><h1>Wo stehst du <em>heute?</em></h1>
   <p class="lead">Denk an die letzten 7 Tage und trag ehrlich ein, was du gemacht hast. Daraus entsteht dein Start-Loop-Score.</p></div>
+  ${explainBox()}
   <div class="grid g21"><div class="card">${qs}</div>
   <div class="grid" style="align-content:start"><div class="card dark"><span class="lbl">Dein Start-Loop-Score</span>
    ${sc?`<div class="score"><b>${sc.L}</b><span>von 100</span></div>
@@ -325,8 +446,23 @@ function vTrack(){const d=S.days[idx(wSel,dSel)]||{}, wd=weekData(wSel), ws=week
   for(let i=0;i<7;i++){const dn=entered(S.days[idx(wSel,i)]); days+=`<button class="dayb${dn?" done":""}" data-day="${i}" aria-pressed="${dSel===i}" aria-label="Tag ${i+1}${dn?", erfasst":""}"><small>Tag</small><b>${i+1}</b><span class="ck">${dn?CHECK:""}</span></button>`;}
   days+="</div>";
   const tg=(k,p,t,sub)=>`<button type="button" class="toggle" data-tg="${k}" aria-pressed="${!!d[k]}"><span class="dot" style="background:${P[p]}"></span><span class="tx">${t}<small>${sub}</small></span><span class="box">${CHECK}</span></button>`;
-  return `<div class="head"><span class="eyebrow">○ Tracker · jeden Abend · 20 Sekunden</span><h1>Woche ${wSel+1} · <em>Tag ${dSel+1}</em></h1></div>
-  ${weekChips(wSel,"wk")}${days}
+  const sel5=(i,k,v)=>`<select data-sel="${i}.${k}" aria-label="${k} Tag ${i+1}"><option value=""${isNum(v)?"":" selected"}>–</option>${[1,2,3,4,5].map(n=>`<option${v===n?" selected":""}>${n}</option>`).join("")}</select>`;
+  let rows="";
+  for(let i=0;i<7;i++){const x=S.days[idx(wSel,i)]||{};
+    const tb=k=>`<button type="button" class="tbox" data-tgd="${i}.${k}" aria-pressed="${!!x[k]}" aria-label="${k} Tag ${i+1}">${CHECK}</button>`;
+    rows+=`<tr><td class="tag">Tag ${i+1}</td><td>${tb("t")}</td><td>${tb("f")}</td><td>${tb("a")}</td>
+    <td><input class="h${isNum(x.h)&&x.h<7?" low":""}" data-hrs="${i}" inputmode="decimal" placeholder="–" value="${isNum(x.h)?fmt1(x.h):""}" aria-label="Stunden Tag ${i+1}"></td>
+    <td>${sel5(i,"er",x.er)}</td><td>${sel5(i,"en",x.en)}</td><td>${sel5(i,"ba",x.ba)}</td>
+    <td><input class="nt" data-nt="${i}" placeholder="Notiz" value="${esc(x.n||"")}" aria-label="Notiz Tag ${i+1}"></td></tr>`;}
+  const table=`<div class="card wide-only"><div class="wk-scroll"><table class="wk"><thead>
+    <tr><th></th><th class="grp" colspan="2" style="--c:var(--p-e);color:var(--coral-t)">Ernährung &amp; Darm</th><th class="grp" style="--c:var(--p-b)">Bewegung</th><th class="grp" style="--c:var(--p-s)">Schlaf</th><th class="grp" colspan="3" style="--c:var(--sand)">Resultat · 1 bis 5</th><th></th></tr>
+    <tr><th></th><th>Pflanzen-Teller</th><th>Fermentiertes</th><th>Aktiv 30 Min.</th><th>Stunden</th><th>Erholt</th><th>Energie</th><th>Bauch</th><th style="text-align:left">Notiz</th></tr></thead>
+    <tbody>${rows}<tr class="bil"><td>Bilanz</td><td>${wd.n?wd.t+" / "+wd.n:"–"}</td><td>${wd.n?wd.f+" / "+wd.n:"–"}</td><td>${wd.n?wd.a+" / "+wd.n:"–"}</td><td>${avg(wd.h)!==null?"Ø "+fmt1(avg(wd.h)):"–"}</td><td>${fmt1(avg(wd.er))}</td><td>${fmt1(avg(wd.en))}</td><td>${fmt1(avg(wd.ba))}</td>
+    <td style="text-align:right;white-space:nowrap"><span class="lbl">Loop-Score</span> <b style="font-size:24px;color:var(--coral-t);letter-spacing:-.03em;margin-left:6px">${ws.L===null?"–":ws.L}</b></td></tr></tbody></table></div>
+    <p class="note" style="margin:0">Antippen = gemacht · leer = nicht gemacht · Stunden unter 7 erscheinen braun · ein vergessener Tag zählt nicht gegen dich</p>
+    ${wSel+1<S.plan&&!ciOpen(wSel+1)?`<div class="row" style="justify-content:flex-start;flex-wrap:wrap"><span class="note">Woche ${wSel+2} öffnet sich nach dem Wochen-Check-in für Woche ${wSel+1}.</span><button class="btn ghost" data-go="week">Zum Wochen-Check-in</button></div>`:""}</div>`;
+  return `<div class="head"><span class="eyebrow">○ Tracker · jeden Abend · 20 Sekunden</span><h1>Woche ${wSel+1}<span class="narrow-only"> · <em>Tag ${dSel+1}</em></span></h1></div>
+  ${weekChips(wSel,"wk")}${table}<div class="narrow-only" style="display:flex;flex-direction:column;gap:14px">${days}
   <div class="grid g21"><div class="card">
     <span class="lbl">Ernährung &amp; Darm · Bewegung</span>
     ${tg("t","e","Pflanzen-Teller","mindestens eine Mahlzeit, halber Teller Pflanzen")}
@@ -343,7 +479,7 @@ function vTrack(){const d=S.days[idx(wSel,dSel)]||{}, wd=weekData(wSel), ws=week
     <div class="row" style="border-top:1px solid var(--line);padding-top:12px"><span class="lbl">Loop-Score</span><b class="num" style="font-size:30px;color:var(--coral-t);letter-spacing:-.03em">${ws.L}</b></div>`
     :`<p class="empty">Noch keine Einträge in dieser Woche. Hak ab, was heute geklappt hat.</p>`}
     <p class="note">Leer heißt nicht gemacht. Ein vergessener Tag zählt nicht gegen dich.</p>
-    ${wSel+1<S.plan&&!ciOpen(wSel+1)?`<div class="q" style="border-top:1px solid var(--line);padding-top:12px"><span class="note" style="margin:0">Woche ${wSel+2} öffnet sich, sobald du den Wochen-Check-in für Woche ${wSel+1} abgeschlossen hast.</span><button class="btn ghost" data-go="week" style="align-self:flex-start">Zum Wochen-Check-in</button></div>`:""}</div></div>`;}
+    ${wSel+1<S.plan&&!ciOpen(wSel+1)?`<div class="q" style="border-top:1px solid var(--line);padding-top:12px"><span class="note" style="margin:0">Woche ${wSel+2} öffnet sich, sobald du den Wochen-Check-in für Woche ${wSel+1} abgeschlossen hast.</span><button class="btn ghost" data-go="week" style="align-self:flex-start">Zum Wochen-Check-in</button></div>`:""}</div></div></div>`;}
 
 /* ---------- Wochen-Check-in ---------- */
 const ZUF=["gar nicht","eher nicht","teils","zufrieden","sehr zufrieden"], STR=["entspannt","eher ruhig","normal","angespannt","sehr gestresst"];
@@ -464,6 +600,14 @@ function setVal(path,v){const [scope,k]=path.split(".");
   save(); render();}
 function bind(){
   document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go));
+  document.querySelectorAll("[data-explain]").forEach(b=>b.onclick=()=>{explain=b.dataset.explain; render(); window.scrollTo(0,0);});
+  const ec=document.querySelector("[data-explain-close]"); if(ec) ec.onclick=()=>{explain=null; render(); window.scrollTo(0,0);};
+  document.querySelectorAll("[data-print]").forEach(b=>b.onclick=()=>printCard(b.dataset.print));
+  document.querySelectorAll("[data-tgd]").forEach(b=>b.onclick=()=>{const [i,k]=b.dataset.tgd.split("."), id=idx(wSel,+i); const d=S.days[id]=S.days[id]||{}; d[k]=!d[k]; save(); render();});
+  document.querySelectorAll("[data-sel]").forEach(el=>el.onchange=()=>{const [i,k]=el.dataset.sel.split("."), id=idx(wSel,+i); const d=S.days[id]=S.days[id]||{}; d[k]=el.value?+el.value:undefined; save(); render();});
+  document.querySelectorAll("[data-hrs]").forEach(el=>el.onchange=()=>{const id=idx(wSel,+el.dataset.hrs); const d=S.days[id]=S.days[id]||{}; const v=parseFloat(el.value.replace(",",".")); d.h= isNaN(v)?undefined:Math.min(14,Math.max(0,Math.round(v*2)/2)); save(); render();});
+  document.querySelectorAll("[data-nt]").forEach(el=>el.oninput=()=>{const id=idx(wSel,+el.dataset.nt); (S.days[id]=S.days[id]||{}).n=el.value; save();});
+
   document.querySelectorAll("[data-set]").forEach(b=>b.onclick=()=>setVal(b.dataset.set,+b.dataset.v));
   document.querySelectorAll("[data-step]").forEach(b=>b.onclick=()=>{const [scope,k]=b.dataset.step.split("."), tgt= scope==="start"?(S.start=S.start||{}):(S.days[idx(wSel,dSel)]=S.days[idx(wSel,dSel)]||{});
     const cur=isNum(tgt[k])?tgt[k]:7; tgt[k]= isNum(tgt[k]) ? Math.min(12,Math.max(3,cur+ +b.dataset.d)) : 7; save(); render();});
