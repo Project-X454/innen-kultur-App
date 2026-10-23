@@ -1,6 +1,6 @@
 // Offline-Betrieb: App-Dateien werden auf dem Gerät zwischengespeichert.
 // Nutzerdaten liegen im Browser-Speicher (localStorage) und werden nie an den Server geschickt.
-const VERSION = "loop-v5";
+const VERSION = "loop-v6";
 const CORE = ["./", "index.html", "manifest.webmanifest", "icons/logo_l.png", "icons/logo_d.png",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png", "icons/favicon.png"];
 

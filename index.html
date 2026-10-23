@@ -243,6 +243,24 @@ td.diff{font-weight:700;font-size:17px;color:var(--coral-t)}
 .fc .ck i{width:3mm;height:3mm;border:.4mm solid #B07A55;border-radius:.8mm}
 .fc .tip{background:#F7EFE6;border-radius:3mm;padding:2.5mm 3mm;font-size:8pt;line-height:1.4;color:#5C4535}
 .fc .ft{font-size:6.5pt;color:#8A5A3A}
+.fc .wp{width:100%;border-collapse:collapse;flex:1}
+.fc .wp th{font-family:var(--f-mono);font-weight:500;font-size:6.5pt;letter-spacing:.08em;text-transform:uppercase;color:#8A5A3A;text-align:left;padding:0 1mm 1.5mm}
+.fc .wp td{border-top:.4mm solid #E6D3BF;height:8.5mm;padding:0 1mm;font-size:9pt;vertical-align:middle}
+.fc .wp td:nth-child(2){width:38%}.fc .wp td:nth-child(3){width:22%}.fc .wp td:nth-child(4){width:14%}
+.fc .wp i{display:block;width:3.2mm;height:3.2mm;border:.4mm solid #B07A55;border-radius:.8mm}
+
+.qrow{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-top:1px solid var(--line)}
+.qrow:first-child{border-top:0}
+.qtx{display:flex;gap:10px;align-items:flex-start;min-width:0}
+.qtx .dot{margin-top:6px}
+.qtx b{display:block;font-size:15px;line-height:1.35}
+.qin{display:flex;align-items:center;gap:8px;flex:none}
+.pick{appearance:none;-webkit-appearance:none;font:inherit;font-size:18px;font-weight:700;text-align:center;text-align-last:center;border:0;background:var(--field);color:var(--ink);border-radius:12px;height:46px;min-width:64px;padding:0 10px}
+.rrow{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media (min-width:560px){.rrow{grid-template-columns:repeat(4,1fr)}}
+.rtile{background:var(--field);border-radius:14px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.rtile b{display:block;font-size:14px}
+.rtile .pick{background:var(--card);min-width:58px;height:42px;font-size:17px}
 </style>
 </head>
 <body>
@@ -361,15 +379,15 @@ const CHEV='<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>';
 const EX={
   pflanzen:{p:"e",pill:"Ernährung & Darm",title:'Der <em>Pflanzen-Teller</em>',short:"Was ist ein Pflanzen-Teller?",sub:"Video · Erklärung · Kühlschrank-Karte",
     rule:'Eine Mahlzeit, bei der mindestens die <b>Hälfte des Tellers</b> aus Pflanzen besteht. Einmal am Tag reicht für den Haken.',
-    groupsLabel:"Das zählt als Pflanze",tags:["Gemüse","Obst","Hülsenfrüchte","Vollkorn","Nüsse & Samen","Kräuter"],
-    examples:"Linsen-Bowl mit Ofengemüse · Vollkornbrot mit Hummus und Gurke · Haferflocken mit Beeren und Nüssen",card:"pflanzen",cardText:"Pflanzen-Gruppen und deine Einkaufs-Basics zum Ausfüllen"},
+    groupsLabel:"Das zählt als Pflanze",mini:[["Gemüse","Brokkoli, Paprika, Spinat, Zucchini, Möhren, Tomaten"],["Obst","Beeren, Äpfel, Bananen, Orangen, Kiwi"],["Hülsenfrüchte","Linsen, Kichererbsen, Bohnen, Erbsen, Edamame"],["Vollkorn","Haferflocken, Vollkornbrot, Quinoa, Naturreis, Buchweizen"],["Nüsse & Samen","Walnüsse, Mandeln, Leinsamen, Chia, Kürbiskerne"],["Kräuter & Pilze","Petersilie, Basilikum, Schnittlauch, Champignons"]],
+    examples:"Linsen-Bowl mit Ofengemüse · Vollkornbrot mit Hummus und Gurke · Haferflocken mit Beeren und Nüssen · Pasta mit Tomaten-Bohnen-Sauce und Rucola",card:"pflanzen",cardText:"Pflanzen-Gruppen und deine Einkaufs-Basics zum Ausfüllen"},
   ferment:{p:"e",pill:"Ernährung & Darm",title:'Was zählt als <em>fermentiert?</em>',short:"Was zählt als fermentiert?",sub:"Video · Lebensmittel · Kühlschrank-Karte",
     rule:'Lebensmittel, die mit Bakterien oder Hefen haltbar gemacht wurden. Schon eine <b>kleine Portion</b> am Tag reicht für den Haken.',
     groupsLabel:"Beispiele",mini:[["Milchprodukte","Naturjoghurt, Kefir, Skyr"],["Gemüse","Sauerkraut, Kimchi, milchsaure Gurken"],["Soja & Co.","Miso, Tempeh, Natto"],["Getränke & Brot","Kombucha, Kwas, echter Sauerteig"]],
     tip:'<b>Einkaufs-Tipp:</b> Aus dem Kühlregal und „nicht pasteurisiert“. Sauerkraut aus der Dose ist meist erhitzt.',card:"ferment",cardText:"Fermentiertes im Überblick und deine Einkaufsliste"},
   aktiv:{p:"b",pill:"Bewegung",title:'Was zählt als <em>aktiv?</em>',short:"Was zählt als aktiv?",sub:"Video · Spazieren bis Kraft",
     rule:'Mindestens <b>30 Minuten</b> Bewegung am Tag, bei der du etwas schneller atmest. Aufgeteilt zählt auch, z. B. 3 × 10 Minuten.',
-    groupsLabel:"Das zählt alles",mini:[["Spazieren","zügig, auch der Weg zur Arbeit"],["Fahrrad","Pendeln, Tour, Ergometer"],["Cardio","Laufen, Schwimmen, Rudern"],["Kraft","Studio, Eigengewicht, Kurse"],["Mobility","Yoga, Pilates, Dehnen"],["Alltag","Garten, Treppen, mit Kindern toben"]]}
+    groupsLabel:"Das zählt alles",mini:[["Spazieren","zügig, auch der Weg zur Arbeit"],["Fahrrad","Pendeln, Tour, Ergometer"],["Cardio","Laufen, Schwimmen, Rudern"],["Kraft","Studio, Eigengewicht, Kurse"],["Mobility","Yoga, Pilates, Dehnen"],["Alltag","Garten, Treppen, mit Kindern toben"]],card:"aktiv",cardText:"Deine Woche planen: was, wann und wie lange"}
 };
 let explain=null;
 function explainBox(){return `<div class="explain-box"><div class="row"><h2>Kurz erklärt</h2><span class="lbl">3 Begriffe · antippen</span></div>
@@ -384,8 +402,8 @@ function vExplain(){const e=EX[explain];
    </div>
    <div class="grid" style="align-content:start">
     <div class="card"><span class="lbl">${e.groupsLabel}</span>
-     ${e.tags?`<div class="tags">${e.tags.map(t=>`<span>${esc(t)}</span>`).join("")}</div><span class="lbl">Beispiele</span><p style="margin:0;font-size:14px">${e.examples}</p>`:""}
      ${e.mini?`<div class="mini">${e.mini.map(([a,b])=>`<div><b>${esc(a)}</b><span>${esc(b)}</span></div>`).join("")}</div>`:""}
+     ${e.examples?`<span class="lbl">Beispiel-Teller</span><p style="margin:0;font-size:14px">${e.examples}</p>`:""}
      ${e.tip?`<p class="note" style="margin:0;color:var(--soft)">${e.tip}</p>`:""}
     </div>
     ${e.card?`<div class="card sand"><div class="cardfile"><span class="a6">A6</span><div><b>Kühlschrank-Karte</b><div class="note">${e.cardText}</div></div></div>
@@ -393,6 +411,7 @@ function vExplain(){const e=EX[explain];
    </div>
   </div>`;}
 function cardHTML(k){const logo=`<img src="${LOGO_L}" alt="innen kultur">`;
+  if(k==="aktiv") return cardAktiv(logo);
   if(k==="pflanzen"){const rows=[["Gemüse","Brokkoli, Paprika, Spinat"],["Obst","Beeren, Äpfel, Bananen"],["Hülsenfrüchte","Linsen, Kichererbsen"],["Vollkorn","Haferflocken, Quinoa"],["Nüsse & Samen","Walnüsse, Leinsamen"],["Kräuter","Petersilie, Basilikum"]];
     return `<div class="fc" style="--c:#E9765B"><div class="hd">${logo}<span>Kühlschrank-Karte</span></div>
     <div><h1>Meine <em>Pflanzen-Basics</em></h1><p class="sub">Einmal am Tag: die Hälfte des Tellers aus Pflanzen. Trag ein, was bei dir immer da sein soll.</p></div>
@@ -406,6 +425,13 @@ function cardHTML(k){const logo=`<img src="${LOGO_L}" alt="innen kultur">`;
     <div class="tip"><b style="color:#2B231E">Beim Einkauf:</b> Kühlregal und „nicht pasteurisiert“ wählen. Erhitzte Konserven zählen meist nicht.</div>
     <div class="rows" style="gap:1.5mm"><span class="k">Meine Favoriten · einkaufen</span><span class="ln" style="height:5mm"></span><span class="ln" style="height:5mm"></span><span class="ln" style="height:5mm"></span></div>
     <span class="ft">innen-kultur.de · Loop-Tracker · Ernährung &amp; Darm</span></div>`;}
+function cardAktiv(logo){const days=["Mo","Di","Mi","Do","Fr","Sa","So"];
+  return `<div class="fc" style="--c:#D9B48F"><div class="hd">${logo}<span>Aktivitäts-Karte</span></div>
+    <div><h1>Meine <em>Bewegungswoche</em></h1><p class="sub">Plane 30 Minuten am Tag. Aufgeteilt zählt auch. Hak ab, was geklappt hat.</p></div>
+    <table class="wp"><thead><tr><th></th><th>Was?</th><th>Wann?</th><th>Min.</th><th>✓</th></tr></thead>
+    <tbody>${days.map(d=>`<tr><td><b>${d}</b></td><td></td><td></td><td></td><td><i></i></td></tr>`).join("")}</tbody></table>
+    <div class="tip"><b style="color:#2B231E">Ideen:</b> Spazieren · Rad · Laufen · Schwimmen · Kraft · Yoga · Treppe statt Aufzug</div>
+    <span class="ft">innen-kultur.de · Loop-Tracker · Bewegung</span></div>`;}
 function printCard(k){const el=document.getElementById("print"); el.innerHTML=cardHTML(k);
   const imgs=[...el.querySelectorAll("img")]; Promise.all(imgs.map(i=>i.complete?1:new Promise(r=>{i.onload=i.onerror=r;}))).then(()=>setTimeout(()=>window.print(),150));}
 
@@ -417,18 +443,22 @@ function seg(name,val,from,to,cls=""){let h=`<div class="seg ${cls}" role="group
   for(let i=from;i<=to;i++) h+=`<button type="button" data-set="${name}" data-v="${i}" aria-pressed="${val===i}">${i}</button>`; return h+"</div>";}
 function vStart(){const s=S.start||{}, sc=startScores();
   const EXQ={t:"pflanzen",f:"ferment",a:"aktiv"};
-  const qs=SQ.map(([k,p,q])=>`<div class="q"><span><span class="dot" style="display:inline-block;background:${P[p]};margin-right:8px"></span>${q}</span>${seg("start."+k,s[k],0,7,"s8")}<div class="seg-cap"><span>0 Tage</span><span>7 Tage</span></div>${EXQ[k]?`<button type="button" class="ex-link" data-explain="${EXQ[k]}">Unsicher, was zählt? Kurz erklärt</button>`:""}</div>`).join("");
-  const fl=FEEL.map(([k,q])=>`<div class="q"><span>${q}</span>${seg("start."+k,s[k],1,5)}<div class="seg-cap"><span>1 · schlecht</span><span>5 · sehr gut</span></div></div>`).join("");
+  const pick=(k,opts,val,lbl)=>`<select class="pick" data-pick="${k}" aria-label="${lbl}"><option value=""${isNum(val)?"":" selected"}>–</option>${opts.map(o=>`<option value="${o}"${val===o?" selected":""}>${String(o).replace(".",",")}</option>`).join("")}</select>`;
+  const D07=[0,1,2,3,4,5,6,7], D15=[1,2,3,4,5], HRS=[]; for(let h=4;h<=11;h+=0.5) HRS.push(h);
+  const qs=SQ.map(([k,p,q])=>`<div class="qrow"><div class="qtx"><span class="dot" style="background:${P[p]}"></span><div><b>${q}</b>${EXQ[k]?`<button type="button" class="ex-link" data-explain="${EXQ[k]}">Unsicher, was zählt?</button>`:""}</div></div>
+    <div class="qin">${pick(k,D07,s[k],q)}<span class="note">von 7</span></div></div>`).join("");
+  const res=[["sl","Ø Schlaf",HRS,"Std."],["er","Erholt",D15,"1–5"],["en","Energie",D15,"1–5"],["ba","Bauchgefühl",D15,"1–5"]]
+    .map(([k,n,o,u])=>`<label class="rtile"><span><b>${n}</b><span class="note">${u}</span></span>${pick(k,o,s[k],n)}</label>`).join("");
   return `<div class="head"><span class="eyebrow">○ Start-Check · einmal vor Woche 1 · 2 Minuten</span><h1>Wo stehst du <em>heute?</em></h1>
   <p class="lead">Denk an die letzten 7 Tage und trag ehrlich ein, was du gemacht hast. Daraus entsteht dein Start-Loop-Score.</p></div>
   ${explainBox()}
-  <div class="grid g21"><div class="card">${qs}</div>
+  <div class="grid g21"><div class="grid" style="align-content:start"><div class="card" style="gap:0;padding-block:6px">${qs}</div>
+   <div class="card"><span class="lbl">Resultat · wie fühlst du dich gerade?</span><div class="rrow">${res}</div><span class="note">Erholt, Energie, Bauchgefühl: 1 = schlecht · 5 = sehr gut</span></div></div>
   <div class="grid" style="align-content:start"><div class="card dark"><span class="lbl">Dein Start-Loop-Score</span>
    ${sc?`<div class="score"><b>${sc.L}</b><span>von 100</span></div>
    ${[["Ernährung & Darm",sc.E,"e"],["Bewegung",sc.B,"b"],["Schlaf",sc.S,"s"]].map(([n,v,p])=>`<div class="q" style="gap:5px"><div class="kv"><span>${n}</span><b class="num">${v}</b></div><div class="bar" style="--c:${P[p]};background:var(--hero-tile)"><i style="width:${v}%"></i></div></div>`).join("")}`
-   :`<p class="msg" style="color:var(--hero-soft)">Beantworte die vier Fragen, dann erscheint dein Score.</p>`}</div></div></div>
-  <div class="card"><div class="row"><h2>Resultat · wie fühlst du dich gerade?</h2></div>
-  <div class="q"><span>Wie viele Stunden schläfst du im Schnitt?</span>${stepper("start.sl", s.sl)}</div>${fl}</div>`;}
+   :`<p class="msg" style="color:var(--hero-soft)">Beantworte die vier Fragen, dann erscheint dein Score.</p>`}</div>
+   <div class="card sand"><span class="lbl">So geht es weiter</span><span><b>Jeden Abend</b> im Tracker abhaken.</span><span><b>Jeden Sonntag</b> der Wochen-Check-in.</span><span><b>Im Dashboard</b> siehst du, wie du dich vom Start aus entwickelst.</span></div></div></div>`;}
 function stepper(name,val){const v=isNum(val)?val:null;
   return `<div class="step"><button type="button" data-step="${name}" data-d="-0.5" aria-label="weniger">−</button><output class="${v!==null&&v<7?"low":""}">${v===null?"– h":fmt1(v)+" h"}</output><button type="button" data-step="${name}" data-d="0.5" aria-label="mehr">+</button></div>`;}
 
@@ -600,6 +630,7 @@ function setVal(path,v){const [scope,k]=path.split(".");
   save(); render();}
 function bind(){
   document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go));
+  document.querySelectorAll("[data-pick]").forEach(el=>el.onchange=()=>{S.start=S.start||{}; S.start[el.dataset.pick]=el.value===""?undefined:+el.value; save(); render();});
   document.querySelectorAll("[data-explain]").forEach(b=>b.onclick=()=>{explain=b.dataset.explain; render(); window.scrollTo(0,0);});
   const ec=document.querySelector("[data-explain-close]"); if(ec) ec.onclick=()=>{explain=null; render(); window.scrollTo(0,0);};
   document.querySelectorAll("[data-print]").forEach(b=>b.onclick=()=>printCard(b.dataset.print));
