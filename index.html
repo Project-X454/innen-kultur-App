@@ -218,7 +218,7 @@ function weekData(w){let n=0,t=0,f=0,a=0,s7=0,h=[],er=[],en=[],ba=[];
     if(isNum(x.h))h.push(x.h); if(isNum(x.er))er.push(x.er); if(isNum(x.en))en.push(x.en); if(isNum(x.ba))ba.push(x.ba);}
   return {n,t,f,a,s7,h,er,en,ba};}
 const avg = a => a.length ? a.reduce((p,c)=>p+c,0)/a.length : null;
-function weekScore(w){const wd=weekData(w), m=(S.ci[w]&&S.ci[w].man)||[];
+function weekScore(w){const wd=weekData(w), cw=S.ci[w], m=(cw&&cw.self&&cw.man)||[];
   const rate=(i,c)=> isNum(m[i]) ? m[i]/7 : (wd.n>0 ? c/wd.n : null);
   const rT=rate(0,wd.t), rF=rate(1,wd.f), rA=rate(2,wd.a), rS=rate(3,wd.s7);
   const ef=[rT,rF].filter(v=>v!==null);
@@ -245,7 +245,7 @@ const fmt1 = v => v===null||v===undefined ? "–" : v.toFixed(1).replace(".",","
 /* ---------- Navigation ---------- */
 let view = "dash", wSel = 0, dSel = 0, cSel = 0, flash = "", confirmWipe = false, transfer = null;
 const TABS = [["dash","Dashboard"],["track","Tracker"],["week","Check-in"],["start","Start"],["data","Daten"]];
-function go(v){view=v; flash=""; confirmWipe=false; transfer=null; render(); window.scrollTo(0,0);}
+function go(v){if(v==="week"&&view!=="week") cSel=firstOpenCi(); view=v; flash=""; confirmWipe=false; transfer=null; render(); window.scrollTo(0,0);}
 
 let lastView=null;
 function render(){
@@ -312,8 +312,12 @@ function stepper(name,val){const v=isNum(val)?val:null;
   return `<div class="step"><button type="button" data-step="${name}" data-d="-0.5" aria-label="weniger">−</button><output class="${v!==null&&v<7?"low":""}">${v===null?"– h":fmt1(v)+" h"}</output><button type="button" data-step="${name}" data-d="0.5" aria-label="mehr">+</button></div>`;}
 
 /* ---------- Tracker ---------- */
+function ciOpen(w){for(let i=0;i<w;i++){if(!(S.ci[i]&&S.ci[i].done)) return false;} return w<S.plan;}
+function firstOpenCi(){for(let w=0;w<S.plan;w++){if(!(S.ci[w]&&S.ci[w].done)) return w;} return S.plan-1;}
+function ciReady(w){const c=S.ci[w]||{}; return !!(c.zuf&&c.str&&weekScore(w).L!==null);}
 function weekChips(sel,attr){let h=`<div class="chips" data-scroll="w" role="group" aria-label="Woche">`;
-  for(let w=0;w<8;w++){const locked=w>=S.plan, has=weekData(w).n>0||(S.ci[w]&&(S.ci[w].zuf||S.ci[w].rec));
+  for(let w=0;w<8;w++){const isCi=attr==="ck", locked= isCi ? !ciOpen(w) : w>=S.plan,
+    has= isCi ? !!(S.ci[w]&&S.ci[w].done) : weekData(w).n>0;
     h+=`<button class="chip${has?" done":""}" data-${attr}="${w}" aria-pressed="${sel===w}" ${locked?"disabled":""}>Woche ${w+1}${has?`<span class="ck">${CHECK}</span>`:""}</button>`;}
   return h+"</div>";}
 function vTrack(){const d=S.days[idx(wSel,dSel)]||{}, wd=weekData(wSel), ws=weekScore(wSel);
@@ -345,7 +349,7 @@ const ZUF=["gar nicht","eher nicht","teils","zufrieden","sehr zufrieden"], STR=[
 function vWeek(){const c=S.ci[cSel]||{}, ws=weekScore(cSel), wd=ws.wd, man=c.man||[], st=startScores();
   const prev = cSel===0 ? (st?st.L:null) : weekScore(cSel-1).L, prevName = cSel===0?"deinem Start":"letzter Woche";
   const items=[["Pflanzen-Teller",wd.t,"e"],["Fermentiertes",wd.f,"e"],["Aktive Tage",wd.a,"b"],["Nächte mit 7+ Std.",wd.s7,"s"]];
-  const selfMode = c.self || (!wd.n);
+  const selfMode = !!c.self;
   let msg="Erscheint, sobald du trackst oder deine Zahlen einträgst.";
   if(ws.L!==null){ if(prev===null) msg=`Dein Loop-Score diese Woche: ${ws.L}.`; else if(ws.L>prev) msg=`Glückwunsch. ${ws.L} statt ${prev} (${prevName}).`; else if(ws.L===prev) msg=`Stabil bei ${ws.L}. Dranbleiben zählt.`; else msg=`Diesmal ${ws.L} (${prevName}: ${prev}). Nächste Woche zählt neu.`;}
   const dPrev = cSel>0 && ws.L!==null && weekScore(cSel-1).L!==null ? sign(ws.L-weekScore(cSel-1).L) : "–";
@@ -353,15 +357,20 @@ function vWeek(){const c=S.ci[cSel]||{}, ws=weekScore(cSel), wd=ws.wd, man=c.man
   return `<div class="head"><span class="eyebrow">○ Wochen-Check-in · Longevity-Recap · 1 Minute</span><h1>Woche ${cSel+1}. <em>Deine Bilanz.</em></h1></div>
   ${weekChips(cSel,"ck")}
   <div class="grid g3">
-   <div class="card"><div class="row"><h2>Deine Woche in Zahlen</h2><span class="plan">${wd.n&&!c.self?"aus dem Tracker":"selbst eingetragen"}</span></div>
+   <div class="card"><div class="row"><h2>Deine Woche in Zahlen</h2><span class="plan">${c.self?"selbst eingetragen":"aus dem Tracker"}</span></div>
     ${items.map(([n,v,p],i)=>`<div class="q" style="gap:6px"><div class="row"><span style="display:flex;align-items:center;gap:10px;font-weight:600"><span class="dot" style="background:${P[p]}"></span>${n}</span>
-      ${selfMode?"":`<b class="num">${v} <span class="note">von ${wd.n}</span></b>`}</div>${selfMode?seg("man."+i,man[i],0,7,"s8"):""}</div>`).join("")}
-    ${wd.n?`<button class="btn warn" data-selfmode>${c.self?"Wieder Tracker-Zahlen nutzen":"Zahlen lieber selbst eintragen"}</button>`:`<p class="note">Nicht täglich getrackt? Trag hier deine vier Zahlen ein (0 bis 7 Tage).</p>`}
+      ${selfMode?"":`<b class="num">${wd.n?`${v} <span class="note">von ${wd.n}</span>`:`– <span class="note">von 7</span>`}</b>`}</div>${selfMode?seg("man."+i,man[i],0,7,"s8"):""}</div>`).join("")}
+    ${!c.self&&!wd.n?`<p class="note" style="margin:0">In dieser Woche gibt es noch keine Tracker-Einträge.</p>`:""}
+    ${c.self?`<p class="note" style="margin:0">Tippe für jede Gewohnheit an, an wie vielen Tagen sie geklappt hat (0 bis 7).</p>`:""}
+    <button class="btn ghost" data-selfmode style="align-self:flex-start">${c.self?"Zurück zu den Tracker-Zahlen":"Selbsteingabe"}</button>
    </div>
    <div class="card"><h2>Dein Recap</h2>
     <div class="q"><span>Wie zufrieden bist du mit deiner Woche?</span>${seg("ci.zuf",c.zuf,1,5)}<div class="seg-cap"><span>${c.zuf?c.zuf+" · "+ZUF[c.zuf-1]:"Zahl antippen"}</span></div></div>
     <div class="q"><span>Wie gestresst warst du?</span>${seg("ci.str",c.str,1,5)}<div class="seg-cap"><span>${c.str?c.str+" · "+STR[c.str-1]:"Zahl antippen"}</span></div></div>
     <div class="q"><label for="rec" style="font-weight:600">Was hast du für dein späteres Ich getan?</label><textarea id="rec" rows="3" placeholder="z. B. Jeden Tag einen Pflanzen-Teller geschafft.">${esc(c.rec||"")}</textarea></div>
+    ${c.done?`<div class="row" style="justify-content:flex-start;gap:10px"><span class="ck" style="width:22px;height:22px;border-radius:50%;background:var(--coral);display:grid;place-items:center">${CHECK.replace('<svg','<svg style="width:12px;height:12px;stroke:#fff;stroke-width:3.5;fill:none"')}</span><b>Woche ${cSel+1} abgeschlossen</b></div>`
+      :`<button class="btn" data-ci-done ${ciReady(cSel)?"":"disabled style=\"opacity:.4;cursor:not-allowed\""}>Woche ${cSel+1} abschließen</button>
+      <p class="note" style="margin:0">${ciReady(cSel)?(cSel+1<S.plan?`Danach öffnet sich Woche ${cSel+2}.`:"Das ist deine letzte Woche."):"Zum Abschließen: Zufriedenheit und Stress antippen und Zahlen aus dem Tracker oder per Selbsteingabe."}</p>`}
    </div>
    <div class="card dark"><span class="lbl">Dein Loop-Score · Woche ${cSel+1}</span>
     ${ws.L!==null?`<div class="score"><b>${ws.L}</b><span>von 100</span></div>`:`<div class="score"><b style="color:var(--hero-tile)">–</b></div>`}
@@ -460,9 +469,10 @@ function bind(){
   document.querySelectorAll("[data-tg]").forEach(b=>b.onclick=()=>{const id=idx(wSel,dSel); const d=S.days[id]=S.days[id]||{}; d[b.dataset.tg]=!d[b.dataset.tg]; save(); render();});
   document.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{wSel=+b.dataset.wk; dSel=0; render();});
   document.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>{dSel=+b.dataset.day; render();});
-  document.querySelectorAll("[data-ck]").forEach(b=>b.onclick=()=>{cSel=+b.dataset.ck; render();});
+  document.querySelectorAll("[data-ck]").forEach(b=>b.onclick=()=>{if(!ciOpen(+b.dataset.ck)) return; cSel=+b.dataset.ck; render();});
   const note=document.getElementById("note"); if(note) note.oninput=()=>{const id=idx(wSel,dSel); (S.days[id]=S.days[id]||{}).n=note.value; save();};
   const rec=document.getElementById("rec"); if(rec) rec.oninput=()=>{(S.ci[cSel]=S.ci[cSel]||{}).rec=rec.value; save();};
+  const cd=document.querySelector("[data-ci-done]"); if(cd) cd.onclick=()=>{if(!ciReady(cSel)) return; (S.ci[cSel]=S.ci[cSel]||{}).done=true; save(); if(cSel+1<S.plan) cSel=cSel+1; render(); window.scrollTo(0,0);};
   const sm=document.querySelector("[data-selfmode]"); if(sm) sm.onclick=()=>{const c=S.ci[cSel]=S.ci[cSel]||{}; c.self=!c.self; if(!c.self) c.man=null; save(); render();};
   const bk=document.querySelector("[data-backup]"); if(bk) bk.onclick=backup;
   const imp=document.getElementById("imp"); if(imp) imp.onchange=()=>{const f=imp.files[0]; if(!f) return; const r=new FileReader();
@@ -496,7 +506,7 @@ function loadDemo(){S=blank(); S.code="KOMPLETT-DEMO"; S.plan=8; S.demo=true;
   const w1=[[1,1,1,7.2,3,3,3],[1,0,0,6.5,3,3,3],[1,1,1,7,3,3,3],[1,0,0,6,3,3,3],[0,0,1,7.5,3,4,3],[0,0,0,6.2,3,3,3],[0,0,0,6.8,3,3,3]];
   const w3=[[1,1,1,7.5,4,4,4,"Linsen-Bowl"],[1,0,0,6.8,3,3,4,"spät gegessen"],[1,1,1,7.2,4,4,4,""],[1,0,1,7,4,4,4,"25 Min. Kraft"],[0,1,0,6.5,3,3,3,"Feier"],[1,0,1,8,5,4,4,"langer Spaziergang"],[1,1,0,7.4,4,4,4,""]];
   [[0,w1],[2,w3]].forEach(([w,rows])=>rows.forEach((r,d)=>{S.days[idx(w,d)]={t:!!r[0],f:!!r[1],a:!!r[2],h:r[3],er:r[4],en:r[5],ba:r[6],n:r[7]||""};}));
-  S.ci={0:{zuf:3,str:4,rec:"Drei Mal 30 Minuten spazieren."},1:{zuf:4,str:3,man:[5,3,4,4],self:true},2:{zuf:4,str:3,rec:"Jeden Tag einen Pflanzen-Teller geschafft, auch im Büro."}};
+  S.ci={0:{zuf:3,str:4,rec:"Drei Mal 30 Minuten spazieren.",done:true},1:{zuf:4,str:3,man:[5,3,4,4],self:true,done:true},2:{zuf:4,str:3,rec:"Jeden Tag einen Pflanzen-Teller geschafft, auch im Büro.",done:true}};
   wSel=2; dSel=6; cSel=2; save();}
 
 async function fromLink(){const m=location.hash.match(/^#t=(.+)$/); if(!m) return false;
