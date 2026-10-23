@@ -261,6 +261,14 @@ td.diff{font-weight:700;font-size:17px;color:var(--coral-t)}
 .rtile{background:var(--field);border-radius:14px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .rtile b{display:block;font-size:14px}
 .rtile .pick{background:var(--card);min-width:58px;height:42px;font-size:17px}
+
+/* bündige Raster: Karten einer Reihe gleich hoch, Spalten gleich breit ausgerichtet */
+.even{align-items:stretch}
+.even>.card,.even>.video{height:100%}
+.even .video{aspect-ratio:auto;min-height:200px}
+.card.dark{justify-content:flex-start}
+.qrow{flex:1}
+.even>.card[style*="padding-block:6px"]{justify-content:space-between}
 </style>
 </head>
 <body>
@@ -395,20 +403,16 @@ function explainBox(){return `<div class="explain-box"><div class="row"><h2>Kurz
 function vExplain(){const e=EX[explain];
   return `<button type="button" class="back" data-explain-close><i><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></i>Zurück zum Start-Check</button>
   <div class="head"><span class="eyebrow" style="color:${e.p==="e"?"var(--coral-t)":"var(--muted)"}">● ${e.pill}</span><h1>${e.title}</h1></div>
-  <div class="grid g2">
-   <div class="grid" style="align-content:start">
+  <div class="grid g2 even">
     <div class="video"><span class="play"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></span><span class="cap">Erklärvideo · ca. 1 Minute</span><span class="soon">folgt bald</span></div>
-    <div class="card"><h2>So zählt es</h2><p class="lead" style="margin:0">${e.rule}</p></div>
-   </div>
-   <div class="grid" style="align-content:start">
     <div class="card"><span class="lbl">${e.groupsLabel}</span>
      ${e.mini?`<div class="mini">${e.mini.map(([a,b])=>`<div><b>${esc(a)}</b><span>${esc(b)}</span></div>`).join("")}</div>`:""}
      ${e.examples?`<span class="lbl">Beispiel-Teller</span><p style="margin:0;font-size:14px">${e.examples}</p>`:""}
      ${e.tip?`<p class="note" style="margin:0;color:var(--soft)">${e.tip}</p>`:""}
     </div>
-    ${e.card?`<div class="card sand"><div class="cardfile"><span class="a6">A6</span><div><b>Kühlschrank-Karte</b><div class="note">${e.cardText}</div></div></div>
+    <div class="card"><h2>So zählt es</h2><p class="lead" style="margin:0">${e.rule}</p></div>
+    ${e.card?`<div class="card sand"><div class="cardfile"><span class="a6">A6</span><div><b>${e.card==="aktiv"?"Aktivitäts-Karte":"Kühlschrank-Karte"}</b><div class="note">${e.cardText}</div></div></div>
      <button class="btn" data-print="${e.card}">Karte als PDF speichern</button><p class="note" style="margin:0">Im Druck-Dialog „Als PDF sichern“ wählen oder direkt drucken.</p></div>`:""}
-   </div>
   </div>`;}
 function cardHTML(k){const logo=`<img src="${LOGO_L}" alt="innen kultur">`;
   if(k==="aktiv") return cardAktiv(logo);
@@ -452,13 +456,15 @@ function vStart(){const s=S.start||{}, sc=startScores();
   return `<div class="head"><span class="eyebrow">○ Start-Check · einmal vor Woche 1 · 2 Minuten</span><h1>Wo stehst du <em>heute?</em></h1>
   <p class="lead">Denk an die letzten 7 Tage und trag ehrlich ein, was du gemacht hast. Daraus entsteht dein Start-Loop-Score.</p></div>
   ${explainBox()}
-  <div class="grid g21"><div class="grid" style="align-content:start"><div class="card" style="gap:0;padding-block:6px">${qs}</div>
-   <div class="card"><span class="lbl">Resultat · wie fühlst du dich gerade?</span><div class="rrow">${res}</div><span class="note">Erholt, Energie, Bauchgefühl: 1 = schlecht · 5 = sehr gut</span></div></div>
-  <div class="grid" style="align-content:start"><div class="card dark"><span class="lbl">Dein Start-Loop-Score</span>
+  <div class="grid g21 even">
+   <div class="card" style="gap:0;padding-block:6px">${qs}</div>
+   <div class="card dark"><span class="lbl">Dein Start-Loop-Score</span>
    ${sc?`<div class="score"><b>${sc.L}</b><span>von 100</span></div>
    ${[["Ernährung & Darm",sc.E,"e"],["Bewegung",sc.B,"b"],["Schlaf",sc.S,"s"]].map(([n,v,p])=>`<div class="q" style="gap:5px"><div class="kv"><span>${n}</span><b class="num">${v}</b></div><div class="bar" style="--c:${P[p]};background:var(--hero-tile)"><i style="width:${v}%"></i></div></div>`).join("")}`
    :`<p class="msg" style="color:var(--hero-soft)">Beantworte die vier Fragen, dann erscheint dein Score.</p>`}</div>
-   <div class="card sand"><span class="lbl">So geht es weiter</span><span><b>Jeden Abend</b> im Tracker abhaken.</span><span><b>Jeden Sonntag</b> der Wochen-Check-in.</span><span><b>Im Dashboard</b> siehst du, wie du dich vom Start aus entwickelst.</span></div></div></div>`;}
+   <div class="card"><span class="lbl">Resultat · wie fühlst du dich gerade?</span><div class="rrow">${res}</div><span class="note">Erholt, Energie, Bauchgefühl: 1 = schlecht · 5 = sehr gut</span></div>
+   <div class="card sand"><span class="lbl">So geht es weiter</span><span><b>Jeden Abend</b> im Tracker abhaken.</span><span><b>Jeden Sonntag</b> der Wochen-Check-in.</span><span><b>Im Dashboard</b> siehst du, wie du dich vom Start aus entwickelst.</span></div>
+  </div>`;}
 function stepper(name,val){const v=isNum(val)?val:null;
   return `<div class="step"><button type="button" data-step="${name}" data-d="-0.5" aria-label="weniger">−</button><output class="${v!==null&&v<7?"low":""}">${v===null?"– h":fmt1(v)+" h"}</output><button type="button" data-step="${name}" data-d="0.5" aria-label="mehr">+</button></div>`;}
 
