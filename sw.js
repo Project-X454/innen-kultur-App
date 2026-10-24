@@ -1,7 +1,7 @@
 // Offline-Betrieb: App-Dateien werden auf dem Gerät zwischengespeichert.
 // Nutzerdaten liegen im Browser-Speicher (localStorage) und werden nie an den Server geschickt.
-const VERSION = "ik-v8";
-const CORE = ["./", "index.html", "app.js", "logic.js", "manifest.webmanifest",
+const VERSION = "ik-v9";
+const CORE = ["./", "index.html", "app.js", "logic.js", "videos.js", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png", "icons/favicon.png"];
 
 self.addEventListener("install", e => {

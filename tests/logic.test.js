@@ -82,3 +82,71 @@ test("Kalendertage über Monatsgrenzen", () => {
   assert.equal(IK.addDays("2026-10-31", 1), "2026-11-01");
   assert.equal(IK.daysBetween("2026-10-30", "2026-11-02"), 3);
 });
+
+const {VIDEOS} = require("../videos.js");
+const fresh = () => ({weeks:[], checkins:[], videoProgress:{}, pausedBausteinIds:[], queuedBausteinIds:[]});
+const at = (day, h = 21) => `${day}T${String(h).padStart(2, "0")}:00:00.000Z`;
+
+test("Videoliste: jeder Baustein hat ein Video", () => {
+  IK.BAUSTEINE.forEach(b => assert.ok(VIDEOS.find(v => v.id === b.videoId), b.videoId));
+});
+
+test("Baustein: erst aktiv, wenn nach dem Video eine neue Tracker-Woche beginnt", () => {
+  const s = fresh();
+  IK.saveCheckIn(s, {}, "2026-10-01", at("2026-10-01"));
+  IK.markSeen(s, "2.1", at("2026-10-02", 10));
+  assert.deepEqual(IK.currentWeek(s).activeBausteinIds, []);
+  let d = "2026-10-02";
+  for (let i = 0; i < 6; i++) { IK.saveCheckIn(s, {}, d, at(d)); d = IK.addDays(d, 1); }
+  IK.saveCheckIn(s, {}, d, at(d));
+  assert.equal(IK.currentWeek(s).index, 2);
+  assert.deepEqual(IK.currentWeek(s).activeBausteinIds, ["ballaststoff"]);
+});
+
+test("Baustein: höchstens 3 neue pro Woche, Auswahl beim Wochenstart, behaltene bleiben", () => {
+  const s = fresh();
+  ["2.1", "2.2", "2.3", "3.1"].forEach(id => IK.markSeen(s, id, at("2026-09-30")));
+  IK.saveCheckIn(s, {}, "2026-10-01", at("2026-10-01"));
+  assert.deepEqual(IK.currentWeek(s).activeBausteinIds, ["ballaststoff", "bildschirm", "kraft"]);
+  IK.completeWeek(s, at("2026-10-08"));
+  IK.saveCheckIn(s, {}, "2026-10-09", at("2026-10-09"));
+  assert.deepEqual(IK.currentWeek(s).activeBausteinIds, ["ballaststoff", "bildschirm", "kraft", "fermentiert"]);
+
+  const t = fresh();
+  ["2.1", "2.2", "2.3", "3.1"].forEach(id => IK.markSeen(t, id, at("2026-09-30")));
+  IK.saveCheckIn(t, {newBausteinIds:["fermentiert", "kraft"]}, "2026-10-01", at("2026-10-01"));
+  assert.deepEqual(IK.currentWeek(t).activeBausteinIds, ["fermentiert", "kraft"]);
+});
+
+test("Ab heute mittracken: sofort in der laufenden Woche, sonst zuerst in der nächsten", () => {
+  const s = fresh();
+  IK.saveCheckIn(s, {}, "2026-10-01", at("2026-10-01"));
+  IK.markSeen(s, "2.2", at("2026-10-01", 22));
+  assert.equal(IK.activationState(s, "bildschirm"), "ok");
+  assert.equal(IK.activateNow(s, "bildschirm"), "active");
+  assert.equal(IK.activationState(s, "bildschirm"), "active");
+  ["2.1", "2.3", "3.1"].forEach(id => IK.markSeen(s, id, at("2026-10-01", 22)));
+  IK.activateNow(s, "ballaststoff"); IK.activateNow(s, "kraft");
+  assert.equal(IK.activationState(s, "fermentiert"), "full");
+
+  const q = fresh();
+  ["2.1", "2.2", "2.3", "3.1"].forEach(id => IK.markSeen(q, id, at("2026-09-30")));
+  assert.equal(IK.activateNow(q, "fermentiert"), "queued");
+  IK.saveCheckIn(q, {}, "2026-10-01", at("2026-10-01"));
+  assert.deepEqual(IK.currentWeek(q).activeBausteinIds, ["fermentiert", "ballaststoff", "bildschirm"]);
+});
+
+test("Kurs: Handout nach allen Kernvideos, nächstes Video und aktuelle Kurswoche", () => {
+  const s = fresh();
+  VIDEOS.filter(v => v.week === 1).forEach(v => IK.markSeen(s, v.id));
+  ["2.1", "2.3"].forEach(id => IK.markSeen(s, id));
+  const p = IK.weekVideoProgress(VIDEOS, s, 2);
+  assert.equal(p.kernTotal, 6);
+  assert.equal(p.kernSeen, 2);
+  assert.equal(p.handoutFree, false);
+  assert.equal(IK.weekVideoProgress(VIDEOS, s, 1).handoutFree, true);
+  assert.equal(IK.nextVideo(VIDEOS, s, 4).id, "2.0");
+  assert.equal(IK.currentCourseWeek(VIDEOS, s, 4), 2);
+  s.videoProgress["2.0"] = {percent:80};
+  assert.equal(IK.isSeen(s, "2.0"), false);
+});

@@ -3,7 +3,7 @@
    Screens und Abläufe: SPEC.md §3. Rechnung: logic.js. */
 (function(){
 "use strict";
-const IK = window.IK;
+const IK = window.IK, VID = window.IK_VIDEOS;
 const KEY = "ik-app-v2", OLD_KEY = "ik-loop-v1";
 const CHECK = "✓";
 const PC = {darm:"var(--darm)", schlaf:"var(--schlaf)", beweg:"var(--beweg)", recap:"var(--recap)"};
@@ -30,7 +30,8 @@ function logo(bg){ return `<svg width="34" height="34" viewBox="0 0 100 100" ari
 
 /* ---------- Speicher (nur auf diesem Gerät) ---------- */
 function blank(){ return {v:2, code:"", product:null, demo:false, goals:[], reminderTime:"21:00",
-  onboardingCompletedAt:null, consentHealthDataAt:null, baselines:[], weeks:[], checkins:[], videoProgress:{}, lastBackup:null}; }
+  onboardingCompletedAt:null, consentHealthDataAt:null, baselines:[], weeks:[], checkins:[], videoProgress:{},
+  pausedBausteinIds:[], queuedBausteinIds:[], lastBackup:null}; }
 function load(){
   try{ const r=localStorage.getItem(KEY); if(r) return Object.assign(blank(), JSON.parse(r)); }catch(e){}
   // Aus der alten Tracker-Version wird nur die Freischaltung übernommen. Die alten Einträge bleiben unter dem alten Schlüssel liegen.
@@ -44,8 +45,8 @@ const latestBaseline = () => S.baselines.length ? S.baselines[S.baselines.length
 const weeksTotal = () => S.product==="komplett" ? 8 : 4;
 
 /* ---------- Zustand der Oberfläche ---------- */
-let view="heute", ob="welcome", obD=null, draft=null, flash="", libTab="wissen", wissen=null, confirmWipe=false, transfer=null, rebase=false, pending=null, lastView=null;
-function go(v){ view=v; flash=v==="heute"?flash:""; confirmWipe=false; transfer=null; wissen=null; rebase=false;
+let view="heute", videoId=null, kursWeek=null, ob="welcome", obD=null, draft=null, flash="", libTab="wissen", wissen=null, confirmWipe=false, transfer=null, rebase=false, pending=null, lastView=null;
+function go(v){ if(v==="kurs"&&view!=="video") kursWeek=null; view=v; flash=v==="heute"?flash:""; confirmWipe=false; transfer=null; wissen=null; rebase=false;
   if(v==="checkin") draft=null; render(); window.scrollTo(0,0); }
 
 function render(){
@@ -54,6 +55,7 @@ function render(){
   if(!S.onboardingCompletedAt){ body=vOnboarding(); full=true; tabs=false; }
   else if(rebase){ body=vBaseline(true); full=true; tabs=false; }
   else if(view==="checkin"){ body=vCheckin(); full=true; tabs=false; }
+  else if(view==='video'){ body=vVideo(); tabs=false; }
   else body={heute:vHeute, kurs:vKurs, fortschritt:vFortschritt, bibliothek:vBibliothek, profil:vProfil}[view]();
   const key=(S.onboardingCompletedAt?view:"ob-"+ob)+(rebase?"-rb":"");
   app.innerHTML=`<main class="${full?"full ":""}${key!==lastView?"enter":""}">${body}</main>${tabs?tabBar():""}`;
@@ -177,8 +179,15 @@ function vHeute(){
   const i=weekInfo(), w=i.w, done=!!i.todayCi;
   const awaiting = w && w.status==="awaitingCheck";
   const cis=i.cis||[];
-  const marks=key=>`<span class="marks" aria-label="${cis.filter(c=>c.basis[key]).length} von ${cis.length} Tagen">${Array.from({length:7},(_,d)=>`<i class="${cis[d]&&cis[d].basis[key]?"on":""}"></i>`).join("")}</span>`;
-  const t=weeksTotal();
+  const marks=(on,n)=>`<span class="marks" aria-label="${cis.filter(on).length} von ${cis.length} Tagen">${Array.from({length:7},(_,d)=>`<i class="${cis[d]&&on(cis[d])?"on":""}"></i>`).join("")}</span>`;
+  const t=weeksTotal(), cw=IK.currentCourseWeek(VID.VIDEOS,S,t), vp=IK.weekVideoProgress(VID.VIDEOS,S,cw), nx=IK.nextVideo(VID.VIDEOS,S,t);
+  const nb=nx&&IK.bausteinForVideo(nx.id);
+  const act=IK.activeBausteine(w);
+  const upcoming=IK.BAUSTEINE.filter(b=>b.courseWeek<=cw&&!act.includes(b)&&!(S.pausedBausteinIds||[]).includes(b.id));
+  const bRow=b=>`<span><span class="dot" style="--c:${PC[b.pillar]}"></span>${esc(b.label)}</span>`+(b.kind==="weeklyCount"
+    ? `<b class="num" style="font-size:13px">${weeklyCountOf(cis,b.id)} von ${b.weeklyTarget}</b>`
+    : `<span style="--c:${PC[b.pillar]}">${marks(c=>c.bausteine&&c.bausteine[b.id]===true)}</span>`);
+  const upRow=b=>`<span><span class="dot" style="--c:${PC[b.pillar]}"></span>${esc(b.label)}</span><span class="note" style="font-size:12px">${IK.isSeen(S,b.videoId)?"ab nächster Woche":"nach Video "+b.videoId}</span>`;
   return `<div class="top"><div class="t"><small>${i.label}</small><b>${greet()}</b></div><button class="iconbtn" data-a="go" data-v="profil" aria-label="Profil und Daten">${logo("#FFFFFF")}</button></div>
   ${flash?`<div class="card soft"><p class="okmsg">${flash}</p></div>`:""}
   ${awaiting?`<div class="card" style="background:var(--recap-soft)"><b>Woche ${w.index} geschafft: 7 Tage eingetragen.</b>
@@ -186,33 +195,54 @@ function vHeute(){
     <button class="btn small" data-a="go" data-v="fortschritt" style="background:var(--recap)">Loop-Score ansehen</button></div>`:""}
   <div class="card navy"><div class="row"><b style="font-size:16px">${done?"Heute erledigt":"Heute noch offen"}</b><span class="note">${done?CHECK+" eingetragen":"ca. 1 Min."}</span></div>
     <button class="btn white" data-a="go" data-v="checkin">${done?"Check-in bearbeiten":"Abend-Check-in starten"}</button></div>
-  <div class="card"><div class="row"><b>Deine Basis${w?` · Woche ${w.index}`:""}</b><span class="note">jeden Tag</span></div>
-    <div class="exp">${IK.BASIS.map(b=>`<span><span class="dot" style="--c:${PC[b.pillar]}"></span>${b.label}</span>${w?`<span style="--c:${PC[b.pillar]}">${marks(b.key)}</span>`:`<span class="note">ab Tag 1</span>`}`).join("")}</div>
-    <p class="note">Ab Kurswoche 2 kommen Bausteine dazu. Sie erscheinen im Check-in, sobald du das passende Video gesehen hast.</p></div>
+  ${nx?`<button class="learn" data-a="video" data-v="${nx.id}"><span class="thumb" style="--s:${PS[pillarOf(nx)]};--c:${PC[pillarOf(nx)]}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5 19 12 8 19Z"/></svg></span>
+    <span class="tx"><span class="eyebrow" style="color:${PT[pillarOf(nx)]}">Weiterlernen · ${pillarLabel(nx)}</span><b>${nx.id} ${esc(nx.title)}</b><span class="note">${nx.durationMin} Min.${nb?` · schaltet „${esc(nb.label)}“ frei`:""}</span></span></button>`:""}
+  <div class="card"><div class="row"><b>Dein Wochen-Experiment${w?` · Woche ${w.index}`:""}</b><button class="btn link small" data-a="go" data-v="kurs" style="min-height:0;padding:0;white-space:nowrap">Kurs ansehen</button></div>
+    <div class="exp">${IK.BASIS.map(b=>`<span><span class="dot" style="--c:${PC[b.pillar]}"></span>${b.label}</span>${w?`<span style="--c:${PC[b.pillar]}">${marks(c=>c.basis[b.key])}</span>`:`<span class="note">ab Tag 1</span>`}`).join("")}
+    ${act.map(bRow).join("")}${upcoming.map(upRow).join("")}</div>
+    ${!act.length&&!upcoming.length?`<p class="note">Ab Kurswoche 2 kommen Bausteine dazu. Sie erscheinen im Check-in, sobald du das passende Video gesehen hast.</p>`:""}</div>
   <div class="g2">
-    <div class="card tile"><span class="note">Wissen</span><b>– <small>Videos</small></b><div class="bar"><i style="width:0"></i></div><span class="note" style="font-size:12px">kommt mit dem Kurs-Bereich</span></div>
-    <div class="card tile"><span class="note">Umsetzung</span><b class="num">${i.days} / 7 <small>Tage</small></b><div class="bar" style="--c:var(--darm)"><i style="width:${Math.round(i.days/7*100)}%"></i></div><span class="note" style="font-size:12px">${S.product==="komplett"?"Komplett":"Basis"} · ${t} Wochen${S.demo?" · Demo":""}</span></div>
-  </div>`;
+    <div class="card tile"><span class="note">Wissen · Kurswoche ${cw}</span><b class="num">${vp.seen} / ${vp.total} <small>Videos</small></b><div class="bar"><i style="width:${vp.total?Math.round(vp.seen/vp.total*100):0}%"></i></div></div>
+    <div class="card tile"><span class="note">Umsetzung</span><b class="num">${i.days} / 7 <small>Tage</small></b><div class="bar" style="--c:var(--darm)"><i style="width:${Math.round(i.days/7*100)}%"></i></div></div>
+  </div>
+  <p class="note" style="text-align:center">${S.product==="komplett"?"Komplett":"Basis"} · ${t} Wochen${S.demo?" · Demo":""}</p>`;
 }
+const pillarOf = v => v.pillar==="intro" ? "recap" : v.pillar;
+const pillarLabel = v => v.pillar==="intro" ? "Intro" : IK.PILLARS[v.pillar].label;
+function weeklyCountOf(cis,id,skipId){ return cis.filter(c=>c.id!==skipId&&c.bausteine&&(c.bausteine[id]===true||(typeof c.bausteine[id]==="number"&&c.bausteine[id]>0))).length; }
 
 /* ---------- Abend-Check-in (Screen 07) ---------- */
+// Für einen neuen Tag ohne laufende Woche beginnt mit dem Speichern eine neue Tracker-Woche. Dann gelten die Kandidaten aus §5.2.
 function checkinTarget(){
   const today=IK.localDay(), ex=IK.checkinFor(S,today);
-  if(ex){ const w=S.weeks.find(x=>x.id===ex.trackerWeekId); return {ex, week:w.index, day:ex.dayIndex}; }
+  if(ex){ const w=S.weeks.find(x=>x.id===ex.trackerWeekId); return {ex, wk:w, week:w.index, day:ex.dayIndex, ids:w.activeBausteinIds, isNew:w.newBausteinIds||[]}; }
   const w=IK.currentWeek(S);
-  if(w && w.status==="running") return {ex:null, week:w.index, day:IK.checkinsOf(S,w.id).length+1};
-  return {ex:null, week:(w?w.index+1:1), day:1};
+  if(w && w.status==="running") return {ex:null, wk:w, week:w.index, day:IK.checkinsOf(S,w.id).length+1, ids:w.activeBausteinIds, isNew:w.newBausteinIds||[]};
+  const paused=S.pausedBausteinIds||[], kept=w?w.activeBausteinIds.filter(id=>!paused.includes(id)):[];
+  const cands=IK.newWeekCandidates(S, new Date().toISOString());
+  return {ex:null, wk:null, week:(w?w.index+1:1), day:1, kept, cands, choose:cands.length>IK.MAX_NEW_PER_WEEK};
 }
 function vCheckin(){
   const t=checkinTarget();
-  if(!draft) draft = t.ex ? JSON.parse(JSON.stringify(t.ex)) : {basis:{bunt:false,morgenlicht:false,bewegt30:false}, bausteine:{}};
+  if(!draft){ draft = t.ex ? JSON.parse(JSON.stringify(t.ex)) : {basis:{bunt:false,morgenlicht:false,bewegt30:false}, bausteine:{}};
+    if(t.cands) draft.newBausteinIds=t.cands.slice(0,IK.MAX_NEW_PER_WEEK); }
+  const ids = t.cands ? t.kept.concat(draft.newBausteinIds) : t.ids;
+  const isNew = t.cands ? draft.newBausteinIds : t.isNew;
+  const cis = t.wk ? IK.checkinsOf(S,t.wk.id) : [];
   const n=IK.basisScore(draft);
   const caps={erholt:["kaum","sehr"],bauch:["unruhig","sehr gut"],energie:["müde","voller Energie"],stress:["entspannt","sehr gestresst"]};
   const num=(k,label,mode,ph)=>`<label for="n-${k}">${label}<input id="n-${k}" data-num="${k}" inputmode="${mode}" placeholder="${ph}" value="${draft[k]!=null?String(draft[k]).replace(".",","):""}"></label>`;
+  const bst=id=>{ const b=IK.bausteinById(id), on=draft.bausteine[id]===true;
+    const extra = b.kind==="weeklyCount" ? `<small>${weeklyCountOf(cis,id,t.ex&&t.ex.id)+(on?1:0)} von ${b.weeklyTarget}</small>` : isNew.includes(id) ? `<span class="new">neu</span>` : "";
+    return `<button type="button" class="bst" data-a="bst" data-v="${id}" aria-pressed="${on}" style="--s:${PS[b.pillar]};--c:${PC[b.pillar]}"><span class="box">${on?CHECK:""}</span><span>${esc(b.label)}${b.kind==="weeklyCount"?" heute":""}</span>${extra}</button>`; };
+  const chooser = t.choose ? `<div class="card soft"><b>Neue Woche: Wähle bis zu ${IK.MAX_NEW_PER_WEEK} neue Bausteine</b>
+    <p class="note" style="color:var(--ink)">Du hast mehr freigeschaltet, als in eine Woche passen. Die übrigen kommen in einer der nächsten Wochen dran.</p>
+    ${t.cands.map(id=>{const b=IK.bausteinById(id), on=draft.newBausteinIds.includes(id); return `<button type="button" class="choice" data-a="pick-new" data-v="${id}" aria-pressed="${on}" ${!on&&draft.newBausteinIds.length>=IK.MAX_NEW_PER_WEEK?"disabled":""}><span class="box">${on?CHECK:""}</span><span class="dot" style="--c:${PC[b.pillar]}"></span><b>${esc(b.label)}</b></button>`;}).join("")}</div>` : "";
   return `<div class="top"><div class="t"><small>Woche ${t.week} · Tag ${t.day} von 7</small><b>Abend-Check-in</b></div><button class="iconbtn" data-a="go" data-v="heute" aria-label="Schließen">${ICON.close}</button></div>
   <div class="card"><div class="row"><b>Basis</b><b style="color:var(--darm-text)">${n} von 3</b></div>
     <div class="basis">${IK.BASIS.map(b=>`<button type="button" data-a="basis" data-v="${b.key}" aria-pressed="${!!draft.basis[b.key]}" style="--c:${PC[b.pillar]};--t:${PT[b.pillar]}">${draft.basis[b.key]?CHECK+" ":""}${b.label}</button>`).join("")}</div></div>
-  <div class="card"><b>Bausteine dieser Woche</b><p class="note">Noch keine. Ab Kurswoche 2 schaltest du sie mit den Videos frei, höchstens drei neue pro Woche.</p></div>
+  ${chooser}
+  <div class="card"><b>Bausteine dieser Woche</b>${ids.length?ids.map(bst).join(""):`<p class="note">Noch keine. Bausteine schaltest du mit den Videos im Kurs frei, höchstens drei neue pro Woche.</p>`}</div>
   <div class="card"><b>Wie war dein Tag?</b>${IK.SCALES.map(s=>scale("ci."+s.key,s.label,draft[s.key],null,caps[s.key])).join("")}</div>
   <div class="card"><b>Optional</b><div class="nums">${num("schlafStunden","Schlaf (Std.)","decimal","7,0")}${num("pflanzen","Pflanzen heute","numeric","0")}${num("bewegungMin","Bewegung (Min.)","numeric","0")}</div></div>
   <button class="btn" data-a="save-ci">Tag ${t.day} ${t.ex?"aktualisieren":"speichern"}</button>`;
@@ -220,7 +250,9 @@ function vCheckin(){
 function saveCheckin(){
   readNums();
   const t=checkinTarget();
-  try{ IK.saveCheckIn(S, Object.assign({}, draft, {forDate:IK.localDay()}), IK.localDay()); }catch(e){ flash=e.message; go("heute"); return; }
+  const data=Object.assign({}, draft, {forDate:IK.localDay()});
+  if(!t.choose) delete data.newBausteinIds;
+  try{ IK.saveCheckIn(S, data, IK.localDay()); }catch(e){ flash=e.message; go("heute"); return; }
   save(); draft=null;
   const w=IK.currentWeek(S);
   flash = t.ex ? `Tag ${t.day} aktualisiert.` : w.status==="awaitingCheck" ? `Tag 7 gespeichert. Woche ${w.index} ist komplett.` : `Tag ${t.day} gespeichert. Schönen Abend!`;
@@ -236,7 +268,7 @@ function readNums(){
 
 /* ---------- Fortschritt (Screen 10, erster Stand) ---------- */
 function vFortschritt(){
-  const weeks=S.weeks.map(w=>{ const c=IK.checkinsOf(S,w.id); return {w, c, ls:IK.loopScore(c,[]), st:IK.weekStats(c,[])}; });
+  const weeks=S.weeks.map(w=>{ const c=IK.checkinsOf(S,w.id), act=IK.activeBausteine(w); return {w, c, ls:IK.loopScore(c,act), st:IK.weekStats(c,act)}; });
   const cur=weeks[weeks.length-1];
   const head=`<div class="top"><div class="t"><small>Wie rund dein Loop läuft</small><b>Fortschritt</b></div><button class="iconbtn" data-a="go" data-v="profil" aria-label="Profil und Daten">${logo("#FFFFFF")}</button></div>`;
   if(!cur||cur.ls.score==null) return head+`<div class="card"><h2>Noch kein Loop-Score</h2><p class="note">Er erscheint nach deinem ersten Check-in mit den vier Skalen.</p><button class="btn small" data-a="go" data-v="checkin">Zum Check-in</button></div>`;
@@ -257,13 +289,49 @@ function vFortschritt(){
     :`<p class="note">Erscheint, sobald deine erste Tracker-Woche abgeschlossen ist.</p>`}</div>`;
 }
 
-/* ---------- Kurs (Screen 05, Vorschau) ---------- */
+/* ---------- Kurs (Screen 05) und Video (Screen 06) ---------- */
 function vKurs(){
-  const byWeek=[2,3,4].map(n=>({n, b:IK.BAUSTEINE.filter(b=>b.courseWeek===n)}));
+  const maxW=weeksTotal(), weeks=Object.keys(VID.WEEKS).map(Number).filter(n=>n<=maxW);
+  if(kursWeek==null||!weeks.includes(kursWeek)) kursWeek=IK.currentCourseWeek(VID.VIDEOS,S,maxW);
+  const p=IK.weekVideoProgress(VID.VIDEOS,S,kursWeek), nx=IK.nextVideo(VID.VIDEOS,S,maxW);
+  const vids=VID.VIDEOS.filter(v=>v.week===kursWeek).sort((a,b)=>a.order-b.order);
+  const tab=n=>{ const q=IK.weekVideoProgress(VID.VIDEOS,S,n); return `<button data-a="kursweek" data-v="${n}" aria-pressed="${kursWeek===n}">${q.total&&q.seen===q.total?CHECK+" ":""}W${n}</button>`; };
+  const more = S.product==="komplett" ? `<button disabled>W5–8 folgen</button>` : `<button data-a="go" data-v="profil">W5–8 Komplett</button>`;
+  const row=v=>{ const seen=IK.isSeen(S,v.id), isNext=nx&&nx.id===v.id, b=IK.bausteinForVideo(v.id);
+    return `<button class="vrow" data-a="video" data-v="${v.id}"><span class="dot" style="--c:${PC[pillarOf(v)]}"></span><span class="st${seen?" on":""}${isNext?" nx":""}" aria-hidden="true">${seen?CHECK:isNext?"▸":""}</span>
+      <span class="tx"><b>${esc(v.title)}</b><span class="note">${v.type} · ${v.durationMin} Min.${b?" · "+esc(b.label):""}</span></span><span class="sr">${seen?"gesehen":"offen"}</span></button>`; };
   return `<div class="top"><div class="t"><small>Wissen · alle Videos frei</small><b>Kurs</b></div></div>
-  <div class="card soft"><h2>Der Kurs-Bereich kommt im nächsten Schritt</h2><p class="note" style="color:var(--ink)">Hier erscheinen die Videos jeder Woche. Wenn du ein Video gesehen hast, schaltet es den passenden Baustein für deinen Check-in frei.</p></div>
-  <div class="card"><b>Woche 1 · Deine Basis</b>${IK.BASIS.map(b=>`<span style="display:flex;gap:8px;align-items:center"><span class="dot" style="--c:${PC[b.pillar]}"></span>${b.label}</span>`).join("")}</div>
-  ${byWeek.map(w=>`<div class="card"><b>Woche ${w.n} · Bausteine</b>${w.b.map(b=>`<span style="display:flex;gap:8px;align-items:center"><span class="dot" style="--c:${PC[b.pillar]}"></span>${esc(b.label)}<span class="note" style="margin-left:auto">Video ${b.videoId}</span></span>`).join("")}</div>`).join("")}`;
+  <div class="tabsrow" role="group" aria-label="Kurswochen">${weeks.map(tab).join("")}${more}</div>
+  <div class="row" style="padding:0 4px"><b style="font-family:var(--f-head);font-size:20px">Woche ${kursWeek} · ${esc(VID.WEEKS[kursWeek].title)}</b></div>
+  <p class="note" style="padding:0 4px">${p.seen} von ${p.total} Videos gesehen · alles freigeschaltet</p>
+  <div class="card" style="gap:0;padding:6px 16px">${vids.map(row).join("")}</div>
+  <div class="card soft"><span><b>Handout Woche ${kursWeek}</b> · ${p.handoutFree?"frei, folgt als Datei":`nach allen Kernvideos (${p.kernSeen} von ${p.kernTotal})`}</span>
+    <span class="note" style="color:var(--ink)"><b>Goodie</b> · nach dem Wochen-Check</span></div>`;
+}
+function vVideo(){
+  const v=VID.VIDEOS.find(x=>x.id===videoId); if(!v){ view="kurs"; return vKurs(); }
+  const seen=IK.isSeen(S,v.id), b=IK.bausteinForVideo(v.id), list=VID.VIDEOS.filter(x=>x.week<=weeksTotal()).sort((a,c)=>a.week-c.week||a.order-c.order);
+  const after=list.slice(list.indexOf(v)+1), next=after.find(x=>!IK.isSeen(S,x.id))||after[0]||null;
+  let bCard="";
+  if(b&&seen){ const st=IK.activationState(S,b.id), paused=(S.pausedBausteinIds||[]).includes(b.id);
+    const txt = paused ? "Du hast ihn pausiert. Unter Profil kannst du ihn wieder aufnehmen."
+      : st==="active" ? "Er ist in deinem Check-in dabei. Du kannst ihn jederzeit pausieren."
+      : st==="queued" ? "Er ist ab deiner nächsten Tracker-Woche im Check-in."
+      : st==="full" ? `Diese Woche sind schon ${IK.MAX_NEW_PER_WEEK} neue Bausteine dabei. Er kommt mit deiner nächsten Tracker-Woche dazu.`
+      : "Er kommt mit deiner nächsten Tracker-Woche in den Check-in. Oder du startest gleich:";
+    bCard=`<div class="card" style="background:${PS[b.pillar]}"><span style="display:flex;gap:10px;align-items:flex-start"><span class="dot" style="--c:${PC[b.pillar]};margin-top:6px"></span><span><b>Neuer Baustein: ${esc(b.label)}</b><br><span class="note" style="color:var(--ink)">${txt}</span></span></span>
+      ${st==="ok"&&!paused?`<button class="btn small" data-a="activate" data-v="${b.id}" style="background:${PC[b.pillar]}">Ab heute mittracken</button>`:""}</div>`; }
+  return `<div class="player"><button class="iconbtn" data-a="go" data-v="kurs" aria-label="Zurück zum Kurs">${ICON.back}</button>
+    <span class="ph">Der Video-Player kommt, sobald die Kurs-Plattform feststeht.</span>
+    <div class="bar" style="--c:#fff;background:rgba(255,255,255,.25)"><i style="width:${seen?100:0}%"></i></div>
+    <div class="row note" style="color:#C9D6E6"><span>${v.durationMin} Min.</span><span>${seen?"gesehen":"noch nicht gesehen"}</span></div></div>
+  <div style="display:flex;flex-direction:column;gap:4px;padding:0 4px"><span class="eyebrow" style="color:${PT[pillarOf(v)]}">Woche ${v.week} · ${pillarLabel(v)} · ${v.type}</span><h1 style="font-size:26px">${esc(v.title)}</h1></div>
+  ${flash?`<div class="card soft"><p class="okmsg">${flash}</p></div>`:""}
+  ${seen?"":`<div class="card"><button class="btn" data-a="seen" data-v="${v.id}">Als gesehen markieren</button><p class="note">Mit dem Player zählt ein Video später automatisch ab 90 Prozent als gesehen.</p></div>`}
+  ${seen&&v.machJetzt?`<div class="card" style="background:var(--navy);color:#fff"><span class="eyebrow" style="color:#C9D6E6">Mach jetzt · 30 Sekunden</span><span>${esc(v.machJetzt)}</span></div>`:""}
+  ${bCard}
+  ${next?`<button class="btn ghost" data-a="video" data-v="${next.id}" style="justify-content:space-between"><span>Nächstes: ${esc(next.title)}</span><span aria-hidden="true">›</span></button>`:""}
+  ${seen?`<button class="btn link small" data-a="unseen" data-v="${v.id}" style="align-self:center">Doch nicht gesehen</button>`:""}`;
 }
 
 /* ---------- Bibliothek (Screens 11 und 14) ---------- */
@@ -334,6 +402,7 @@ function vProfil(){
   <div class="card"><h2>Dein Startpunkt</h2>
     ${b?IK.BASELINE.map(x=>`<div class="kv"><span>${x.label}</span><b class="num">${b[x.key]} von 5</b></div>`).join("")+`<p class="note">Erfasst am ${new Date(b.createdAt).toLocaleDateString("de-DE")}.</p>`:`<p class="note">Noch nicht erfasst.</p>`}
     <button class="btn ghost small" data-a="rebase">Neu erfassen</button></div>
+  ${bausteineCard()}
   <div class="card"><h2>Erinnerung</h2><div class="times" role="group" aria-label="Uhrzeit für die Erinnerung">${["20:00","21:00","22:00",null].map(t=>`<button type="button" data-a="ptime" data-v="${t||""}" aria-pressed="${S.reminderTime===t}">${t||"Aus"}</button>`).join("")}</div>
     <p class="note">Push-Nachrichten kommen in einem späteren Update.</p></div>
   <div class="card"><h2>Sicherung</h2><p class="note">${status} Speichere die Datei z. B. in iCloud Drive, Google Drive oder auf deinem PC.</p>
@@ -351,6 +420,15 @@ function vProfil(){
     <p class="note">Einwilligung erteilt am ${S.consentHealthDataAt?new Date(S.consentHealthDataAt).toLocaleDateString("de-DE"):"–"}. Wenn du sie widerrufst, löschen wir alle Einträge auf diesem Gerät.</p>
     ${confirmWipe?`<p class="err">Wirklich alle Einträge auf diesem Gerät löschen? Das lässt sich nicht rückgängig machen.</p><div class="btns"><button class="btn small" data-a="wipe-yes" style="background:var(--beweg)">Ja, alles löschen</button><button class="btn ghost small" data-a="wipe-no">Abbrechen</button></div>`
       :`<button class="btn danger" data-a="wipe">Einwilligung widerrufen und alle Daten löschen</button>`}</div>`;
+}
+
+function bausteineCard(){
+  const un=IK.unlockedBausteine(S); if(!un.length) return "";
+  const w=IK.currentWeek(S), paused=S.pausedBausteinIds||[];
+  return `<div class="card"><h2>Deine Bausteine</h2>${un.map(b=>{ const p=paused.includes(b.id), a=w&&w.activeBausteinIds.includes(b.id);
+    return `<div class="kv" style="align-items:center"><span style="display:flex;gap:8px;align-items:center"><span class="dot" style="--c:${PC[b.pillar]}"></span>${esc(b.label)}</span>
+      <button class="btn ghost small" data-a="${p?"resume":"pause"}" data-v="${b.id}" style="min-height:40px">${p?"Wieder aufnehmen":"Pausieren"}</button></div>
+      <p class="note" style="margin-top:-6px">${p?"pausiert":a?"in deinem Check-in":"kommt mit der nächsten Woche"}</p>`;}).join("")}</div>`;
 }
 
 /* ---------- Kodierung für Sicherung und QR ---------- */
@@ -393,8 +471,13 @@ function loadDemo(){
     [1,0,1,3,3,3,4,6.5,12,35],[1,1,0,3,3,3,3,7,15,10],[0,0,1,2,3,2,4,6,8,40],[1,1,0,3,3,3,3,7,14,15],[0,1,0,3,2,3,4,6.5,9,5],[1,0,1,3,3,3,3,7.5,18,45],[0,0,0,3,3,2,4,6,7,0],
     [1,1,1,4,3,3,3,7,20,40],[1,1,0,3,4,3,3,7,16,20],[1,0,1,4,4,4,2,7.5,22,35],[0,1,1,3,3,3,3,7,12,30],[1,1,0,4,4,3,3,7,19,15],[1,1,1,4,4,4,2,8,24,50],[1,0,1,4,3,4,3,7,17,30],
     [1,1,1,4,4,4,3,7.5,21,35],[1,1,0,4,4,3,3,7,18,20]];
+  const ts=(day,h)=>new Date(day+"T"+h).toISOString();
+  VID.VIDEOS.filter(v=>v.week===1).forEach(v=>IK.markSeen(S,v.id,ts(IK.addDays(start,-1),"19:00")));
+  const seenOn={2:["2.0","2.1","2.2","2.3","2.3b"], 9:["3.0","3.1","2.1b"]};
+  const bst=i=>({ballaststoff:i%3!==0, bildschirm:i%2===0, kraft:i%3===0, fermentiert:i%2===1});
   rows.forEach((r,i)=>{ const day=IK.addDays(start,i+(i>=7?1:0));
-    IK.saveCheckIn(S,{basis:{bunt:!!r[0],morgenlicht:!!r[1],bewegt30:!!r[2]},erholt:r[3],bauch:r[4],energie:r[5],stress:r[6],schlafStunden:r[7],pflanzen:r[8],bewegungMin:r[9]},day,new Date(IK.addDays(start,i)+"T21:00").toISOString()); });
+    (seenOn[i]||[]).forEach(id=>IK.markSeen(S,id,ts(day,"12:00")));
+    IK.saveCheckIn(S,{basis:{bunt:!!r[0],morgenlicht:!!r[1],bewegt30:!!r[2]},bausteine:i>=7?bst(i):{},erholt:r[3],bauch:r[4],energie:r[5],stress:r[6],schlafStunden:r[7],pflanzen:r[8],bewegungMin:r[9]},day,ts(day,"21:00")); });
   save(); view="heute"; render(); window.scrollTo(0,0);
 }
 
@@ -415,6 +498,15 @@ document.addEventListener("click", e=>{
     return render(); }
   if(a==="basis"){ readNums(); draft.basis[v]=!draft.basis[v]; return render(); }
   if(a==="save-ci") return saveCheckin();
+  if(a==="bst"){ readNums(); draft.bausteine[v]=draft.bausteine[v]!==true; return render(); }
+  if(a==="pick-new"){ readNums(); const n=draft.newBausteinIds, i=n.indexOf(v); if(i>=0) n.splice(i,1); else if(n.length<IK.MAX_NEW_PER_WEEK) n.push(v); return render(); }
+  if(a==="kursweek"){ kursWeek=+v; return render(); }
+  if(a==="video"){ videoId=v; view="video"; flash=""; render(); return window.scrollTo(0,0); }
+  if(a==="seen"){ IK.markSeen(S,v); save(); const b=IK.bausteinForVideo(v); flash=b?`Gesehen. Damit ist „${b.label}“ freigeschaltet.`:"Als gesehen markiert."; return render(); }
+  if(a==="unseen"){ IK.markUnseen(S,v); save(); flash=""; return render(); }
+  if(a==="activate"){ const r=IK.activateNow(S,v); save(); flash=r==="active"?"Ab deinem nächsten Check-in dabei.":r==="queued"?"Kommt mit deiner nächsten Tracker-Woche zuerst dran.":""; return render(); }
+  if(a==="pause"){ IK.pauseBaustein(S,v); save(); return render(); }
+  if(a==="resume"){ const r=IK.resumeBaustein(S,v); save(); flash=r==="active"?"Wieder in deinem Check-in.":"Kommt mit deiner nächsten Tracker-Woche wieder dazu."; return render(); }
   if(a==="libtab"){ libTab=v; return render(); }
   if(a==="wissen"){ wissen=v; render(); return window.scrollTo(0,0); }
   if(a==="wissen-close"){ wissen=null; render(); return window.scrollTo(0,0); }

@@ -173,6 +173,27 @@ td:not(:first-child){text-align:right}
 .kv{display:flex;justify-content:space-between;gap:12px;font-size:14.5px}
 @media (prefers-reduced-motion:no-preference){.enter{animation:fade .18s ease}@keyframes fade{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}}
 
+/* Kurs, Video, Weiterlernen */
+.learn{display:flex;gap:12px;align-items:center;width:100%;border:0;background:var(--card);border-radius:16px;padding:12px;text-align:left}
+.learn .thumb{flex:none;width:74px;height:74px;border-radius:12px;background:var(--s);display:grid;place-items:center}
+.learn .thumb svg{width:26px;height:26px;fill:var(--c)}
+.learn .tx{display:flex;flex-direction:column;gap:3px;min-width:0}
+.learn b{font-size:15px}
+.vrow{display:flex;align-items:center;gap:10px;width:100%;min-height:58px;border:0;border-top:1px solid var(--line);background:none;padding:10px 0;text-align:left}
+.vrow:first-child{border-top:0}
+.vrow .st{flex:none;width:24px;height:24px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff}
+.vrow .st.on{background:var(--darm);border-color:var(--darm)}
+.vrow .st.nx{border-color:var(--blue);color:var(--blue)}
+.vrow .tx{display:flex;flex-direction:column;gap:1px;min-width:0}
+.vrow b{font-weight:600;font-size:14.5px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.new{margin-left:auto;background:var(--navy);color:#fff;font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px}
+.bst+.bst{margin-top:8px}
+.tabsrow button[disabled]{opacity:.5}
+.player{background:var(--navy);border-radius:var(--r-card);padding:12px 14px 14px;display:flex;flex-direction:column;gap:12px;min-height:220px;color:#fff}
+.player .iconbtn{background:rgba(255,255,255,.12);color:#fff}
+.player .ph{flex:1;display:grid;place-items:center;text-align:center;font-size:14px;color:#C9D6E6;padding:0 20px}
+
 /* Kühlschrank-Karten: nur im Druck sichtbar */
 #print{display:none}
 @page{size:105mm 148mm;margin:0}
@@ -204,6 +225,7 @@ td:not(:first-child){text-align:right}
 <div id="print"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="logic.js"></script>
+<script src="videos.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
