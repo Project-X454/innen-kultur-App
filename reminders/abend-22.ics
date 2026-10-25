@@ -1,0 +1,20 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//innen kultur//Erinnerung//DE
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:innen-kultur-checkin-2200@innen-kultur.de
+DTSTAMP:20261025T120000Z
+DTSTART:20261026T220000
+DTEND:20261026T220500
+RRULE:FREQ=DAILY;UNTIL=20271231T235959
+SUMMARY:innen kultur · Abend-Check-in
+DESCRIPTION:1 Minute: Wie war dein Tag? Öffne innen kultur über deinen Home-Bildschirm.
+URL:https://project-x454.github.io/innen-kultur-App/
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Zeit für deinen Check-in
+TRIGGER:PT0M
+END:VALARM
+END:VEVENT
+END:VCALENDAR

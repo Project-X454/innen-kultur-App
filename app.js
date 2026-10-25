@@ -45,7 +45,7 @@ const brandBar = extra => `<div class="brandbar"><span class="bmark">${mark(30)}
 function blank(){ return {v:2, code:"", product:null, demo:false, goals:[], reminderTime:"21:00",
   onboardingCompletedAt:null, consentHealthDataAt:null, baselines:[], weeks:[], checkins:[], videoProgress:{},
   pausedBausteinIds:[], queuedBausteinIds:[], lastBackup:null,
-  wakeTime:null, lightSpot:null, why:null, standTest:null, standTestAt:null, plantCount:null, todosDone:{}, noticesSeen:{},
+  wakeTime:null, lightSpot:null, why:null, standTest:null, standTestAt:null, plantCount:null, topGoal:null, textSize:"normal", installSnooze:null, reminderSetupAt:null, notify:false, backupSnooze:null, todosDone:{}, noticesSeen:{},
   dayTicks:{}, focusSnooze:{}, eveningMode:"auto", haptics:true}; }
 function load(){
   try{ const r=localStorage.getItem(KEY); if(r){ const o=JSON.parse(r); if(!("noticesSeen" in o)) migrateNotices=true;
@@ -97,7 +97,7 @@ function render(){
   const side=tabs||view==="video"&&!!S.onboardingCompletedAt&&!rebase; // Video: am Desktop mit Seitenleiste
   app.className=(side?"nav ":"")+"v-"+(S.onboardingCompletedAt?(rebase?"rebase":view):"ob-"+ob);
   applyTheme();
-  const sheet = !S.onboardingCompletedAt ? "" : sheetOpen ? sheetHTML() : lockFor ? lockHTML() : "";
+  const sheet = !S.onboardingCompletedAt ? "" : sheetOpen ? sheetHTML() : lockFor ? lockHTML() : (installSheet||reminderSheet) ? setupSheetHTML() : "";
   document.body.classList.toggle("sheet-open", !!sheet);
   app.innerHTML=`${side?sideBar():""}<main class="${full?"full ":""}${key!==lastView?"enter":""}">${body}</main>${tabs?tabBar():""}${sheet}`;
   lastView=key;
@@ -141,7 +141,7 @@ function vOnboarding(){
   <p class="lead">Jede Woche ein kleiner Loop: verstehen, ausprobieren, sehen, was es mit dir macht.</p>`,
   `${P.map(([k,t,s])=>`<div class="pillar" style="--s:${PS[k]};--c:${PC[k]}"><span class="ic">${ICON[k]}</span><span><b>${t}</b><span>${s}</span></span></div>`).join("")}
   <button class="btn" data-a="ob" data-v="${S.product?"goals":"code"}" style="margin-top:12px">Los geht's</button>
-  <button class="btn link" data-a="ob" data-v="restore">Ich habe schon ein Konto</button>`,"hero");
+  <button class="btn link" data-a="ob" data-v="restore">Daten von einem anderen Gerät übernehmen</button>`,"hero");
 }
 function obHead(back,step,of){
   return `<div class="ob-top"><button class="iconbtn" data-a="ob" data-v="${back}" aria-label="Zurück">${ICON.back}</button>
@@ -177,7 +177,7 @@ function vGoals(){
     return `<button type="button" class="choice" data-a="goal" data-v="${g.id}" aria-pressed="${on}" ${!on&&n>=3?"disabled":""}><span class="box">${on?CHECK:""}</span><b>${g.label}</b></button>`;}).join("")}</div>
   <div class="card"><b>Wann willst du an den Check-in denken?</b>
   <div class="times" role="group" aria-label="Uhrzeit für die Erinnerung">${["20:00","21:00","22:00",null].map(t=>`<button type="button" data-a="time" data-v="${t||""}" aria-pressed="${d.reminderTime===t}">${t||"Aus"}</button>`).join("")}</div>
-  <p class="note">Heute erinnert dich zu dieser Uhrzeit an deinen Check-in. Push-Nachrichten kommen in einem späteren Update.</p></div>
+  <p class="note">Nach dem Start zeigen wir dir, wie die Erinnerung auf dein Handy kommt: als Kalender-Termin oder als Benachrichtigung.</p></div>
   <button class="btn" data-a="ob" data-v="consent">Weiter</button>`;
 }
 function vConsent(){
@@ -219,13 +219,84 @@ function finishOnboarding(){
   if(!S.tourDoneAt) startTour();
 }
 
+/* ---------- Home-Bildschirm, Erinnerung, Sicherung ---------- */
+const isStandalone = () => (window.matchMedia&&matchMedia("(display-mode: standalone)").matches) || navigator.standalone===true;
+const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+let installEvt=null, installSheet=false, reminderSheet=false;
+window.addEventListener("beforeinstallprompt", e=>{ e.preventDefault(); installEvt=e; if(view==="heute") render(); });
+window.addEventListener("appinstalled", ()=>{ installEvt=null; render(); });
+const snoozed = k => S[k] && Date.now()-S[k] < 2*864e5;
+const icsFor = t => t ? `reminders/abend-${t.slice(0,2)}.ics` : null;
+// Merkt sich für den Service Worker nur Uhrzeit und letzten Check-in-Tag, keine Gesundheitsdaten.
+function writeMeta(){
+  if(!("caches" in window)) return;
+  const last=S.checkins.length?S.checkins.map(c=>c.forDate).sort().pop():null;
+  caches.open("ik-meta").then(c=>c.put("meta", new Response(JSON.stringify({time:S.reminderTime, last, on:!!S.notify&&S.reminderTime!=null})))).catch(()=>{});
+}
+let remTimer=null;
+function scheduleReminder(){
+  clearTimeout(remTimer); writeMeta();
+  if(!S.notify||!S.reminderTime||!("Notification" in window)||Notification.permission!=="granted") return;
+  const [h,m]=S.reminderTime.split(":").map(Number), now=new Date(), at=new Date(now); at.setHours(h,m,0,0);
+  if(at<=now) return;
+  remTimer=setTimeout(async ()=>{ if(IK.checkinFor(S,IK.localDay())) return;
+    try{ const r=await navigator.serviceWorker.ready; r.showNotification("innen kultur",{body:"Zeit für deinen Abend-Check-in. Dauert 1 Minute.", tag:"checkin", icon:"icons/icon-192.png", badge:"icons/favicon.png", data:{url:"./#checkin"}}); }catch(e){} }, at-now);
+}
+async function enableNotify(){
+  try{ const p=await Notification.requestPermission(); S.notify=p==="granted"; S.reminderSetupAt=S.reminderSetupAt||(S.notify?new Date().toISOString():null); save();
+    if(S.notify){ const r=await navigator.serviceWorker.ready; if(r.periodicSync) try{ await r.periodicSync.register("ik-reminder",{minInterval:60*60*1000}); }catch(e){} }
+    flash=S.notify?"Benachrichtigungen sind an.":"Benachrichtigungen wurden nicht erlaubt. Die Kalender-Erinnerung funktioniert trotzdem.";
+  }catch(e){ flash="Benachrichtigungen gehen auf diesem Gerät nicht. Nimm die Kalender-Erinnerung."; }
+  scheduleReminder(); render();
+}
+// Eine Karte oben auf Heute: zuerst Home-Bildschirm, dann Erinnerung, dann Sicherung
+function setupCard(){
+  if(!isStandalone() && !snoozed("installSnooze")) return tcard("schlaf",`<span class="k">Einmal einrichten · 1 Minute</span><b class="tt">Leg innen kultur auf deinen Home-Bildschirm</b>
+    <p>Dann startet sie wie eine App, kann dich an den Check-in erinnern und deine Einträge bleiben sicher auf dem Gerät.</p>
+    <div class="btns">${installEvt?`<button class="btn small" data-a="install">Jetzt hinzufügen</button>`:`<button class="btn small" data-a="install-how">So geht's</button>`}<button class="btn small ghost" data-a="snooze" data-v="installSnooze">Später</button></div>`,"setup");
+  if(!S.reminderSetupAt && S.reminderTime && !snoozed("remSnooze")) return tcard("recap",`<span class="k">Erinnerung · ${esc(S.reminderTime)} Uhr</span><b class="tt">Damit du den Check-in nicht vergisst</b>
+    <p>Eine tägliche Erinnerung um ${esc(S.reminderTime)} Uhr, im Kalender oder als Benachrichtigung.</p>
+    <div class="btns"><button class="btn small" data-a="reminder">Erinnerung einrichten</button><button class="btn small ghost" data-a="snooze" data-v="remSnooze">Später</button></div>`,"setup");
+  const done=S.weeks.filter(w=>w.status==="completed").length, old=!S.lastBackup||Date.now()-S.lastBackup>7*864e5;
+  if(done && old && !snoozed("backupSnooze")) return tcard("darm",`<span class="k">Sicherung · einmal pro Woche</span><b class="tt">Sichere deine Woche</b>
+    <p>Deine Einträge liegen nur auf diesem Gerät. Eine Sicherungsdatei schützt sie, falls das Handy verloren geht oder du wechselst.</p>
+    <div class="btns"><button class="btn small" data-a="backup">Jetzt sichern</button><button class="btn small ghost" data-a="snooze" data-v="backupSnooze">Später</button></div>`,"setup");
+  return "";
+}
+function reminderBody(){
+  const t=S.reminderTime, notif="Notification" in window && "serviceWorker" in navigator, granted=notif&&Notification.permission==="granted"&&S.notify;
+  return `<div class="opt2 opt4" role="group" aria-label="Uhrzeit">${["20:00","21:00","22:00",null].map(x=>`<button data-a="rem-time" data-v="${x||""}" aria-pressed="${t===x}">${x||"Aus"}</button>`).join("")}</div>
+    ${t?`<div class="remopt"><b>Im Kalender</b><span class="note">Klappt auf jedem Handy, auch ohne Internet. Ein täglicher Termin um ${esc(t)} Uhr mit Erinnerung.</span><a class="btn small" href="${icsFor(t)}" data-a="rem-ics">In den Kalender eintragen</a></div>
+    <div class="remopt"><b>Als Benachrichtigung</b><span class="note">${!isStandalone()?"Geht erst, wenn innen kultur auf deinem Home-Bildschirm liegt.":granted?"Ist an. Auf dem iPhone kommt sie zuverlässig, solange die App nicht ganz geschlossen ist. Der Kalender ist die sichere Variante.":"Die App meldet sich zur Check-in-Zeit, wenn du noch nicht eingetragen hast."}</span>
+      ${isStandalone()&&notif&&!granted?`<button class="btn small ghost" data-a="notify">Benachrichtigungen erlauben</button>`:""}</div>`:`<p class="note">Ohne Erinnerung. Du kannst sie jederzeit wieder einschalten.</p>`}`;
+}
+function setupSheetHTML(){
+  if(installSheet){ const ios=isIOS();
+    const steps = ios ? [["Teilen tippen","Unten in Safari das Symbol mit dem Pfeil nach oben."],["„Zum Home-Bildschirm“ wählen","Etwas nach unten scrollen, falls du es nicht gleich siehst."],["„Hinzufügen“ tippen","Ab jetzt startest du innen kultur über das Logo auf deinem Home-Bildschirm."]]
+      : [["Menü öffnen","Oben rechts im Browser die drei Punkte tippen."],["„App installieren“ oder „Zum Startbildschirm“","Je nach Browser heißt es etwas anders."],["Bestätigen","Ab jetzt startest du innen kultur über das Logo."]];
+    return `<div class="sheet-bg" data-a="setup-close"><section class="sheet lock" role="dialog" aria-modal="true" aria-labelledby="in-t" data-a="noop" style="${pvars("schlaf")}"><span class="grab" aria-hidden="true"></span>
+      <div class="sh"><span class="lk-pill">Home-Bildschirm</span><button class="iconbtn" data-a="setup-close" aria-label="Schließen" style="background:var(--btn2-bg);box-shadow:none">${ICON.close}</button></div>
+      <div class="lk-cover"><svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg><span class="k">In 3 Schritten</span><b class="s">innen kultur als App</b></div>
+      <h2 id="in-t">${ios?"So geht's auf dem iPhone":"So geht's auf deinem Gerät"}</h2>
+      ${ios?`<p class="lwhy">Das klappt nur in Safari. Öffnest du die App gerade in einem anderen Browser, kopier den Link und öffne ihn in Safari.</p>`:""}
+      <ol class="lsteps">${steps.map(([a,b],i)=>`<li><span class="n" aria-hidden="true">${i+1}</span><span><b>${a}</b><small>${b}</small></span></li>`).join("")}</ol>
+      <div class="lnow"><p>Warum? Auf dem Home-Bildschirm startet die App im Vollbild, kann dich erinnern, und Safari löscht deine Einträge nicht, wenn du ein paar Tage nicht reinschaust.</p></div>
+      <button class="btn ghost" data-a="setup-close">Verstanden</button></section></div>`; }
+  if(reminderSheet) return `<div class="sheet-bg" data-a="setup-close"><section class="sheet lock" role="dialog" aria-modal="true" aria-labelledby="rm-t" data-a="noop" style="${pvars("recap")}"><span class="grab" aria-hidden="true"></span>
+      <div class="sh"><span class="lk-pill">Erinnerung</span><button class="iconbtn" data-a="setup-close" aria-label="Schließen" style="background:var(--btn2-bg);box-shadow:none">${ICON.close}</button></div>
+      <h2 id="rm-t">Wann sollen wir dich erinnern?</h2>${flash?`<p class="okmsg">${flash}</p>`:""}${reminderBody()}
+      <button class="btn ghost" data-a="setup-close">Fertig</button></section></div>`;
+  return "";
+}
+
 /* ---------- Heute (Screen 04) ---------- */
 function weekInfo(){
   const w=IK.currentWeek(S), today=IK.localDay();
   const todayCi=IK.checkinFor(S,today);
-  if(!w) return {w:null, days:0, todayCi, label:"Woche 1 · Start"};
+  const td=IK.trackerDay(S,today);
+  if(!w) return {w:null, days:0, todayCi, label:"Woche 1 · Tag 1 von 7"};
   const cis=IK.checkinsOf(S,w.id);
-  return {w, cis, days:cis.length, todayCi, label:`Woche ${w.index} · ${cis.length?`Tag ${cis.length} von 7`:"noch kein Eintrag"}`};
+  return {w, cis, days:cis.length, todayCi, label:`Woche ${td.week} · Tag ${td.day} von 7`};
 }
 // Hinweise auf Heute: höchstens zwei auf einmal, der Wochen-Check hat seine eigene Karte.
 /* ---------- Haptik: kurz und eindeutig (Apple HIG). Abschaltbar unter Profil. ---------- */
@@ -249,6 +320,7 @@ function haptic(kind){
 const isEvening = () => { if(S.eveningMode==="off") return false; const h=new Date().getHours(); return h>=18||h<4; };
 function applyTheme(){
   const ev=isEvening(); document.body.classList.toggle("evening",ev); document.documentElement.classList.toggle("evening",ev);
+  document.documentElement.classList.toggle("big", S.textSize==="gross");
   const m=document.querySelector('meta[name="theme-color"]'); if(m) m.content=ev?"#0F1B28":"#F4F6F9";
 }
 setInterval(()=>{ if(isEvening()!==document.body.classList.contains("evening")) render(); }, 60000);
@@ -273,7 +345,7 @@ function focusOf(i,nx){
   const h=new Date().getHours(), today=IK.localDay(), done=!!i.todayCi, sn=((S.focusSnooze||{})[today])||[], w=i.w;
   if(IK.weekCheckOpen(S)) return {id:"wc", eb:"Dein Wochen-Check", t:`Woche ${w.index} ist komplett`,
     p:`${i.days} Tage eingetragen. Schau dir deine Woche an${w.index===1?" und schalte dein Goodie frei":""}.`, btn:`data-a="go" data-v="wochencheck"`, label:"Wochen-Check öffnen"};
-  if(!done && (h>=18||h<4)) return {id:"ci", eb:"Dein Abend-Check-in", t:"Wie war dein Tag?", checks:true, btn:`data-a="go" data-v="checkin"`, label:`Check-in starten <span style="font-weight:500;opacity:.65;font-size:14px">· 1 Min.</span>`};
+  if(!done && (h>=18||h<4)) return {id:"ci", eb:"Dein Abend-Check-in", t:"Wie war dein Tag?", checks:true, btn:`data-a="go" data-v="checkin"`, label:`Check-in starten <span style="font-weight:500;opacity:.65;font-size:15px">· 1 Min.</span>`};
   if(!done && h<11 && IK.basisUnlocked(S,"morgenlicht") && !basisState("morgenlicht") && !sn.includes("licht"))
     return {id:"licht", eb:"Dein Fokus heute", t:"Raus ins Morgenlicht",
       p:`10 Minuten bei Tageslicht${S.wakeTime?`, am besten bis ${addMinutes(S.wakeTime,60)} Uhr`:", in der ersten Stunde nach dem Aufstehen"}.${S.lightSpot?` Dein Ort: ${esc(S.lightSpot)}.`:""}`,
@@ -312,33 +384,37 @@ function starterRow(){
     const p=cur?cur.pillar:vidLock?vidLock.pillar:"darm", ic=cur||vidLock?ICON[p]:ICON.checkin;
     const title = cur ? `${cur.status==="today"?"Heute":"Noch offen"}: ${esc(cur.title)}` : vidLock ? `Heute: ${esc(vidLock.title)}` : d===st.length ? "Alle To-dos dieser Woche geschafft" : "Dein To-do für heute ist erledigt";
     const sub = cur ? `${AREA[cur.pillar]} · ${esc(cur.min)}` : vidLock ? `Frei mit Video ${vidLock.after}` : nxt ? `Morgen: ${esc(nxt.short)}` : "Dein Rückblick kommt nach dem 7. Check-in.";
-    const attr = cur ? gAttr({kind:"todo", id:cur.id}) : vidLock ? `data-a="video" data-v="${vidLock.after}"` : `data-a="go" data-v="starter"`;
+    const attr = cur ? gAttr({kind:"todo", id:cur.id}) : `data-a="go" data-v="starter"`;
     const dots=st.map((t,k)=>`<i class="${t.done?"on":""}" style="${pvars(t.pillar)};animation-delay:${k*70}ms"></i>`).join("");
     return `<button class="srow starter-card tday" ${attr} style="${pvars(p)}"><span class="tic">${ic}</span><span><b>${title}</b><span class="note">${sub}</span>
       <span class="tprog"><span class="tdots" aria-hidden="true">${dots}</span><span class="tcount">${d} von ${st.length} diese Woche geschafft</span></span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>`;
   }
   const cw=IK.currentWeek(S); if(!cw) return "";
-  const W=weekWins(cw.index===undefined?1:cw.index); if(!W.total) return "";
-  return `<button class="srow starter-card tday" data-a="erfolge" data-v="${W.index}" style="${pvars("recap")}"><span class="tic">${ICON.fortschritt}</span><span><b>Deine Erfolge · Woche ${W.index}</b><span class="note">${W.total} kleine Erfolge bisher, alle im Fortschritt</span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>`;
+  const W=weekWins(cw.index===undefined?1:cw.index), rd=Object.values(W.days).reduce((a,b)=>a+b,0); if(!W.total) return "";
+  return `<button class="srow starter-card tday" data-a="erfolge" data-v="${W.index}" style="${pvars("recap")}"><span class="tic">${ICON.fortschritt}</span><span><b>Deine Erfolge · Woche ${W.index}</b><span class="note">${rd} Routinen abgehakt an ${W.N} Tag${W.N===1?"":"en"}${W.steps?` · ${W.steps} To-dos`:""}</span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>`;
 }
 function weekCard(i,cw,vp){
   const w=i.w, cis=i.cis||[], act=IK.activeBausteine(w);
   const upcoming=IK.BAUSTEINE.filter(b=>b.courseWeek<=cw&&!act.includes(b)&&!(S.pausedBausteinIds||[]).includes(b.id));
   const marks=on=>`<span class="marks" aria-label="${cis.filter(on).length} von ${cis.length} Tagen">${Array.from({length:7},(_,d)=>`<i class="${cis[d]&&on(cis[d])?"on":""}"></i>`).join("")}</span>`;
   const bRow=b=>`<span><span class="dot" style="--c:${PC[b.pillar]}"></span>${esc(b.label)}</span>`+(b.kind==="weeklyCount"
-    ? `<b class="num" style="font-size:13px">${weeklyCountOf(cis,b.id)} von ${b.weeklyTarget}</b>` : `<span style="--c:${PC[b.pillar]}">${marks(c=>c.bausteine&&c.bausteine[b.id]===true)}</span>`);
-  const upRow=b=>`<span><span class="dot" style="--c:${PC[b.pillar]}"></span>${esc(b.label)}</span><span class="note" style="font-size:12px">${IK.isSeen(S,b.videoId)?"ab nächster Woche":"nach Video "+b.videoId}</span>`;
-  const big=(l,a,b,c)=>`<div style="display:flex;flex-direction:column;gap:6px"><span class="note">${l}</span><b class="num" style="font-family:var(--f-head);font-size:22px;font-weight:800">${a} <small style="font-family:var(--f-body);font-size:13px;font-weight:500;color:var(--muted)">von ${b}</small></b><div class="bar" style="--c:${c}"><i style="width:${b?Math.round(a/b*100):0}%"></i></div></div>`;
-  return `<div class="card"><b style="font-size:17px">Diese Woche${w?` · Woche ${w.index}`:""}</b><div class="g2">${big(`Wissen · Kurswoche ${cw}`,vp.seen,vp.total,"var(--blue)")}${big("Umsetzung · Tage",i.days,7,"var(--darm)")}</div>
+    ? `<b class="num" style="font-size:14px">${weeklyCountOf(cis,b.id)} von ${b.weeklyTarget}</b>` : `<span style="--c:${PC[b.pillar]}">${marks(c=>c.bausteine&&c.bausteine[b.id]===true)}</span>`);
+  const upRow=b=>`<span><span class="dot" style="--c:${PC[b.pillar]}"></span>${esc(b.label)}</span><span class="note" style="font-size:13px">${IK.isSeen(S,b.videoId)?"ab nächster Woche":"nach Video "+b.videoId}</span>`;
+  const big=(l,a,b,c)=>`<div style="display:flex;flex-direction:column;gap:6px"><span class="note">${l}</span><b class="num" style="font-family:var(--f-head);font-size:22px;font-weight:800">${a} <small style="font-family:var(--f-body);font-size:14px;font-weight:500;color:var(--muted)">von ${b}</small></b><div class="bar" style="--c:${c}"><i style="width:${b?Math.round(a/b*100):0}%"></i></div></div>`;
+  return `<div class="card wk-full"><b style="font-size:17px">Diese Woche${w?` · Woche ${w.index}`:""}</b><div class="g2">${big(`Wissen · Kurswoche ${cw}`,vp.seen,vp.total,"var(--blue)")}${big("Umsetzung · Tage",i.days,7,"var(--darm)")}</div>
     ${act.length||upcoming.length?`<div class="exp">${act.map(bRow).join("")}${upcoming.map(upRow).join("")}</div>`:`<p class="note">Ab Kurswoche 2 kommen Bausteine dazu, jeweils nach dem Video, das sie erklärt.</p>`}</div>`;
+}
+function weekMini(i,cw,vp){
+  return `<button class="srow wk-mini" data-a="go" data-v="fortschritt"><span><b>Diese Woche${i.w?` · Woche ${i.w.index}`:""}</b><span class="note">${vp.seen} von ${vp.total} Videos · ${i.days} von 7 Tagen eingetragen</span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>`;
 }
 function vHeute(){
   const i=weekInfo(), t=weeksTotal(), cw=IK.currentCourseWeek(VID.VIDEOS,S,t), vp=IK.weekVideoProgress(VID.VIDEOS,S,cw), nx=IK.nextVideo(VID.VIDEOS,S,t);
   const f=focusOf(i,nx), n=openNotices().length, day=new Date().toLocaleDateString("de-DE",{weekday:"long"});
   return `${brandBar(`<button class="iconbtn bell" data-a="sheet" aria-label="${n?`${n} neue Freischaltungen`:"Neu für dich"}">${ICON.bell}${n?`<span class="badge">${n}</span>`:""}</button>`)}
-  <div class="top"><div class="t"><small>${day} · ${esc(i.label)}</small><b>${greet()}</b></div></div>
-  ${flash?`<div class="card soft"><p class="okmsg">${flash}</p></div>`:""}
-  ${lay(`${focusCard(f)}${routinesCard()}${f.id!=="video"&&nx?learnCard(nx):""}${starterRow()}`, weekCard(i,cw,vp))}
+  <div class="top"><div class="t"><small>${day} · ${esc(i.label)}</small><b>${greet().replace(/(\S+)$/,'<span class="acc">$1</span>')}</b></div></div>
+  ${flash&&!reminderSheet?`<div class="card soft"><p class="okmsg">${flash}</p></div>`:""}
+  ${setupCard()}
+  ${lay(`${focusCard(f)}${routinesCard()}${f.id!=="video"&&nx?learnCard(nx):""}${starterRow()}${weekMini(i,cw,vp)}`, weekCard(i,cw,vp))}
   <p class="note" style="text-align:center">${S.product==="komplett"?"Komplett":"Basis"} · ${t} Wochen${S.demo?" · Demo":""}</p>`;
 }
 
@@ -359,7 +435,7 @@ function sheetHTML(){
   return `<div class="sheet-bg" data-a="sheet-close"><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t" data-a="noop"><span class="grab" aria-hidden="true"></span>
     <div class="sh"><h2 id="sh-t">Neu für dich</h2><button class="iconbtn" data-a="sheet-close" aria-label="Schließen" style="background:var(--btn2-bg);box-shadow:none">${ICON.close}</button></div>
     ${list.length ? `<div>${list.map(item).join("")}</div><button class="btn ghost" data-a="notice-all">Alle als gelesen markieren</button>`
-      : `<div style="display:flex;justify-content:center;padding:8px 0">${mark(56,"var(--card)")}</div><p class="note" style="font-size:15px;line-height:1.5;text-align:center">Alles gesehen. Neues erscheint hier, sobald du etwas freischaltest, zum Beispiel mit deinem nächsten Video.</p>`}</section></div>`;
+      : `<div style="display:flex;justify-content:center;padding:8px 0">${mark(56,"var(--card)")}</div><p class="note" style="font-size:16px;line-height:1.5;text-align:center">Alles gesehen. Neues erscheint hier, sobald du etwas freischaltest, zum Beispiel mit deinem nächsten Video.</p>`}</section></div>`;
 }
 const pillarOf = v => v.pillar==="intro" ? "recap" : v.pillar;
 const pillarLabel = v => v.pillar==="intro" ? "Intro" : IK.PILLARS[v.pillar].label;
@@ -385,7 +461,7 @@ function vCheckin(){
   const ids = t.cands ? t.kept.concat(draft.newBausteinIds) : t.ids;
   const isNew = t.cands ? draft.newBausteinIds : t.isNew;
   const cis = t.wk ? IK.checkinsOf(S,t.wk.id) : [];
-  const prog=`<div class="cprog" role="img" aria-label="Schritt ${ciStep} von 3">${[1,2,3].map(k=>`<i class="${k<=ciStep?"on":""}"></i>`).join("")}</div>`;
+  const prog=`<div class="cprog" role="img" aria-label="Schritt ${ciStep} von 2">${[1,2].map(k=>`<i class="${k<=ciStep?"on":""}"></i>`).join("")}</div>`;
   const head=`<div class="top"><div class="t"><small>Woche ${t.week} · Tag ${t.day} von 7</small>${prog}</div>${ciStep===1
     ? `<button class="iconbtn" data-a="back" data-v="heute" aria-label="Schließen">${ICON.close}</button>` : `<button class="iconbtn" data-a="ci-back" aria-label="Zurück">${ICON.back}</button>`}</div>`;
   if(ciStep===1){
@@ -412,7 +488,7 @@ function vCheckin(){
   ${IK.SCALES.map(sc).join("")}
   <button class="more" data-a="ci-more" aria-expanded="${ciMore}">Mehr eintragen (optional)<span aria-hidden="true">${ciMore?"−":"+"}</span></button>
   <div class="nums" ${ciMore?"":"hidden"}>${num("schlafStunden","Schlaf (Std.)","decimal","7,0")}${num("pflanzen","Pflanzen heute","numeric","0")}${num("bewegungMin","Bewegung (Min.)","numeric","0")}</div>
-  <div class="cfoot"><button class="btn" data-a="save-ci">Tag ${t.day} ${t.ex?"aktualisieren":"speichern"}</button></div>`;
+  <div class="cfoot">${(()=>{ const o=IK.SCALES.filter(x=>draft[x.key]==null).length; return o?`<p class="cmiss">${o===IK.SCALES.length?"Noch keine Frage beantwortet":`Noch ${o} von ${IK.SCALES.length} Fragen offen`}. Speichern geht trotzdem, dein Loop-Score wird mit allen genauer.</p>`:""; })()}<button class="btn" data-a="save-ci">Tag ${t.day} ${t.ex?"aktualisieren":"speichern"}</button></div>`;
 }
 function saveCheckin(){
   readNums();
@@ -421,7 +497,9 @@ function saveCheckin(){
   if(!t.choose) delete data.newBausteinIds;
   let ci;
   try{ ci=IK.saveCheckIn(S, data, IK.localDay()); }catch(e){ flash=e.message; go("heute"); return; }
-  S.dayTicks={}; save(); draft=null; ciStep=1;
+  // Pflanzen aus dem Check-in erledigen das To-do „Pflanzen zählen“, sobald es dran ist
+  if(ci.pflanzen>0){ const pt=IK.todoStatus(S,IN.TODOS).find(x=>x.input&&x.input.field==="plantCount"); if(pt&&pt.unlocked&&!pt.done) S.plantCount=ci.pflanzen; }
+  S.dayTicks={}; save(); draft=null; ciStep=1; scheduleReminder();
   const w=IK.currentWeek(S);
   lastSaved={day:ci.dayIndex, updated:!!t.ex, basisN:IK.basisScore(ci), weekDone:w.status==="awaitingCheck"};
   haptic(lastSaved.weekDone?"strong":"success");
@@ -443,14 +521,14 @@ function vGeschafft(){
   if(nx) rows.push(["Nächstes Video",`<b>${nx.id} ${esc(nx.title.split(":")[0])}</b>`]);
   if(wc&&w&&!L.updated){ const W=weekWins(w.index);
     return `<div class="done bilanz"><span class="bmark" style="justify-content:center">${mark(44)}</span>
-      <h1>Woche ${w.index} geschafft</h1><p class="lead">${days} Abende${W.steps?`, ${W.steps} kleine Schritte`:""}. Das hast du diese Woche alles gemacht:</p>
+      <h1>Woche ${w.index} <span class="acc">geschafft</span></h1><p class="lead">${days} Abende${W.steps?`, ${W.steps} kleine Schritte`:""}. Das hast du diese Woche alles gemacht:</p>
       <div class="wins-list">${winsCards(W)||`<p class="note">Deine Woche steht. Ab jetzt sammeln sich hier deine Erfolge.</p>`}</div>
       <button class="btn" data-a="go" data-v="wochencheck" style="min-height:58px;border-radius:18px;font-size:17px">Weiter zum Wochen-Check</button>
       <button class="btn link small" data-a="erfolge" data-v="${w.index}">Alle Erfolge im Fortschritt</button></div>`; }
   return `<div class="done"><svg class="big" viewBox="0 0 132 132" role="img" aria-label="Tag ${L.day} gespeichert"><circle cx="66" cy="66" r="58" fill="none" stroke="var(--line)" stroke-width="8"/>
     <circle class="arc" cx="66" cy="66" r="58" fill="none" stroke="var(--coral)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${C*days/7} ${C}" style="--len:${C*days/7}" transform="rotate(-90 66 66)"/>
     <g class="mk"><path d="${BLOBPATH}" transform="translate(23 23) scale(.86)" style="fill:var(--coral)"/><path d="M50 67 62 78 84 55" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></g></svg>
-    <h1>Tag ${L.day} ${L.updated?"aktualisiert":"geschafft"}</h1><p class="lead">${msg}</p>
+    <h1>Tag ${L.day} <span class="acc">${L.updated?"aktualisiert":"geschafft"}</span></h1><p class="lead">${msg}</p>
     <div class="wk7" role="img" aria-label="${days} von 7 Tagen eingetragen">${Array.from({length:7},(_,k)=>`<i class="${k<days?"on":""}"></i>`).join("")}</div>
     ${rows.length?`<div class="list">${rows.map(([a,b])=>`<div><span>${a}</span>${b}</div>`).join("")}</div>`:""}
     <button class="btn" data-a="${wc?"go":"back"}" data-v="${wc?"wochencheck":"heute"}" style="min-height:58px;border-radius:18px;font-size:17px">${wc?"Zum Wochen-Check":"Fertig"}</button></div>`;
@@ -466,7 +544,7 @@ function readNums(){
 
 /* ---------- Fortschritt (Screen 10, erster Stand) ---------- */
 function loopRing(score){ const C=2*Math.PI*46;
-  return `<svg viewBox="0 0 110 110" role="img" aria-label="Loop-Score ${score} von 100"><circle cx="55" cy="55" r="46" fill="none" stroke="var(--line)" stroke-width="10"/><circle cx="55" cy="55" r="46" fill="none" stroke="var(--coral)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C*score/100} ${C}" transform="rotate(-90 55 55)"/><text x="55" y="63" text-anchor="middle" font-family="Epilogue,sans-serif" font-weight="800" font-size="30" fill="var(--ink)">${score}</text></svg>`; }
+  return `<svg viewBox="0 0 110 110" role="img" aria-label="Loop-Score ${score} von 100"><circle cx="55" cy="55" r="46" fill="none" stroke="var(--line)" stroke-width="10"/><circle cx="55" cy="55" r="46" fill="none" stroke="var(--coral)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C*score/100} ${C}" transform="rotate(-90 55 55)"/><text x="55" y="63" text-anchor="middle" font-family="Inter,sans-serif" font-weight="800" font-size="30" fill="var(--ink)">${score}</text></svg>`; }
 const loopPart=(l,v,c)=>`<div><div class="row"><span>${l}</span><b class="num">${v}</b></div><div class="bar" style="--c:${c}"><i style="width:${v}%"></i></div></div>`;
 // Beispiel mit Erklärung der drei Teile. withStart = zusätzlich Startpunkt → jetzt.
 function loopExample(withStart){
@@ -482,7 +560,8 @@ const scoreWord = s => s>=75 ? "Läuft sehr rund" : s>=60 ? "Läuft rund" : s>=4
 function vFortschritt(){
   const weeks=S.weeks.map(w=>{ const c=IK.checkinsOf(S,w.id), act=IK.activeBausteine(w); return {w, c, ls:IK.loopScore(c,act), st:IK.weekStats(c,act)}; });
   const cur=weeks[weeks.length-1];
-  const why=S.why?`<div class="card soft why-card"><span class="eyebrow" style="color:var(--recap-text)">Dein Warum</span><b>${esc(S.why)}</b></div>`:"";
+  const tg=IK.GOALS.find(g=>g.id===S.topGoal);
+  const why=S.why||tg?tcard("recap",`<span class="k">${S.why?"Dein Warum":"Dein wichtigstes Ziel"}</span><b class="tt">${esc(S.why||tg.label)}</b>${S.why&&tg?`<p>Wichtigstes Ziel: ${esc(tg.label)}</p>`:""}`,"why-card"):"";
   const idx=S.weeks.map(x=>x.index); if(!idx.length) idx.push(1);
   if(erfolgeWeek==null||!idx.includes(erfolgeWeek)) erfolgeWeek=idx[idx.length-1];
   const wsel = fortTab==="erfolge" ? `<label class="vsel"><select data-ew aria-label="Woche wählen">${idx.slice().reverse().map(n=>`<option value="${n}"${n===erfolgeWeek?" selected":""}>Woche ${n}</option>`).join("")}</select><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></label>` : "";
@@ -493,7 +572,7 @@ function vFortschritt(){
     `<div class="card example"><span class="eyebrow" style="color:var(--recap-text)">Beispiel nach einer Woche</span>${loopExample(true)}</div>`);
   const s=cur.ls, running=cur.w.status==="running", prev=weeks.length>1?weeks[weeks.length-2].ls.score:null, trend=prev!=null?s.score-prev:null, C=2*Math.PI*56;
   const ring=`<svg viewBox="0 0 132 132" role="img" aria-label="Loop-Score ${s.score} von 100"><circle cx="66" cy="66" r="56" fill="none" stroke="var(--line)" stroke-width="14"/><circle cx="66" cy="66" r="56" fill="none" stroke="var(--coral)" stroke-width="14" stroke-linecap="round" stroke-dasharray="${C*s.score/100} ${C}" transform="rotate(-90 66 66)"/>
-    <text x="66" y="72" text-anchor="middle" font-family="Epilogue,sans-serif" font-weight="800" font-size="40" fill="var(--ink)">${s.score}</text><text x="66" y="92" text-anchor="middle" font-family="Inter,sans-serif" font-weight="600" font-size="11" fill="var(--muted)">von 100</text></svg>`;
+    <text x="66" y="72" text-anchor="middle" font-family="Inter,sans-serif" font-weight="700" font-size="40" fill="var(--ink)">${s.score}</text><text x="66" y="92" text-anchor="middle" font-family="Inter,sans-serif" font-weight="600" font-size="11" fill="var(--muted)">von 100</text></svg>`;
   const p3=(l,v,c)=>`<div><span>${l}</span><b>${v}</b><div class="bar" style="--c:${c}"><i style="width:${v}%"></i></div></div>`;
   const done=weeks.filter(x=>x.w.status!=="running"), last=done[done.length-1], cmp=last?IK.compareToStart(latestBaseline(), last.st.avg):[];
   const bars=weeks.slice(-6).map((x,k,arr)=>{ const v=x.ls.score, isCur=k===arr.length-1;
@@ -501,8 +580,8 @@ function vFortschritt(){
   return head+why+lay(`<section class="lhero" aria-label="Loop-Score"><div class="top2">${ring}<div style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow" style="color:var(--muted)">Loop-Score · Woche ${cur.w.index}${running?" · Zwischenstand":""}</span><b class="word">${scoreWord(s.score)}</b>
       ${trend!=null?`<span class="trend" style="${trend<0?"color:var(--muted)":""}">${trend>0?"+":trend<0?"−":"±"}${Math.abs(trend)} zur Vorwoche</span>`:`<span class="note">Dein erster Wert</span>`}</div></div>
     <div class="parts3">${p3("Befinden",s.befinden,"var(--schlaf)")}${p3("Umsetzung",s.umsetzung,"var(--darm)")}${p3("Dranbleiben",s.dranbleiben,"var(--recap)")}</div></section>
-    <div class="card"><b style="font-size:15px">Dein Verlauf</b><div class="wbars" role="img" aria-label="Loop-Score je Woche: ${weeks.map(x=>`Woche ${x.w.index} ${x.ls.score==null?"offen":x.ls.score}`).join(", ")}">${bars}</div></div>`,
-  `<div class="card"><b style="font-size:15px">Startpunkt → jetzt</b>
+    <div class="card"><b style="font-size:16px">Dein Verlauf</b><div class="wbars" role="img" aria-label="Loop-Score je Woche: ${weeks.map(x=>`Woche ${x.w.index} ${x.ls.score==null?"offen":x.ls.score}`).join(", ")}">${bars}</div></div>`,
+  `<div class="card"><b style="font-size:16px">Startpunkt → jetzt</b>
   ${last?`<p class="note">Vergleich mit Woche ${last.w.index}, deiner letzten abgeschlossenen Woche.</p>
     <table><tbody>${cmp.map(r=>`<tr><td>${r.label}</td><td>${r.text?esc(r.text):r.start+" → "+fmt1(r.now)}</td><td style="font-weight:700;width:56px;color:${r.diff>0?"var(--darm-text)":"inherit"}">${r.text?"":fmtSigned(r.diff)}</td></tr>`).join("")}</tbody></table>
     <p class="note">Startwerte 1 bis 5 aus deinem Onboarding. „Entspannt sein“ ist 6 minus dein Ø Stress.</p>`
@@ -546,9 +625,9 @@ function vKurs(){
   const ho=hoOf(kursWeek), hoFree=p.handoutFree&&ho;
   const kern=VID.VIDEOS.filter(v=>v.week===kursWeek&&v.type==="Kern").map(v=>v.id);
   const hAttr = hoFree ? `data-a="mat" data-v="${ho.id}" data-go-lib="1"` : p.handoutFree ? `data-a="noop"` : `data-a="lock" data-v="ho:${kursWeek}"`;
-  const hcard=`<button class="hcard kurs-extra" ${hAttr}><span class="hic">${ICON.doc}</span><span><span class="row"><b style="font-size:14px">Handout Woche ${kursWeek}</b><span class="note">${p.handoutFree?(ho?"frei · öffnen":"frei, folgt als Datei"):`${p.kernSeen} von ${p.kernTotal} Kernvideos`}</span></span>
-    <span class="bar" style="--c:var(--recap)"><i style="width:${p.kernTotal?Math.round(p.kernSeen/p.kernTotal*100):0}%"></i></span><span class="note">Goodie · mit dem Wochen-Check</span></span></button>`;
-  return `${brandBar()}<div class="top"><div class="t"><small>Wissen · alle Videos frei</small><b>Kurs</b></div>${kseg}</div>
+  const hcard=`<button class="hcard kurs-extra" ${hAttr}><span class="hic">${ICON.doc}</span><span><span class="row"><b style="font-size:15px">Handout Woche ${kursWeek}</b><span class="note">${p.handoutFree?(ho?"frei · öffnen":"frei, folgt als Datei"):`${p.kernSeen} von ${p.kernTotal} Kernvideos`}</span></span>
+    <span class="bar" style="--c:var(--recap)"><i style="width:${p.kernTotal?Math.round(p.kernSeen/p.kernTotal*100):0}%"></i></span><span class="note">${p.handoutFree?(ho?"Zum Nachlesen in der Bibliothek":"Erscheint mit dem nächsten Update"):"Wird frei, sobald du alle Kernvideos gesehen hast"}</span></span></button>`;
+  return `${brandBar()}<div class="top"><div class="t"><small>Alle Videos frei</small><b>Kurs</b></div>${kseg}</div>
   <div class="wchips" role="group" aria-label="Kurswochen">${partWeeks.map(chip).join("")}</div>
   <div style="display:flex;flex-direction:column;gap:2px;padding:0 4px"><b style="font-family:var(--f-head);font-size:22px;font-weight:800;letter-spacing:-.02em">${esc(VID.WEEKS[kursWeek].title)}</b><span class="note">Woche ${kursWeek} · ${p.seen} von ${p.total} Videos · alles frei, in deinem Tempo</span></div>
   ${hcard}
@@ -573,10 +652,10 @@ function vVideo(){
     <span class="ph">Der Video-Player kommt, sobald die Kurs-Plattform feststeht.</span>
     <div class="bar" style="--c:#fff;background:rgba(255,255,255,.25)"><i style="width:${seen?100:0}%"></i></div>
     <div class="row note" style="color:#C9D6E6"><span>${v.durationMin} Min.</span><span>${seen?"gesehen":"noch nicht gesehen"}</span></div></div>
-  <div style="display:flex;flex-direction:column;gap:4px;padding:0 4px"><span class="eyebrow" style="color:${PT[pillarOf(v)]}">Woche ${v.week} · ${pillarLabel(v)} · ${v.type}</span><h1 style="font-size:26px">${esc(v.title)}</h1></div>
+  <div style="display:flex;flex-direction:column;gap:4px;padding:0 4px"><span class="eyebrow" style="color:${PT[pillarOf(v)]}">Woche ${v.week} · ${v.pillar==="intro"?"Einstieg":pillarLabel(v)+" · "+v.type}</span><h1 style="font-size:26px">${esc(v.title)}</h1></div>
   ${flash?`<div class="card soft"><p class="okmsg">${flash}</p></div>`:""}`,
   `${seen?"":`<div class="card"><button class="btn" data-a="seen" data-v="${v.id}">Als gesehen markieren</button><p class="note">Mit dem Player zählt ein Video später automatisch ab 90 Prozent als gesehen.</p></div>`}
-  ${seen&&v.machJetzt?tcard(pillarOf(v),`<span class="k">Mach jetzt · 30 Sekunden</span><b class="tt">${esc(v.machJetzt)}</b>${IN.MACH_JETZT_GO[v.id]?`<div class="btns"><button class="btn small" ${gAttr(IN.MACH_JETZT_GO[v.id])}>${esc(IN.MACH_JETZT_GO[v.id].label)}</button></div>`:""}`):""}
+  ${seen&&v.machJetzt?tcard(pillarOf(v),`<span class="k">Mach jetzt · 30 Sekunden</span><b class="tt">${esc(v.machJetzt)}</b>${v.id==="1.0"&&S.goals.length?`<div class="btns">${IK.GOALS.filter(g=>S.goals.includes(g.id)).map(g=>`<button class="btn small${S.topGoal===g.id?"":" ghost"}" data-a="top-goal" data-v="${g.id}" aria-pressed="${S.topGoal===g.id}">${S.topGoal===g.id?CHECK+" ":""}${esc(g.label)}</button>`).join("")}</div>`:""}${IN.MACH_JETZT_GO[v.id]?`<div class="btns"><button class="btn small" ${gAttr(IN.MACH_JETZT_GO[v.id])}>${esc(IN.MACH_JETZT_GO[v.id].label)}</button></div>`:""}`):""}
   ${freshIds.length?openNotices(e=>freshIds.includes(e.id)).map(noticeCard).join(""):""}
   ${freshTodos.length?tcard("recap",`<span class="k">Neu in deinen To-dos</span>
     ${freshTodos.map(todoById).map(t=>`<div class="trow"><span><b>${esc(t.title)}</b><small>${AREA[t.pillar]} · Tag ${t.day}</small></span><button class="btn small" ${gAttr({kind:"todo", id:t.id})}>${t.input?"Eintragen":"Ansehen"}</button></div>`).join("")}`):""}
@@ -712,7 +791,7 @@ function fieldInput(inp){
 }
 function vTodos(){
   const st=weekTodos(1), d=st.filter(t=>t.done).length;
-  const cur=st.find(t=>t.status==="today")||st.find(t=>t.status==="open");
+  const cur=st.find(t=>t.status==="today")||st.find(t=>t.status==="open"), vidLock=!cur&&st.find(t=>t.status==="locked"&&t.dayOk);
   const n={alle:st.length, offen:st.length-d, erledigt:d}, L={alle:"Alle", offen:"Offen", erledigt:"Erledigt"};
   const shown=st.filter(t=>todoFilter==="alle"||(todoFilter==="erledigt")===t.done);
   const sel=`<label class="vsel"><select data-tf aria-label="To-dos filtern">${Object.keys(L).map(k=>`<option value="${k}"${todoFilter===k?" selected":""}>${L[k]} · ${n[k]}</option>`).join("")}</select><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></label>`;
@@ -722,18 +801,20 @@ function vTodos(){
     return `<button class="tdrow${t.status==="locked"?" locked":""}${t.done?" is-done":""}" ${attr} style="${pvars(t.pillar)}"><span class="dn"><small>Tag</small><b>${t.day}</b></span><span class="tx"><b>${esc(t.title)}</b><span class="note">${AREA[t.pillar]} · ${sub}</span></span>${mk}<span class="sr">${t.done?"erledigt":t.status==="locked"?"gesperrt":"offen"}</span></button>`; };
   const hero = !starterActive() ? `<div class="card soft"><b>Woche 1 ist abgeschlossen</b><p class="note" style="color:var(--ink)">Alles, was du geschafft hast, findest du im Fortschritt.</p><button class="btn small" data-a="erfolge" data-v="1">Deine Erfolge ansehen</button></div>`
     : cur ? tcard(cur.pillar, `<span class="k">${cur.status==="today"?"Heute":"Noch offen"} · Tag ${cur.day} · ${AREA[cur.pillar]} · ${esc(cur.min)}</span><b class="tt">${esc(cur.title)}</b><p>${esc(cur.why)}</p><div class="btns"><button class="btn small" ${gAttr({kind:"todo", id:cur.id})}>${cur.input?"Jetzt eintragen":"Ansehen"}</button></div>`)
+    : vidLock ? tcard(vidLock.pillar, `<span class="k">Heute · Tag ${vidLock.day} · ${AREA[vidLock.pillar]}</span><b class="tt">${esc(vidLock.title)}</b><p>Das To-do wird frei, sobald du Video ${vidLock.after} gesehen hast. Es erklärt, worum es geht.</p><div class="btns"><button class="btn small" data-a="video" data-v="${vidLock.after}">Video ${vidLock.after} ansehen</button></div>`)
     : `<div class="ldone">${mark(36)}<p>${d===st.length?"Alle 7 To-dos geschafft. Dein Rückblick kommt nach dem 7. Check-in.":"Für heute ist alles erledigt. Morgen wartet das nächste To-do."}</p></div>`;
   return `<div class="tdwrap"><div class="top"><div class="t"><small>Woche 1 · ${d} von ${st.length} erledigt</small><b>Deine To-dos</b></div><button class="iconbtn" data-a="back" data-v="heute" aria-label="Schließen">${ICON.close}</button></div>
   <div class="tseg" role="img" aria-label="${d} von ${st.length} erledigt">${st.map(t=>`<i class="${t.done?"on":t.status==="today"?"now":""}" style="${pvars(t.pillar)}"></i>`).join("")}</div>
-  ${hero}<div class="tdhd"><b>Diese Woche</b>${sel}</div>
-  <div class="card tdlist">${shown.map(row).join("")||`<p class="note" style="padding:12px 0">${todoFilter==="erledigt"?"Noch nichts erledigt. Das erste To-do wartet schon.":"Alles erledigt."}</p>`}</div></div>`;
+  ${lay(hero, `<div class="tdhd"><b>Diese Woche</b>${sel}</div>
+  <div class="card tdlist">${shown.map(row).join("")||`<p class="note" style="padding:12px 0">${todoFilter==="erledigt"?"Noch nichts erledigt. Das erste To-do wartet schon.":"Alles erledigt."}</p>`}</div>`)}</div>`;
 }
 // Ein To-do allein: eine Frage, ein Feld, ein Knopf. Feld steht oben, damit es über der Tastatur bleibt.
 function vTodo(){
   const st=weekTodos(1), t=st.find(x=>x.id===focusTodo);
   if(!t){ view="starter"; return vTodos(); }
   if(!t.unlocked&&!t.done){ view="starter"; lockFor="todo:"+t.id; return vTodos(); }
-  const inp=t.input, val=inp&&S[inp.field]!=null?String(S[inp.field]):"";
+  const inp=t.input, ciToday=IK.checkinFor(S,IK.localDay());
+  const val=inp&&S[inp.field]!=null?String(S[inp.field]):inp&&inp.field==="plantCount"&&ciToday&&ciToday.pflanzen>0?String(ciToday.pflanzen):"";
   const later=st.filter(x=>!x.done&&x.id!==t.id), nx=later[0];
   const nextMsg = !nx ? "Alle To-dos dieser Woche sind geschafft." : nx.status==="locked"&&!nx.dayOk ? `Morgen wartet: ${esc(nx.short)}.` : `Als Nächstes: ${esc(nx.short)}.`;
   const field = inp ? `<div class="card tfield"><label for="f-${inp.field}">${esc(inp.label)}</label><input id="f-${inp.field}" type="${inp.type==="number"?"text":inp.type}" ${inp.type==="number"?'inputmode="numeric"':""} value="${esc(val)}" placeholder="${esc(inp.placeholder||"")}" maxlength="140" autocomplete="off">
@@ -806,7 +887,7 @@ function vWochencheck(){
 const BLOB=`<path d="${BLOBPATH}" style="fill:var(--c)"/>`;
 // Getönte Karte wie die Wissens-Kacheln der Bibliothek: Themenfarbe hell, Logo-Form in der Ecke.
 const tcard=(p,inner,cls)=>`<div class="tcard${cls?" "+cls:""}" style="${pvars(p)}"><svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg>${inner}</div>`;
-const WISSEN_COVER = {pflanzen:"Pflanzen-Teller", ferment:"Fermentiertes", licht:"Morgenlicht", aktiv:"30 Minuten"};
+const WISSEN_COVER = {pflanzen:"Pflanzen-Teller", ferment:"Fermen\u00ADtiertes", licht:"Morgenlicht", aktiv:"30 Minuten"};
 const cover=(attrs,k,s,title,how,p,locked)=>`<button class="cover${locked?" locked":""}" ${attrs} style="${pvars(p)}"><span class="cv"><svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg><span class="k">${esc(k)}</span><b class="s">${esc(s)}</b>${locked?`<span class="lk" aria-hidden="true">${LOCK}</span>`:""}</span><span><b>${esc(title)}</b><small>${esc(how)}${locked?" · gesperrt":""}</small></span></button>`;
 function materialList(tab){
   const list=IN.MATERIALS.filter(m=>m.tab===tab && m.week<=weeksTotal());
@@ -852,9 +933,9 @@ function saveField(k){
 function basisFieldsCard(){
   const st=IK.todoStatus(S,IN.TODOS), byField=k=>st.find(t=>t.input&&t.input.field===k);
   return `<div class="card"><h2>Deine Basis</h2><p class="note">Aus deinen To-dos. Sie stehen auch auf deinem Handout und deiner Morgen-Karte.</p>
-    ${Object.keys(FIELDS).filter(k=>k!=="plantCount").map(k=>{ const t=byField(k), open=!t||t.videoOk, vid=t&&t.after;
+    ${Object.keys(FIELDS).filter(k=>k!=="plantCount").map(k=>{ const t=byField(k), open=!t||t.unlocked||!starterActive(), vid=t&&!t.videoOk?t.after:null;
       return open||filledField(k) ? fieldInput({field:k, type:FIELDS[k].type, label:FIELDS[k].label})
-        : `<div class="kv" style="align-items:center"><span class="note" style="font-weight:600">${esc(FIELDS[k].label)}</span><button class="btn link small" data-a="video" data-v="${vid}" style="min-height:0;padding:0">frei mit Video ${vid}</button></div>`; }).join("")}</div>`;
+        : `<div class="kv" style="align-items:center"><span class="note" style="font-weight:600">${esc(FIELDS[k].label)}</span>${vid?`<button class="btn link small" data-a="video" data-v="${vid}" style="min-height:0;padding:0">frei mit Video ${vid}</button>`:`<span class="note">kommt als To-do an Tag ${t.day}</span>`}</div>`; }).join("")}</div>`;
 }
 const filledField = k => S[k]!=null && String(S[k]).trim()!=="";
 
@@ -926,7 +1007,7 @@ function tourPreview(k){
   if(k==="learn"){ const v=VID.VIDEOS.find(x=>x.id==="1.1"), b=IK.BASIS.find(x=>x.key==="bunt");
     return `<div class="tour-prev"><div class="learn" style="pointer-events:none"><span class="thumb" style="--s:${PS.darm};--c:${PC.darm}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5 19 12 8 19Z"/></svg></span>
       <span class="tx"><span class="eyebrow" style="color:${PT.darm}">Weiterlernen · Ernährung & Darm</span><b>1.1 ${esc(v.title)}</b><span class="note">${v.durationMin} Min. · schaltet „${esc(b.label)}“ frei</span></span></div>
-      <div class="card" style="background:var(--navy);color:#fff;gap:4px"><span class="eyebrow" style="color:#C9D6E6">Mach jetzt · 30 Sekunden</span><span style="font-size:14px">${esc(v.machJetzt||"")}</span></div></div>`; }
+      <div class="card" style="background:var(--navy);color:#fff;gap:4px"><span class="eyebrow" style="color:#C9D6E6">Mach jetzt · 30 Sekunden</span><span style="font-size:15px">${esc(v.machJetzt||"")}</span></div></div>`; }
   if(k==="material"){ const row=(kind,title,how,on)=>`<div class="tour-mat${on?" on":""}"><span class="eyebrow" style="color:var(--recap-text)">${kind}</span><b>${title}</b><span class="note">${how}</span></div>`;
     return `<div class="tour-prev">${row("Mini-Karte · Woche 1","Pflanzen-Teller","frei direkt nach Video 1.6",true)}${row("Handout · Woche 1","Deine Basis auf zwei Seiten","frei nach allen 5 Kernvideos der Woche",false)}${row("Goodie · Woche 1","Bunte Teller in 15 Minuten","frei mit deinem Wochen-Check",false)}
       <p class="note">Alles liegt danach in der Bibliothek. Gesperrtes zeigt, wodurch es frei wird.</p></div>`; }
@@ -1065,14 +1146,16 @@ function vProfil(){
     <div class="opt2" role="group" aria-label="Abendmodus"><button data-a="set-theme" data-v="auto" aria-pressed="${S.eveningMode!=="off"}">Ab 18 Uhr dunkel</button><button data-a="set-theme" data-v="off" aria-pressed="${S.eveningMode==="off"}">Immer hell</button></div>
     <span class="note" style="font-weight:600">Haptik</span>
     <div class="opt2" role="group" aria-label="Haptik"><button data-a="set-haptic" data-v="on" aria-pressed="${S.haptics!==false}">An</button><button data-a="set-haptic" data-v="off" aria-pressed="${S.haptics===false}">Aus</button></div>
+    <span class="note" style="font-weight:600">Schriftgröße</span>
+    <div class="opt2" role="group" aria-label="Schriftgröße"><button data-a="set-text" data-v="normal" aria-pressed="${S.textSize!=="gross"}">Normal</button><button data-a="set-text" data-v="gross" aria-pressed="${S.textSize==="gross"}" style="font-size:18px">Größer</button></div>
     <p class="note">Ein kurzes Tippen beim Abhaken und ein Erfolgs-Muster beim Speichern. Auf Android-Handys zuverlässig, auf dem iPhone über einen Safari-Umweg, der nicht überall spürbar ist.</p></div>
+  <div class="card remcard"><h2>Erinnerung</h2>${reminderBody()}</div>
+  ${!isStandalone()?`<div class="card"><h2>Home-Bildschirm</h2><p class="note">Auf dem Home-Bildschirm startet innen kultur wie eine App und deine Einträge bleiben sicher gespeichert.</p><div class="btns">${installEvt?`<button class="btn small" data-a="install">Jetzt hinzufügen</button>`:`<button class="btn small" data-a="install-how">So geht's</button>`}</div></div>`:""}
   <div class="card"><h2>App-Tour</h2><p class="note">In 2 Minuten durch alle Bereiche, mit einer Übersicht, wodurch Handouts, Goodies und Bausteine frei werden.</p>
     <div class="btns"><button class="btn small" data-a="tour-start">Tour ansehen</button></div></div>
   ${basisFieldsCard()}
   ${bausteineCard()}
-  <div class="card"><h2>Erinnerung</h2><div class="times" role="group" aria-label="Uhrzeit für die Erinnerung">${["20:00","21:00","22:00",null].map(t=>`<button type="button" data-a="ptime" data-v="${t||""}" aria-pressed="${S.reminderTime===t}">${t||"Aus"}</button>`).join("")}</div>
-    <p class="note">Push-Nachrichten kommen in einem späteren Update.</p></div>
-  <div class="card"><h2>Sicherung</h2><p class="note">${status} Speichere die Datei z. B. in iCloud Drive, Google Drive oder auf deinem PC.</p>
+  <div class="card"><h2>Sicherung</h2><p class="note">${status} Speichere die Datei z. B. in iCloud Drive, Google Drive oder auf deinem PC. Nach jedem Wochen-Check erinnert dich die App daran.</p>
     <div class="btns"><button class="btn small" data-a="backup">Sicherung speichern</button><label class="btn ghost small" for="imp">Sicherung laden</label><input id="imp" type="file" accept=".json,application/json" hidden></div></div>
   <div class="card"><h2>Auf anderes Gerät übertragen</h2><p class="note">Zeig den QR-Code an und scanne ihn mit der Kamera des anderen Geräts. Die Daten stecken im Code und laufen nicht über einen Server.</p>
     ${transfer?`<div class="qr">${transfer.svg||'<p class="note">Zu viele Daten für einen QR-Code. Nutze den Code unten.</p>'}</div><div class="mono" id="tcode">${transfer.code}</div><div class="btns"><button class="btn ghost small" data-a="copy">Code kopieren</button></div>`
@@ -1158,7 +1241,7 @@ document.addEventListener("click", e=>{
   if(a==="tour-next"){ tour.i=Math.min(tour.i+1,IN.TOUR.length-1); return showTourStep(); }
   if(a==="tour-back"){ tour.i=Math.max(tour.i-1,0); return showTourStep(); }
   if(a==="tour-end"){ endTour(); return go("heute"); }
-  if(a==="tour-finish"){ endTour(); if(v){ videoId=v; view="video"; flash=""; render(); return window.scrollTo(0,0); } return go("heute"); }
+  if(a==="tour-finish"){ endTour(); if(v){ view="heute"; navStack=[]; pushNav(); videoId=v; view="video"; flash=""; render(); return window.scrollTo(0,0); } return go("heute"); }
   if(a==="tour-start"){ return startTour(); }
   if(tour) return; // während der Tour reagiert nur die Tour
   if(a==="noop") return;
@@ -1173,6 +1256,15 @@ document.addEventListener("click", e=>{
   if(a==="ci-back"){ readNums(); ciStep=1; render(); return window.scrollTo(0,0); }
   if(a==="ci-more"){ readNums(); ciMore=!ciMore; return render(); }
   if(a==="set-theme"){ S.eveningMode=v; save(); return render(); }
+  if(a==="install"){ if(installEvt){ installEvt.prompt(); installEvt.userChoice.finally(()=>{ installEvt=null; render(); }); } return; }
+  if(a==="install-how"){ installSheet=true; haptic("tap"); return render(); }
+  if(a==="reminder"){ reminderSheet=true; flash=""; haptic("tap"); return render(); }
+  if(a==="setup-close"){ installSheet=false; reminderSheet=false; flash=""; return render(); }
+  if(a==="snooze"){ S[v]=Date.now(); save(); return render(); }
+  if(a==="rem-time"){ S.reminderTime=v||null; save(); scheduleReminder(); haptic("tap"); return render(); }
+  if(a==="rem-ics"){ S.reminderSetupAt=S.reminderSetupAt||new Date().toISOString(); save(); setTimeout(render,300); return; }
+  if(a==="notify") return enableNotify();
+  if(a==="set-text"){ S.textSize=v; save(); haptic("tap"); return render(); }
   if(a==="set-haptic"){ S.haptics=v==="on"; save(); if(S.haptics) haptic("tap"); return render(); }
   if(a==="go"){ if(el.dataset.root) navStack=[]; else if(v!==view) pushNav(); return go(v); }
   if(a==="back") return back(v);
@@ -1204,6 +1296,7 @@ document.addEventListener("click", e=>{
   if(a==="goto"){ let g=null; try{ g=JSON.parse(el.dataset.g); }catch(err){} if(el.dataset.n) markNotice(el.dataset.n); sheetOpen=false; lockFor=null; return goTo(g); }
   if(a==="lock"){ lockFor=v; haptic("tap"); return render(); }
   if(a==="todo-save") return todoSave(v);
+  if(a==="top-goal"){ S.topGoal=v; save(); haptic("success"); return render(); }
   if(a==="todo-chip"){ const i=document.getElementById("f-"+el.dataset.f); if(i){ i.value=v; } haptic("tap"); return; }
   if(a==="fort-tab"){ fortTab=v; haptic("tap"); return render(); }
   if(a==="erfolge"){ pushNav(); fortTab="erfolge"; erfolgeWeek=+v; go("fortschritt"); return; }
@@ -1214,7 +1307,7 @@ document.addEventListener("click", e=>{
   if(a==="mat"){ pushNav(); if(el.dataset.goLib){ view="bibliothek"; libTab="handouts"; wissen=null; } mat=v; render(); return window.scrollTo(0,0); }
   if(a==="mat-close"){ if(navStack.length) return back(); mat=null; render(); return window.scrollTo(0,0); }
   if(a==="weekcheck-done"){ const w=IK.currentWeek(S); IK.completeWeek(S); save(); view="heute"; haptic("strong");
-    flash=`Woche ${w.index} abgeschlossen. Mit deinem nächsten Check-in startet Woche ${w.index+1}.`; render(); return window.scrollTo(0,0); }
+    S.backupSnooze=null; flash=`Woche ${w.index} abgeschlossen. Mit deinem nächsten Check-in startet Woche ${w.index+1}.`; render(); return window.scrollTo(0,0); }
   if(a==="unseen"){ IK.markUnseen(S,v); save(); flash=""; return render(); }
   if(a==="activate"){ const r=IK.activateNow(S,v); save(); flash=r==="active"?"Ab deinem nächsten Check-in dabei.":r==="queued"?"Kommt mit deiner nächsten Tracker-Woche zuerst dran.":""; return render(); }
   if(a==="pause"){ IK.pauseBaustein(S,v); save(); return render(); }
@@ -1241,7 +1334,7 @@ document.addEventListener("click", e=>{
   if(a==="wipe-no"){ confirmWipe=false; return render(); }
   if(a==="wipe-yes"){ S=blank(); save(); confirmWipe=false; view="heute"; ob="welcome"; obD=null; flash=""; render(); return window.scrollTo(0,0); }
 });
-document.addEventListener("keydown", e=>{ if(tour&&e.key==="Escape"){ endTour(); return go("heute"); } if((sheetOpen||lockFor)&&e.key==="Escape"){ sheetOpen=false; lockFor=null; return render(); } if(e.key!=="Enter") return; const t=e.target; if(t&&t.id&&t.id.startsWith("f-")){ e.preventDefault(); if(view==="todo") todoSave(focusTodo); else saveField(t.id.slice(2)); } });
+document.addEventListener("keydown", e=>{ if(tour&&e.key==="Escape"){ endTour(); return go("heute"); } if((sheetOpen||lockFor||installSheet||reminderSheet)&&e.key==="Escape"){ sheetOpen=false; lockFor=null; installSheet=false; reminderSheet=false; return render(); } if(e.key!=="Enter") return; const t=e.target; if(t&&t.id&&t.id.startsWith("f-")){ e.preventDefault(); if(view==="todo") todoSave(focusTodo); else saveField(t.id.slice(2)); } });
 document.addEventListener("submit", e=>{ if(e.target.dataset.form==="code"){ e.preventDefault(); unlock(document.getElementById("code").value); } });
 document.addEventListener("change", e=>{
   if(e.target.matches("[data-kf]")){ kursFilter=e.target.value; haptic("tap"); return render(); }
@@ -1262,6 +1355,6 @@ async function fromLink(){
 }
 // Wer schon vor diesem Update dabei war, bekommt keine Flut alter Hinweise.
 if(migrateNotices && S.onboardingCompletedAt){ IK.unlockEvents(S,uctx()).forEach(x=>{ S.noticesSeen[x.id]="update"; }); save(); }
-fromLink().then(render);
+fromLink().then(()=>{ if(location.hash==="#checkin"&&S.onboardingCompletedAt){ history.replaceState(null,"",location.pathname); view="checkin"; draft=null; ciStep=1; } render(); scheduleReminder(); });
 if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 })();

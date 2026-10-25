@@ -114,3 +114,9 @@ Nach dem Onboarding begrüßt die App einmalig mit „Herzlich willkommen“ und
 - Nach dem 7. Check-in zeigt der Erfolgsmoment einen Wochenrückblick nach Bereich: erledigte To-dos mit ihrem Wert, Routinen-Tage und Bausteine, dazu das Warum. Danach weiter zum Wochen-Check.
 - Fortschritt hat zwei Ansichten: „Loop-Score“ und „Deine Erfolge“. Der Wochenfilter steht rechts neben der Überschrift. Ab Woche 2 führt die Zeile auf Heute dorthin.
 - Texte im Rückblick kommen aus `win` je To-do in inhalte.js. Für Woche 2 bis 8 braucht es je 7 To-dos vom Team.- Bibliothek: Detailseiten (Wissen, Mini-Karte, Handout, Goodie) folgen dem Aufbau der To-do-Seite: Kachel in Themenfarbe, Titel, getönte Karten mit weißem Knopf (`libHead()`, `printTile()` in app.js).
+
+## Schriften, Lesbarkeit, Erinnerung, Sicherung (Okt 2026)
+- Schriften laut CI-Leitfaden liegen in `fonts/` und funktionieren offline: Inter (Text und Überschriften), Instrument Serif kursiv (ein Akzent pro Screen, z. B. „Guten *Morgen*“), Geist Mono (Etiketten). Lizenz SIL OFL, Dateien beiliegend.
+- Mindestgrößen angehoben (Fließtext 16 px, kleinste Etiketten 12 px), dunkleres Grau. Unter Profil · Darstellung gibt es „Schriftgröße: Größer“ (vergrößert die ganze Oberfläche um 15 %).
+- Heute zeigt oben genau eine Einrichtungs-Karte: zuerst „Auf den Home-Bildschirm“ (Android/Chrome mit Installieren-Knopf, iPhone mit Anleitung), dann „Erinnerung einrichten“, nach jedem Wochen-Check „Sichere deine Woche“.
+- Erinnerung: Kalender-Termin (`reminders/abend-20|21|22.ics`, täglich, mit Alarm, funktioniert überall) und auf dem Home-Bildschirm zusätzlich Benachrichtigungen. Ohne eigenen Server kommen Benachrichtigungen auf dem iPhone nur, solange die App im Hintergrund läuft; der Kalender ist die verlässliche Variante. Der Service Worker kennt nur Uhrzeit und letzten Check-in-Tag (`ik-meta`).
