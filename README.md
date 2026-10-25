@@ -26,7 +26,7 @@ Rechenmodul testen (Node 18 oder neuer): `node --test`
 - [~] 5. Halbzeit (08) und Wochen-Check (09): schlanker Wochen-Check mit Abschluss ist da, ausführliche Auswertung und Halbzeit fehlen
 - [~] 6. Fortschritt (10): Loop-Score und Startpunkt → jetzt sind da, Wochenverlauf und Zusammenhänge fehlen
 - [~] 7. Bibliothek (11, 14): Wissen, Handout und Mini-Karten Woche 1, Goodie Woche 1 (Inhalt folgt), Abschluss (12) fehlt
-- [x] Woche 1: Starter-Liste, Freischalt-Hinweise, Mach-jetzt-Aufgaben, Basis-Routinen erst nach ihrem Video
+- [x] Woche 1: ein To-do pro Tag, Freischalt-Hinweise, Mach-jetzt-Aufgaben, Basis-Routinen erst nach ihrem Video
 
 ## Kursplan übernehmen
 
@@ -59,7 +59,7 @@ Alternativ eine Subdomain (z. B. `app.innen-kultur.de`) per CNAME auf GitHub Pag
 - `videos.js` – Videoliste mit allen 89 Videos aus dem Kursplan-Board (Woche 1–8). Wird automatisch erzeugt, nicht von Hand bearbeiten.
 - `data/kursplan.csv` – CSV-Export des Kursplan-Boards, Quelle für `videos.js`
 - `tools/kursplan-import.js` – erzeugt `videos.js` aus `data/kursplan.csv`
-- `inhalte.js` – Texte und Regeln für Starter-Liste, Freischalt-Hinweise, Handouts, Mini-Karten und Goodies. Texte hier sicher änderbar.
+- `inhalte.js` – Texte und Regeln für To-dos, Freischalt-Hinweise, Handouts, Mini-Karten und Goodies. Texte hier sicher änderbar.
 - `tests/` – Tests für das Rechenmodul
 - `manifest.webmanifest` – Name, Symbol, Farben für die Installation
 - `sw.js` – Offline-Betrieb
@@ -80,7 +80,7 @@ Nach dem Onboarding begrüßt die App einmalig mit „Herzlich willkommen“ und
 
 ## Woche 1: so funktioniert es
 
-- **Starter-Liste:** 10 einmalige To-dos auf Heute. 6 haken sich selbst ab (Videos, erster Check-in, Profilfelder, Wochen-Check), 4 hakt man selbst ab. Sie verschwindet nach dem Wochen-Check 1.
+- **To-dos:** ein kleines To-do pro Tracker-Tag (7 in Woche 1), je einem Bereich zugeordnet (Darm, Schlaf, Bewegung, Recap). Frei, sobald sein Tag erreicht und sein Video gesehen ist. Heute zeigt das To-do des Tages und „x von 7 diese Woche geschafft“. Weiterleitungen öffnen nur dieses eine To-do (Frage, Feld, Knopf). Die Liste hat einen Filter Alle/Offen/Erledigt. Logik: `trackerDay()` und `todoStatus()` in logic.js.
 - **Freischalt-Hinweise:** Jede Freischaltung bekommt eine Karte mit Wieso, Wann und Wo plus einem Knopf, der direkt dorthin führt. Sie erscheint sofort nach der auslösenden Aktion und auf Heute, bis sie bestätigt ist (höchstens zwei auf einmal, die neueste zuerst).
 - **Basis-Routinen:** „Bunt gegessen“ erscheint im Check-in nach Video 1.1, „Morgenlicht“ nach 1.2, „30 Min bewegt“ nach 1.3. Vorher führt ein Tipp darauf zum Video.
 - **Materialien:** Mini-Karte Pflanzen-Teller (nach 1.6), Mini-Karte Dein Morgen (nach 1.9), Handout Woche 1 (nach allen 5 Kernvideos), Goodie (nach Wochen-Check 1). Handout und Karten erzeugt die App selbst zum Drucken, mit den eigenen Angaben.
@@ -108,3 +108,9 @@ Nach dem Onboarding begrüßt die App einmalig mit „Herzlich willkommen“ und
 - Karten nach dem Video und Freischalt-Hinweise nutzen den Stil der Wissens-Kacheln (`tcard`).
 - Knöpfe: auf Standardflächen blau (Haupt) und grau (Neben), auf getönten Karten weiß und halbweiß, nie mit Rahmen. Farben über `--btn2-*` und `--tbtn-*` in index.html. Einzige Ausnahme: Rot beim endgültigen Löschen aller Daten.
 - Gesperrt-Blatt: Kopf im Stil der Bibliotheks-Kachel (Themenfarbe, Logo-Form, Kurzname), Schritt-Nummern in der Themenfarbe.
+
+
+## Kleine Erfolge
+- Nach dem 7. Check-in zeigt der Erfolgsmoment einen Wochenrückblick nach Bereich: erledigte To-dos mit ihrem Wert, Routinen-Tage und Bausteine, dazu das Warum. Danach weiter zum Wochen-Check.
+- Fortschritt hat zwei Ansichten: „Loop-Score“ und „Deine Erfolge“. Der Wochenfilter steht rechts neben der Überschrift. Ab Woche 2 führt die Zeile auf Heute dorthin.
+- Texte im Rückblick kommen aus `win` je To-do in inhalte.js. Für Woche 2 bis 8 braucht es je 7 To-dos vom Team.

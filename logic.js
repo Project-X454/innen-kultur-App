@@ -270,10 +270,23 @@ function todoDone(state, t){
   }
   return !!(state.todosDone||{})[t.id];
 }
-// Gesperrt = sein Video ist noch nicht gesehen. Dann zeigt die App nur den Titel und das Video, das es freischaltet.
-const todoUnlocked = (state, t) => !t.after || isSeen(state, t.after);
-const todoInputOpen = (state, t) => !!t.input && todoUnlocked(state, t) && (!t.afterInput || isSeen(state, t.afterInput));
-function todoStatus(state, todos){ return todos.map(t=>Object.assign({}, t, {done:todoDone(state,t), unlocked:todoUnlocked(state,t), inputOpen:todoInputOpen(state,t)})); }
+// Ein To-do pro Tracker-Tag. Frei, sobald sein Tag erreicht und sein Video gesehen ist.
+// Tracker-Tag: der heutige Check-in, sonst der nächste Tag der laufenden Woche (höchstens 7).
+function trackerDay(state, today){
+  const ci=checkinFor(state, today||localDay()); if(ci) return {week:(state.weeks.find(w=>w.id===ci.trackerWeekId)||{}).index||1, day:ci.dayIndex};
+  const w=currentWeek(state); if(!w) return {week:1, day:1};
+  if(w.status==="completed") return {week:w.index+1, day:1};
+  return {week:w.index, day:Math.min(DAYS_PER_WEEK, checkinsOf(state,w.id).length+1)};
+}
+const todoVideoOk = (state, t) => !t.after || isSeen(state, t.after);
+function todoStatus(state, todos, today){
+  const td=trackerDay(state, today);
+  return todos.map(t=>{ const done=todoDone(state,t), videoOk=todoVideoOk(state,t), wk=t.week||1;
+    const dayOk = td.week>wk || (td.week===wk && td.day>=(t.day||1));
+    const unlocked=videoOk&&dayOk;
+    const status = done ? "done" : !unlocked ? "locked" : (td.week===wk && td.day===(t.day||1)) ? "today" : "open";
+    return Object.assign({}, t, {done, videoOk, dayOk, unlocked, inputOpen:!!t.input&&unlocked, status, trackerDay:td.day}); });
+}
 
 // Materialien (Handout, Mini-Karte, Goodie): frei nach Video, nach allen Kernvideos einer Woche oder nach dem Wochen-Check.
 function materialUnlocked(state, m, videos){
@@ -308,6 +321,6 @@ const api = {WEIGHTS, UMSETZUNG, DAYS_PER_WEEK, PILLARS, BASIS, SCALES, GOALS, B
   completeWeek, saveCheckIn, MAX_NEW_PER_WEEK, SEEN_PERCENT, isSeen, markSeen, markUnseen, bausteinById, bausteinForVideo,
   unlockedBausteine, newWeekCandidates, startWeek, activationState, activateNow, pauseBaustein, resumeBaustein, activeBausteine,
   weekVideoProgress, nextVideo, currentCourseWeek,
-  basisUnlocked, WEEKCHECK_MIN_DAYS, WEEKCHECK_LATE_DAYS, weekCheckOpen, weekCompleted, todoDone, todoStatus, todoUnlocked, todoInputOpen, materialUnlocked, unlockEvents, newUnlocks};
+  basisUnlocked, WEEKCHECK_MIN_DAYS, WEEKCHECK_LATE_DAYS, weekCheckOpen, weekCompleted, todoDone, todoStatus, todoVideoOk, trackerDay, materialUnlocked, unlockEvents, newUnlocks};
 if(typeof module!=="undefined" && module.exports) module.exports = api; else root.IK = api;
 })(typeof globalThis!=="undefined" ? globalThis : this);

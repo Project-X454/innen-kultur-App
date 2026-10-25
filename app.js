@@ -45,10 +45,12 @@ const brandBar = extra => `<div class="brandbar"><span class="bmark">${mark(30)}
 function blank(){ return {v:2, code:"", product:null, demo:false, goals:[], reminderTime:"21:00",
   onboardingCompletedAt:null, consentHealthDataAt:null, baselines:[], weeks:[], checkins:[], videoProgress:{},
   pausedBausteinIds:[], queuedBausteinIds:[], lastBackup:null,
-  wakeTime:null, lightSpot:null, why:null, standTest:null, standTestAt:null, todosDone:{}, noticesSeen:{},
+  wakeTime:null, lightSpot:null, why:null, standTest:null, standTestAt:null, plantCount:null, todosDone:{}, noticesSeen:{},
   dayTicks:{}, focusSnooze:{}, eveningMode:"auto", haptics:true}; }
 function load(){
-  try{ const r=localStorage.getItem(KEY); if(r){ const o=JSON.parse(r); if(!("noticesSeen" in o)) migrateNotices=true; return Object.assign(blank(), o); } }catch(e){}
+  try{ const r=localStorage.getItem(KEY); if(r){ const o=JSON.parse(r); if(!("noticesSeen" in o)) migrateNotices=true;
+    const d=o.todosDone||{}; if(d.t6&&!d.d2) d.d2=d.t6; if(d.t7&&!d.d5) d.d5=d.t7; // alte Starter-Liste → Tages-To-dos
+    return Object.assign(blank(), o); } }catch(e){}
   // Aus der alten Tracker-Version wird nur die Freischaltung übernommen. Die alten Einträge bleiben unter dem alten Schlüssel liegen.
   const s=blank();
   try{ const o=JSON.parse(localStorage.getItem(OLD_KEY)||"null"); if(o&&o.plan&&!o.demo){ s.code=o.code||""; s.product=o.plan===8?"komplett":"basis"; } }catch(e){}
@@ -61,19 +63,19 @@ const latestBaseline = () => S.baselines.length ? S.baselines[S.baselines.length
 const weeksTotal = () => S.product==="komplett" ? 8 : 4;
 
 /* ---------- Zustand der Oberfläche ---------- */
-let view="heute", videoId=null, kursWeek=null, kursFilter="alle", ob="welcome", obD=null, draft=null, flash="", libTab="wissen", wissen=null, confirmWipe=false, transfer=null, rebase=false, pending=null, lastView=null, mat=null, focusTodo=null, freshIds=[], freshTodos=[];
+let view="heute", videoId=null, kursWeek=null, kursFilter="alle", todoFilter="alle", fortTab="loop", erfolgeWeek=null, ob="welcome", obD=null, draft=null, flash="", libTab="wissen", wissen=null, confirmWipe=false, transfer=null, rebase=false, pending=null, lastView=null, mat=null, focusTodo=null, freshIds=[], freshTodos=[];
 /* Verlauf: Wer weitergeleitet wird, kommt mit „Zurück“ dorthin, wo er herkam. Die Tab-Leiste beginnt neu. */
 let navStack=[];
-const snap=()=>({view,videoId,mat,wissen,libTab,kursWeek,kursFilter,y:window.scrollY||0});
+const snap=()=>({view,videoId,mat,wissen,libTab,kursWeek,kursFilter,focusTodo,fortTab,y:window.scrollY||0});
 function pushNav(){ const c=snap(), t=navStack[navStack.length-1];
-  if(t&&t.view===c.view&&t.videoId===c.videoId&&t.mat===c.mat&&t.wissen===c.wissen) return;
+  if(t&&t.view===c.view&&t.videoId===c.videoId&&t.mat===c.mat&&t.wissen===c.wissen&&t.focusTodo===c.focusTodo) return;
   navStack.push(c); if(navStack.length>30) navStack.shift();
   try{ history.pushState({ikNav:navStack.length},""); }catch(e){} }
 function restoreNav(fallback){
   const s=navStack.pop(); if(!s) return go(fallback||"heute");
   if(s.view==="checkin") return go("checkin");
-  view=s.view; videoId=s.videoId; mat=s.mat; wissen=s.wissen; libTab=s.libTab; kursWeek=s.kursWeek; kursFilter=s.kursFilter;
-  flash=""; confirmWipe=false; transfer=null; rebase=false; focusTodo=null; freshIds=[]; freshTodos=[]; sheetOpen=false; lockFor=null;
+  view=s.view; videoId=s.videoId; mat=s.mat; wissen=s.wissen; libTab=s.libTab; kursWeek=s.kursWeek; kursFilter=s.kursFilter; fortTab=s.fortTab||fortTab;
+  flash=""; confirmWipe=false; transfer=null; rebase=false; focusTodo=s.focusTodo||null; freshIds=[]; freshTodos=[]; sheetOpen=false; lockFor=null;
   render(); window.scrollTo(0,s.y); }
 function back(fallback){
   if(navStack.length && history.state && history.state.ikNav) return history.back(); // löst popstate aus
@@ -90,7 +92,7 @@ function render(){
   else if(view==="checkin"){ body=vCheckin(); full=true; tabs=false; }
   else if(view==="geschafft"){ body=vGeschafft(); full=true; tabs=false; }
   else if(view==='video'){ body=vVideo(); tabs=false; }
-  else body={heute:vHeute, kurs:vKurs, fortschritt:vFortschritt, bibliothek:vBibliothek, profil:vProfil, starter:vStarter, wochencheck:vWochencheck}[view]();
+  else body={heute:vHeute, kurs:vKurs, fortschritt:vFortschritt, bibliothek:vBibliothek, profil:vProfil, starter:vTodos, todo:vTodo, wochencheck:vWochencheck}[view]();
   const key=(S.onboardingCompletedAt?view:"ob-"+ob)+(rebase?"-rb":"");
   const side=tabs||view==="video"&&!!S.onboardingCompletedAt&&!rebase; // Video: am Desktop mit Seitenleiste
   app.className=(side?"nav ":"")+"v-"+(S.onboardingCompletedAt?(rebase?"rebase":view):"ob-"+ob);
@@ -104,7 +106,7 @@ function render(){
 const lay=(a,b,cls)=>`<div class="lay${cls?" "+cls:""}"><div class="col">${a}</div><div class="col">${b}</div></div>`;
 function sideBar(){
   const t=[["heute","Heute"],["kurs","Kurs"],["fortschritt","Fortschritt"],["bibliothek","Bibliothek"]];
-  const cur=view==="video"?"kurs":view==="starter"||view==="wochencheck"||view==="geschafft"?"heute":view;
+  const cur=view==="video"?"kurs":view==="starter"||view==="todo"||view==="wochencheck"||view==="geschafft"?"heute":view;
   const item=([k,l])=>`<button data-a="go" data-v="${k}" data-root="1" ${cur===k?'aria-current="page"':""}>${ICON[k]}<span>${l}</span></button>`;
   return `<aside class="side" aria-label="App-Navigation"><div class="brand">${logo("#FFFFFF")}innen kultur</div>
   <button class="btn" data-a="go" data-v="checkin">${ICON.checkin}Abend-Check-in</button>
@@ -115,7 +117,7 @@ function tabBar(){
   const t=[["heute","Heute"],["kurs","Kurs"],["checkin","Check-in"],["fortschritt","Fortschritt"],["bibliothek","Bibliothek"]];
   return `<nav class="tabs" aria-label="App-Navigation"><div class="tabs-in">${t.map(([k,l])=>k==="checkin"
     ? `<button class="ci" data-a="go" data-v="checkin" aria-label="Abend-Check-in"><span>${logoSVG(50,"b")}</span></button>`
-    : `<button data-a="go" data-v="${k}" data-root="1" ${(view==="starter"||view==="wochencheck"?"heute":view)===k?'aria-current="page"':""}>${ICON[k]}${l}</button>`).join("")}</div></nav>`;
+    : `<button data-a="go" data-v="${k}" data-root="1" ${(view==="starter"||view==="todo"||view==="wochencheck"?"heute":view)===k?'aria-current="page"':""}>${ICON[k]}${l}</button>`).join("")}</div></nav>`;
 }
 function scale(name,label,val,dot,caps){
   let h=`<div class="scale"><span>${dot?`<span class="dot" style="--c:${dot}"></span>`:""}${label}</span><div class="seg" role="group" aria-label="${esc(label)}">`;
@@ -302,11 +304,22 @@ function learnCard(nx){
   return `<button class="learn" data-a="video" data-v="${nx.id}" style="${pvars(p)}"><span class="thumb"><span class="nr">${nx.id}</span><span class="pl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4 20 12 7 20Z"/></svg></span></span>
     <span class="tx"><span class="eyebrow" style="color:${PT[p]}">Weiterlernen · ${pillarLabel(nx)}</span><b>${esc(nx.title)}</b><span class="note">${nx.durationMin} Min.${b?` · schaltet „${esc(b.label)}“ frei`:""}</span></span></button>`;
 }
+// Heute: das To-do des Tages und wie viele kleine Schritte diese Woche geschafft sind
 function starterRow(){
-  if(!starterActive()) return "";
-  const st=IK.todoStatus(S,IN.TODOS), d=st.filter(t=>t.done).length, nxt=st.find(t=>!t.done&&t.unlocked)||st.find(t=>!t.done), C=2*Math.PI*16;
-  return `<button class="srow starter-card" data-a="go" data-v="starter"><svg class="mring" width="40" height="40" viewBox="0 0 40 40" role="img" aria-label="${d} von ${st.length} erledigt"><circle cx="20" cy="20" r="16" fill="none" stroke="var(--line)" stroke-width="5"/><circle cx="20" cy="20" r="16" fill="none" stroke="var(--recap)" stroke-width="5" stroke-linecap="round" stroke-dasharray="${C*d/st.length} ${C}" transform="rotate(-90 20 20)"/></svg>
-    <span><b>Starter-Liste · ${d} von ${st.length}</b><span class="note">${nxt?`Als Nächstes: ${esc(nxt.title)}${nxt.unlocked?"":` (nach Video ${nxt.after})`}`:"Alles erledigt"}</span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>`;
+  if(starterActive()){
+    const st=weekTodos(1), d=st.filter(t=>t.done).length;
+    const cur=st.find(t=>t.status==="today")||st.find(t=>t.status==="open"), vidLock=st.find(t=>t.status==="locked"&&t.dayOk), nxt=st.find(t=>t.status==="locked"&&!t.dayOk);
+    const p=cur?cur.pillar:vidLock?vidLock.pillar:"darm", ic=cur||vidLock?ICON[p]:ICON.checkin;
+    const title = cur ? `${cur.status==="today"?"Heute":"Noch offen"}: ${esc(cur.title)}` : vidLock ? `Heute: ${esc(vidLock.title)}` : d===st.length ? "Alle To-dos dieser Woche geschafft" : "Dein To-do für heute ist erledigt";
+    const sub = cur ? `${AREA[cur.pillar]} · ${esc(cur.min)}` : vidLock ? `Frei mit Video ${vidLock.after}` : nxt ? `Morgen: ${esc(nxt.short)}` : "Dein Rückblick kommt nach dem 7. Check-in.";
+    const attr = cur ? gAttr({kind:"todo", id:cur.id}) : vidLock ? `data-a="video" data-v="${vidLock.after}"` : `data-a="go" data-v="starter"`;
+    const dots=st.map((t,k)=>`<i class="${t.done?"on":""}" style="${pvars(t.pillar)};animation-delay:${k*70}ms"></i>`).join("");
+    return `<button class="srow starter-card tday" ${attr} style="${pvars(p)}"><span class="tic">${ic}</span><span><b>${title}</b><span class="note">${sub}</span>
+      <span class="tprog"><span class="tdots" aria-hidden="true">${dots}</span><span class="tcount">${d} von ${st.length} diese Woche geschafft</span></span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>`;
+  }
+  const cw=IK.currentWeek(S); if(!cw) return "";
+  const W=weekWins(cw.index===undefined?1:cw.index); if(!W.total) return "";
+  return `<button class="srow starter-card tday" data-a="erfolge" data-v="${W.index}" style="${pvars("recap")}"><span class="tic">${ICON.fortschritt}</span><span><b>Deine Erfolge · Woche ${W.index}</b><span class="note">${W.total} kleine Erfolge bisher, alle im Fortschritt</span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>`;
 }
 function weekCard(i,cw,vp){
   const w=i.w, cis=i.cis||[], act=IK.activeBausteine(w);
@@ -428,6 +441,12 @@ function vGeschafft(){
   if(wc) rows.push(["Wochen-Check","<b>jetzt offen</b>"]);
   if(IK.basisUnlocked(S,"morgenlicht")) rows.push(["Morgen früh",`<b>Morgenlicht${S.wakeTime?" · "+esc(S.wakeTime):""}</b>`]);
   if(nx) rows.push(["Nächstes Video",`<b>${nx.id} ${esc(nx.title.split(":")[0])}</b>`]);
+  if(wc&&w&&!L.updated){ const W=weekWins(w.index);
+    return `<div class="done bilanz"><span class="bmark" style="justify-content:center">${mark(44)}</span>
+      <h1>Woche ${w.index} geschafft</h1><p class="lead">${days} Abende${W.steps?`, ${W.steps} kleine Schritte`:""}. Das hast du diese Woche alles gemacht:</p>
+      <div class="wins-list">${winsCards(W)||`<p class="note">Deine Woche steht. Ab jetzt sammeln sich hier deine Erfolge.</p>`}</div>
+      <button class="btn" data-a="go" data-v="wochencheck" style="min-height:58px;border-radius:18px;font-size:17px">Weiter zum Wochen-Check</button>
+      <button class="btn link small" data-a="erfolge" data-v="${w.index}">Alle Erfolge im Fortschritt</button></div>`; }
   return `<div class="done"><svg class="big" viewBox="0 0 132 132" role="img" aria-label="Tag ${L.day} gespeichert"><circle cx="66" cy="66" r="58" fill="none" stroke="var(--line)" stroke-width="8"/>
     <circle class="arc" cx="66" cy="66" r="58" fill="none" stroke="var(--coral)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${C*days/7} ${C}" style="--len:${C*days/7}" transform="rotate(-90 66 66)"/>
     <g class="mk"><path d="${BLOBPATH}" transform="translate(23 23) scale(.86)" style="fill:var(--coral)"/><path d="M50 67 62 78 84 55" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></g></svg>
@@ -464,7 +483,12 @@ function vFortschritt(){
   const weeks=S.weeks.map(w=>{ const c=IK.checkinsOf(S,w.id), act=IK.activeBausteine(w); return {w, c, ls:IK.loopScore(c,act), st:IK.weekStats(c,act)}; });
   const cur=weeks[weeks.length-1];
   const why=S.why?`<div class="card soft why-card"><span class="eyebrow" style="color:var(--recap-text)">Dein Warum</span><b>${esc(S.why)}</b></div>`:"";
-  const head=`${brandBar()}<div class="top"><div class="t"><small>Wie rund dein Loop läuft</small><b>Fortschritt</b></div></div>`;
+  const idx=S.weeks.map(x=>x.index); if(!idx.length) idx.push(1);
+  if(erfolgeWeek==null||!idx.includes(erfolgeWeek)) erfolgeWeek=idx[idx.length-1];
+  const wsel = fortTab==="erfolge" ? `<label class="vsel"><select data-ew aria-label="Woche wählen">${idx.slice().reverse().map(n=>`<option value="${n}"${n===erfolgeWeek?" selected":""}>Woche ${n}</option>`).join("")}</select><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></label>` : "";
+  const seg=`<div class="segc seg2" role="group" aria-label="Ansicht"><button data-a="fort-tab" data-v="loop" aria-pressed="${fortTab==="loop"}">Loop-Score</button><button data-a="fort-tab" data-v="erfolge" aria-pressed="${fortTab==="erfolge"}">Deine Erfolge</button></div>`;
+  const head=`${brandBar()}<div class="top"><div class="t"><small>${fortTab==="erfolge"?"Kleine Schritte, große Wirkung":"Wie rund dein Loop läuft"}</small><b>Fortschritt</b></div>${wsel}</div>${seg}`;
+  if(fortTab==="erfolge") return head+vErfolge(erfolgeWeek);
   if(!cur||cur.ls.score==null) return head+why+lay(`<div class="card"><h2>Noch kein Loop-Score</h2><p class="note">Er erscheint nach deinem ersten Check-in mit den vier Skalen und wird mit jedem Tag genauer. So sieht er nach einer Woche aus:</p><button class="btn small" data-a="go" data-v="checkin">Zum Check-in</button></div>`,
     `<div class="card example"><span class="eyebrow" style="color:var(--recap-text)">Beispiel nach einer Woche</span>${loopExample(true)}</div>`);
   const s=cur.ls, running=cur.w.status==="running", prev=weeks.length>1?weeks[weeks.length-2].ls.score:null, trend=prev!=null?s.score-prev:null, C=2*Math.PI*56;
@@ -483,6 +507,17 @@ function vFortschritt(){
     <table><tbody>${cmp.map(r=>`<tr><td>${r.label}</td><td>${r.text?esc(r.text):r.start+" → "+fmt1(r.now)}</td><td style="font-weight:700;width:56px;color:${r.diff>0?"var(--darm-text)":"inherit"}">${r.text?"":fmtSigned(r.diff)}</td></tr>`).join("")}</tbody></table>
     <p class="note">Startwerte 1 bis 5 aus deinem Onboarding. „Entspannt sein“ ist 6 minus dein Ø Stress.</p>`
     :`<p class="note">Erscheint, sobald deine erste Tracker-Woche abgeschlossen ist.</p>`}</div>`);
+}
+
+function vErfolge(n){
+  const W=weekWins(n), cw=IK.currentWeek(S), running=cw&&cw.index===n&&cw.status!=="completed";
+  const tile=(k,p,l)=>`<div class="wtile" style="${pvars(p)}"><span class="ic">${ICON[p]}</span><b>${W.days[k]||0}<small> von ${W.N}</small></b><span>${l}</span></div>`;
+  const rows=[]; ["darm","schlaf","beweg","recap"].forEach(p=>W.A[p].forEach(x=>rows.push([p,x])));
+  const list=rows.length?`<div class="card wlist">${rows.map(([p,x])=>`<div class="wrow" style="${pvars(p)}"><span class="ic">${ICON[p]}</span><span>${x}</span></div>`).join("")}</div>`:"";
+  const why=W.why?tcard("recap",`<span class="k">Dein Warum</span><b class="tt">„${esc(W.why)}“</b>`):"";
+  const empty=!W.N&&!W.steps?`<div class="card"><h2>Noch keine Erfolge in Woche ${n}</h2><p class="note">Jeder Check-in und jedes To-do landet hier. Am Ende der Woche siehst du alles auf einen Blick.</p></div>`:"";
+  const run=running&&W.stepsTotal&&starterActive()?`<div class="card soft wrun"><span><b>Woche ${n} läuft</b><span class="note">${W.steps} von ${W.stepsTotal} To-dos erledigt · ${W.N} von 7 Tagen eingetragen</span></span><button class="btn small" data-a="go" data-v="starter">Ansehen</button></div>`:"";
+  return empty || lay(`${W.N?`<div class="wtiles">${tile("bunt","darm","Tage bunt gegessen")}${tile("morgenlicht","schlaf","Tage Morgenlicht")}${tile("bewegt30","beweg","Tage 30 Min bewegt")}</div>`:""}${list}`, `${why}${run}`);
 }
 
 /* ---------- Kurs (Screen 05) und Video (Screen 06) ---------- */
@@ -543,8 +578,8 @@ function vVideo(){
   `${seen?"":`<div class="card"><button class="btn" data-a="seen" data-v="${v.id}">Als gesehen markieren</button><p class="note">Mit dem Player zählt ein Video später automatisch ab 90 Prozent als gesehen.</p></div>`}
   ${seen&&v.machJetzt?tcard(pillarOf(v),`<span class="k">Mach jetzt · 30 Sekunden</span><b class="tt">${esc(v.machJetzt)}</b>${IN.MACH_JETZT_GO[v.id]?`<div class="btns"><button class="btn small" ${gAttr(IN.MACH_JETZT_GO[v.id])}>${esc(IN.MACH_JETZT_GO[v.id].label)}</button></div>`:""}`):""}
   ${freshIds.length?openNotices(e=>freshIds.includes(e.id)).map(noticeCard).join(""):""}
-  ${freshTodos.length?tcard("recap",`<span class="k">Neu in deiner Starter-Liste</span>
-    ${freshTodos.map(todoById).map(t=>`<div class="trow"><span><b>${esc(t.title)}</b><small>${esc(t.when)}</small></span><button class="btn small" ${gAttr({kind:"todo", id:t.id})}>${t.input?"Eintragen":"Ansehen"}</button></div>`).join("")}`):""}
+  ${freshTodos.length?tcard("recap",`<span class="k">Neu in deinen To-dos</span>
+    ${freshTodos.map(todoById).map(t=>`<div class="trow"><span><b>${esc(t.title)}</b><small>${AREA[t.pillar]} · Tag ${t.day}</small></span><button class="btn small" ${gAttr({kind:"todo", id:t.id})}>${t.input?"Eintragen":"Ansehen"}</button></div>`).join("")}`):""}
   ${bCard}
   ${next?`<button class="btn ghost" data-a="video" data-v="${next.id}" style="justify-content:space-between"><span>Nächstes: ${esc(next.title)}</span><span aria-hidden="true">›</span></button>`:""}
   ${seen?`<button class="btn link small" data-a="unseen" data-v="${v.id}" style="align-self:center">Doch nicht gesehen</button>`:""}`,"side-r");
@@ -605,9 +640,7 @@ function goTo(g){
   if(g.kind==="weekcheck"){ view="wochencheck"; render(); return window.scrollTo(0,0); }
   if(g.kind==="wissen"){ view="bibliothek"; libTab="wissen"; wissen=g.id; mat=null; render(); return window.scrollTo(0,0); }
   if(g.kind==="material"){ const m=matById(g.id); view="bibliothek"; libTab=m?m.tab:"handouts"; mat=g.id; wissen=null; render(); return window.scrollTo(0,0); }
-  if(g.kind==="todo"){ view="starter"; focusTodo=g.id; render();
-    const el=document.getElementById("todo-"+g.id); if(el){ el.scrollIntoView({block:"center"}); const i=el.querySelector("input"); if(i) i.focus({preventScroll:true}); }
-    return; }
+  if(g.kind==="todo"){ view="todo"; focusTodo=g.id; flash=""; render(); return window.scrollTo(0,0); }
   if(g.kind==="activate"){ const r=IK.activateNow(S,g.id); save(); flash=r==="active"?"Ab deinem nächsten Check-in dabei.":r==="queued"?"Kommt mit deiner nächsten Tracker-Woche zuerst dran.":""; return render(); }
 }
 
@@ -616,11 +649,20 @@ let lockFor=null; // "mat:<id>" oder "ho:<woche>"
 function lockItem(key){
   const [t,id]=String(key).split(":");
   if(t==="mat") return matById(id);
+  if(t==="todo"){ const x=weekTodos(1).find(y=>y.id===id); return x?Object.assign({}, x, {kind:"To-do", sub:x.title, todo:true}):null; }
   const w=+id; return hoOf(w) || {title:`Handout Woche ${w}`, kind:"Handout", week:w, unlock:{kernOfWeek:w}};
 }
 function lockInfo(it){
   const u=it.unlock||{}, steps=[]; let why="", now=null, doneMsg="";
   const todayDone=!!IK.checkinFor(S,IK.localDay()), hour=new Date().getHours();
+  if(it.todo){ const td=IK.trackerDay(S);
+    why="Jeden Tag kommt ein kleines To-do dazu, passend zu dem Video, das es erklärt.";
+    steps.push({t:`Tag ${it.day} erreichen`, sub:it.dayOk?"Erreicht":`Heute ist Tag ${td.day}. Jeder Abend-Check-in bringt dich einen Tag weiter.`, done:it.dayOk});
+    if(it.after){ const v=VID.VIDEOS.find(x=>x.id===it.after); steps.push({t:`Video ${it.after} ansehen`, sub:v?`${v.title} · ${v.durationMin} Min.`:"", done:it.videoOk}); }
+    if(!it.videoOk) now={q:`Das Video kannst du jetzt schon ansehen. Willst du Video ${it.after} starten?`, label:`Video ${it.after} ansehen`, g:{kind:"video", id:it.after}};
+    else if(!todayDone) now={q:`Mit deinem heutigen Check-in geht es weiter zu Tag ${Math.min(7,td.day+1)}. Willst du ihn jetzt machen?`, hint:hour<18?"Am besten abends, wenn du den Tag überblickst.":"", label:"Check-in jetzt machen", g:{kind:"checkin"}};
+    else doneMsg=`Für heute ist alles erledigt. Dieses To-do ist ab Tag ${it.day} dran.`;
+    return {why, steps, now, doneMsg}; }
   if(u.video){ const v=VID.VIDEOS.find(x=>x.id===u.video);
     why=`Das gehört zu Video ${u.video} und wird frei, sobald du es gesehen hast.`;
     steps.push({t:`Video ${u.video} ansehen`, sub:v?`${v.title} · ${v.durationMin} Min.`:"", done:IK.isSeen(S,u.video)});
@@ -643,11 +685,12 @@ function lockInfo(it){
 }
 function lockHTML(){
   const it=lockItem(lockFor); if(!it){ lockFor=null; return ""; }
+  const wk = it.todo ? `Tag ${it.day}` : `Woche ${it.week}`;
   const L=lockInfo(it), p=it.pillar||"recap", openN=L.steps.filter(x=>!x.done).length;
   const li=(x,i)=>`<li class="${x.done?"on":""}"><span class="n" aria-hidden="true">${x.done?CHECK:i+1}</span><span><b>${esc(x.t)}</b>${x.sub?`<small>${esc(x.sub)}</small>`:""}</span><span class="sr">${x.done?"erledigt":"offen"}</span></li>`;
   return `<div class="sheet-bg" data-a="lock-close"><section class="sheet lock" role="dialog" aria-modal="true" aria-labelledby="lk-t" data-a="noop" style="${pvars(p)}"><span class="grab" aria-hidden="true"></span>
     <div class="sh"><span class="lk-pill">${LOCK}Noch gesperrt</span><button class="iconbtn" data-a="lock-close" aria-label="Schließen" style="background:var(--btn2-bg);box-shadow:none">${ICON.close}</button></div>
-    <div class="lk-cover"><svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg><span class="k">${esc(it.kind)} · Woche ${it.week}</span><b class="s">${esc(it.short||it.title)}</b><span class="lk" aria-hidden="true">${LOCK}</span></div>
+    <div class="lk-cover"><svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg><span class="k">${esc(it.kind)} · ${wk}</span><b class="s">${esc(it.short||it.title)}</b><span class="lk" aria-hidden="true">${LOCK}</span></div>
     <h2 id="lk-t">${esc(it.sub||it.title.replace(/^[^:]+: /,""))}</h2>
     <p class="lwhy">${esc(L.why)}</p>
     <div><b class="lhd">${L.steps.length>1?`So schaltest du es frei · ${openN} von ${L.steps.length} offen`:"So schaltest du es frei"}</b><ol class="lsteps">${L.steps.map(li).join("")}</ol></div>
@@ -655,44 +698,81 @@ function lockHTML(){
       : `<div class="ldone">${mark(40)}<p>${esc(L.doneMsg)}</p></div><button class="btn ghost" data-a="lock-close">Verstanden</button>`}</section></div>`;
 }
 
-/* ---------- Starter-Liste Woche 1 ---------- */
+/* ---------- To-dos: eins pro Tracker-Tag (Woche 1) ---------- */
+const AREA={darm:"Ernährung & Darm", schlaf:"Schlaf", beweg:"Bewegung", recap:"Recap"};
 const starterActive = () => !IK.weekCompleted(S,1);
-function todoGoBtn(t, onList){
-  if(t.done) return "";
-  if(!t.go) return onList ? "" : `<button class="btn small ghost" ${gAttr({kind:"todo", id:t.id})}>${t.input?"Eintragen":"Ansehen"}</button>`;
-  const g=t.go, label=g.label || (g.kind==="video" ? (()=>{ const ids=g.ids, open=ids.find(id=>!IK.isSeen(S,id)); return open?`Video ${open} öffnen`:g.then==="checkin"?"Zum Check-in":`Video ${ids[0]} öffnen`; })()
-    : g.kind==="weekcheck" ? (IK.weekCheckOpen(S)?"Wochen-Check öffnen":"") : "Hin");
-  return label?`<button class="btn small ghost" ${gAttr(g)}>${esc(label)}</button>`:"";
-}
-function starterCard(){
-  if(!starterActive()) return "";
-  const st=IK.todoStatus(S,IN.TODOS), done=st.filter(t=>t.done).length, open=st.filter(t=>!t.done&&t.unlocked).concat(st.filter(t=>!t.done&&!t.unlocked)).slice(0,2);
-  return `<div class="card starter-card"><div class="row"><b>Deine Starter-Liste</b><b class="num" style="font-size:14px">${done} von ${st.length}</b></div>
-    <div class="bar" style="--c:var(--recap)"><i style="width:${Math.round(done/st.length*100)}%"></i></div>
-    ${open.map(t=>`<div class="todo-mini${t.unlocked?"":" locked"}"><span><b>${esc(t.title)}</b><span class="note">${t.unlocked?esc(t.when):`frei mit Video ${t.after}`}</span></span>${t.unlocked?todoGoBtn(t):`<button class="btn small ghost" data-a="video" data-v="${t.after}">Video ${t.after}</button>`}</div>`).join("")}
-    <button class="btn link small" data-a="go" data-v="starter" style="align-self:flex-start;min-height:0;padding:0">Alle To-dos ansehen</button></div>`;
-}
+const weekTodos = w => IK.todoStatus(S,IN.TODOS).filter(t=>(t.week||1)===w);
+const UNIT = {wakeTime:" Uhr", standTest:" Wiederholungen", plantCount:" Pflanzen"};
+const todoResult = t => t.input&&S[t.input.field]!=null&&String(S[t.input.field]).trim()!=="" ? esc(String(S[t.input.field]))+(UNIT[t.input.field]||"") : "";
 function fieldInput(inp){
   const v=S[inp.field]; const val=v==null?"":String(v);
   return `<div class="fin"><label for="f-${inp.field}" class="note" style="font-weight:600">${esc(inp.label)}</label>
     <div class="fin-row"><input id="f-${inp.field}" type="${inp.type==="number"?"text":inp.type}" ${inp.type==="number"?'inputmode="numeric"':""} value="${esc(val)}" placeholder="${esc(inp.placeholder||"")}" maxlength="140">
     <button class="btn small" data-a="field" data-v="${inp.field}">Speichern</button></div></div>`;
 }
-function vStarter(){
-  const st=IK.todoStatus(S,IN.TODOS), done=st.filter(t=>t.done).length;
-  const item=t=>{ const manual=!t.auto;
-    if(!t.unlocked) return `<div class="card todo locked" id="todo-${t.id}"><div class="todo-hd"><span class="tick lock" aria-hidden="true"></span><span><b>${esc(t.title)}</b><span class="note">Wird frei mit Video ${t.after} · ${esc(t.when)}</span></span></div>
-      <div class="btns"><button class="btn small ghost" data-a="video" data-v="${t.after}">Video ${t.after} öffnen</button></div></div>`;
-    const mark = manual ? `<button class="tick" data-a="todo-tick" data-v="${t.id}" aria-pressed="${t.done}" aria-label="${esc(t.title)} ${t.done?"erledigt":"abhaken"}">${t.done?CHECK:""}</button>`
-      : `<span class="tick auto${t.done?" on":""}" aria-hidden="true">${t.done?CHECK:""}</span>`;
-    return `<div class="card todo${t.done?" done":""}${focusTodo===t.id?" focus":""}" id="todo-${t.id}">
-      <div class="todo-hd">${mark}<span><b>${esc(t.title)}</b><span class="note">${esc(t.when)}${t.min?" · "+esc(t.min):""}${manual?" · selbst abhaken":t.done?" · erledigt":" · hakt sich selbst ab"}</span></span></div>
-      ${t.done?"":`<p class="note why"><b>Wieso:</b> ${esc(t.why)}</p>${t.how?`<p class="note why">${esc(t.how)}</p>`:""}`}
-      ${t.inputOpen&&(!t.done||t.input.field!=="why")?fieldInput(t.input):t.input&&!t.inputOpen&&!t.done?`<p class="note">Das Eingabefeld erscheint nach Video ${t.afterInput}.</p>`:""}
-      ${t.done?"":`<div class="btns">${todoGoBtn(t,true)}</div>`}</div>`; };
-  return `<div class="top"><div class="t"><small>Woche 1 · ${done} von ${st.length} erledigt</small><b>Deine Starter-Liste</b></div><button class="iconbtn" data-a="back" data-v="heute" aria-label="Schließen">${ICON.close}</button></div>
-  <p class="note" style="padding:0 4px">Einmalige Aufgaben für deinen Start. Gesperrte To-dos werden mit ihrem Video frei. „Tag“ meint deinen Tracker-Tag. Die Liste verschwindet nach deinem ersten Wochen-Check.</p>
-  <div class="masonry">${st.map(item).join("")}</div>`;
+function vTodos(){
+  const st=weekTodos(1), d=st.filter(t=>t.done).length;
+  const cur=st.find(t=>t.status==="today")||st.find(t=>t.status==="open");
+  const n={alle:st.length, offen:st.length-d, erledigt:d}, L={alle:"Alle", offen:"Offen", erledigt:"Erledigt"};
+  const shown=st.filter(t=>todoFilter==="alle"||(todoFilter==="erledigt")===t.done);
+  const sel=`<label class="vsel"><select data-tf aria-label="To-dos filtern">${Object.keys(L).map(k=>`<option value="${k}"${todoFilter===k?" selected":""}>${L[k]} · ${n[k]}</option>`).join("")}</select><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></label>`;
+  const row=t=>{ const sub = t.done ? (todoResult(t)||"Erledigt") : t.status==="today" ? `Heute · ${esc(t.min)}` : t.status==="open" ? `Nachholen · ${esc(t.min)}` : !t.dayOk ? `Ab Tag ${t.day}` : `Frei mit Video ${t.after}`;
+    const mk = t.done ? `<span class="st on">${CHECK}</span>` : t.status==="locked" ? `<span class="st lk">${LOCK}</span>` : `<span class="st nx">▶</span>`;
+    const attr = t.status==="locked" ? `data-a="lock" data-v="todo:${t.id}"` : gAttr({kind:"todo", id:t.id});
+    return `<button class="tdrow${t.status==="locked"?" locked":""}${t.done?" is-done":""}" ${attr} style="${pvars(t.pillar)}"><span class="dn"><small>Tag</small><b>${t.day}</b></span><span class="tx"><b>${esc(t.title)}</b><span class="note">${AREA[t.pillar]} · ${sub}</span></span>${mk}<span class="sr">${t.done?"erledigt":t.status==="locked"?"gesperrt":"offen"}</span></button>`; };
+  const hero = !starterActive() ? `<div class="card soft"><b>Woche 1 ist abgeschlossen</b><p class="note" style="color:var(--ink)">Alles, was du geschafft hast, findest du im Fortschritt.</p><button class="btn small" data-a="erfolge" data-v="1">Deine Erfolge ansehen</button></div>`
+    : cur ? tcard(cur.pillar, `<span class="k">${cur.status==="today"?"Heute":"Noch offen"} · Tag ${cur.day} · ${AREA[cur.pillar]} · ${esc(cur.min)}</span><b class="tt">${esc(cur.title)}</b><p>${esc(cur.why)}</p><div class="btns"><button class="btn small" ${gAttr({kind:"todo", id:cur.id})}>${cur.input?"Jetzt eintragen":"Ansehen"}</button></div>`)
+    : `<div class="ldone">${mark(36)}<p>${d===st.length?"Alle 7 To-dos geschafft. Dein Rückblick kommt nach dem 7. Check-in.":"Für heute ist alles erledigt. Morgen wartet das nächste To-do."}</p></div>`;
+  return `<div class="tdwrap"><div class="top"><div class="t"><small>Woche 1 · ${d} von ${st.length} erledigt</small><b>Deine To-dos</b></div><button class="iconbtn" data-a="back" data-v="heute" aria-label="Schließen">${ICON.close}</button></div>
+  <div class="tseg" role="img" aria-label="${d} von ${st.length} erledigt">${st.map(t=>`<i class="${t.done?"on":t.status==="today"?"now":""}" style="${pvars(t.pillar)}"></i>`).join("")}</div>
+  ${hero}<div class="tdhd"><b>Diese Woche</b>${sel}</div>
+  <div class="card tdlist">${shown.map(row).join("")||`<p class="note" style="padding:12px 0">${todoFilter==="erledigt"?"Noch nichts erledigt. Das erste To-do wartet schon.":"Alles erledigt."}</p>`}</div></div>`;
+}
+// Ein To-do allein: eine Frage, ein Feld, ein Knopf. Feld steht oben, damit es über der Tastatur bleibt.
+function vTodo(){
+  const st=weekTodos(1), t=st.find(x=>x.id===focusTodo);
+  if(!t){ view="starter"; return vTodos(); }
+  if(!t.unlocked&&!t.done){ view="starter"; lockFor="todo:"+t.id; return vTodos(); }
+  const inp=t.input, val=inp&&S[inp.field]!=null?String(S[inp.field]):"";
+  const later=st.filter(x=>!x.done&&x.id!==t.id), nx=later[0];
+  const nextMsg = !nx ? "Alle To-dos dieser Woche sind geschafft." : nx.status==="locked"&&!nx.dayOk ? `Morgen wartet: ${esc(nx.short)}.` : `Als Nächstes: ${esc(nx.short)}.`;
+  const field = inp ? `<div class="card tfield"><label for="f-${inp.field}">${esc(inp.label)}</label><input id="f-${inp.field}" type="${inp.type==="number"?"text":inp.type}" ${inp.type==="number"?'inputmode="numeric"':""} value="${esc(val)}" placeholder="${esc(inp.placeholder||"")}" maxlength="140" autocomplete="off">
+    ${inp.chips?`<div class="tchips">${inp.chips.map(c=>`<button class="tchip" data-a="todo-chip" data-v="${esc(c)}" data-f="${inp.field}">${esc(c)}</button>`).join("")}</div>`:""}</div>` : "";
+  const acts = t.done
+    ? `<button class="btn" data-a="back" data-v="heute">Fertig</button>${inp?`<button class="btn ghost" data-a="todo-save" data-v="${t.id}">Änderung speichern</button>`:`<button class="btn ghost" data-a="todo-tick" data-v="${t.id}">Doch nicht erledigt</button>`}`
+    : `<button class="btn" data-a="${inp?"todo-save":"todo-tick"}" data-v="${t.id}">${inp?"Speichern und abhaken":"Erledigt"}</button>`;
+  return `<div class="tfocus"><div class="tf-top"><button class="iconbtn" data-a="back" data-v="heute" aria-label="Zurück">${ICON.back}</button><span class="lk-pill">Tag ${t.day} von 7</span></div>
+    <div class="lk-cover" style="${pvars(t.pillar)}"><svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg><span class="k">To-do · ${AREA[t.pillar]} · ${esc(t.min)}</span><b class="s">${esc(t.short)}</b></div>
+    <h1 class="tq">${esc(t.q)}</h1><p class="lwhy">${esc(t.why)}</p>${t.how?`<p class="note">${esc(t.how)}</p>`:""}
+    ${flash?`<p class="err" role="alert">${flash}</p>`:""}
+    ${t.done?`<div class="ldone">${mark(36)}<p>${inp?"Eingetragen.":"Abgehakt."} ${nextMsg}</p></div>`:""}
+    ${field}${acts}
+    ${t.link?`<button class="btn link small" ${gAttr(t.link)}>${esc(t.link.label)}</button>`:""}
+    <button class="btn link small" data-a="go" data-v="starter">Alle To-dos der Woche</button></div>`;
+}
+function todoSave(id){
+  const t=todoById(id); if(!t||!t.input) return; const k=t.input.field, el=document.getElementById("f-"+k), f=FIELDS[k]; if(!el||!f) return;
+  const v=f.check(el.value); if(v==null){ flash=f.err; haptic("tap"); return render(); }
+  S[k]=v; if(k==="standTest") S.standTestAt=new Date().toISOString(); save(); flash=""; haptic("success"); render(); window.scrollTo(0,0);
+}
+
+/* ---------- Kleine Erfolge einer Woche: aus To-dos, Routinen und Bausteinen ---------- */
+function weekWins(index){
+  const w=S.weeks.find(x=>x.index===index), cis=w?IK.checkinsOf(S,w.id):[], N=cis.length;
+  const A={darm:[], schlaf:[], beweg:[], recap:[]}, B={darm:[], schlaf:[], beweg:[], recap:[]}, days={};
+  const td=weekTodos(index).filter(t=>t.done);
+  td.forEach(t=>{ if(!t.win) return; const v=t.input?S[t.input.field]:null; A[t.pillar].push(t.win.replace("{v}", esc(String(v==null?"":v)))); });
+  IK.BASIS.forEach(b=>{ const n=cis.filter(c=>c.basis&&c.basis[b.key]).length; days[b.key]=n; if(n) B[b.pillar].push(`${b.label==="30 Min bewegt"?"30 Minuten bewegt":b.label} an ${n} von ${N} Tag${N===1?"":"en"}`); });
+  if(w) IK.activeBausteine(w).forEach(b=>{ const n=weeklyCountOf(cis,b.id); if(n&&A[b.pillar]) A[b.pillar].push(`${esc(b.label)} an ${n} von ${N} Tag${N===1?"":"en"}`); });
+  const why = td.some(t=>t.input&&t.input.field==="why") && S.why ? S.why : null;
+  const all={}; Object.keys(A).forEach(p=>{ all[p]=A[p].slice(0,99); });
+  // Reihenfolge je Bereich: To-dos, Routinen, Bausteine
+  Object.keys(A).forEach(p=>{ const todo=A[p].filter((x,i)=>i<td.filter(t=>t.pillar===p&&t.win).length), rest=A[p].slice(todo.length); all[p]=[...todo, ...B[p], ...rest]; });
+  return {index, A, B, all, days, N, why, steps:td.length, stepsTotal:weekTodos(index).length, total:Object.values(all).reduce((a,l)=>a+l.length,0)+(why?1:0)};
+}
+function winsCards(W){
+  return ["darm","schlaf","beweg","recap"].filter(p=>W.all[p].length).map(p=>tcard(p,`<span class="k kic">${ICON[p]}${AREA[p]}</span><ul class="wins">${W.all[p].map(x=>`<li><span class="ok" aria-hidden="true">${CHECK}</span><span>${x}</span></li>`).join("")}</ul>`)).join("")
+    + (W.why?tcard("recap",`<span class="k">Dein Warum</span><b class="tt">„${esc(W.why)}“</b>`):"");
 }
 
 /* ---------- Wochen-Check (schlanke Fassung bis Screen 09) ---------- */
@@ -748,12 +828,13 @@ function vMaterial(){
   ${lay(`<div class="card"><p style="margin:0">${esc(m.why)}</p><p class="note"><b>Wann:</b> ${esc(m.when)}</p></div>`, body, "side-r")}`;
 }
 
-/* ---------- Profilfelder aus der Starter-Liste ---------- */
+/* ---------- Profilfelder aus den To-dos ---------- */
 const FIELDS = {
   wakeTime:{label:"Meine Aufstehzeit", type:"time", check:v=>/^([01]\d|2[0-3]):[0-5]\d$/.test(v)?v:null, err:"Bitte eine Uhrzeit wie 06:45 eingeben."},
   lightSpot:{label:"Mein Morgenlicht-Ort", type:"text", check:v=>v.trim().slice(0,140)||null, err:"Bitte einen Ort eingeben."},
   why:{label:"Mein Warum", type:"text", check:v=>v.trim().slice(0,140)||null, err:"Bitte einen Satz eingeben."},
-  standTest:{label:"Aufsteh-Test (Wiederholungen in 30 Sek.)", type:"number", check:v=>{ const n=parseInt(v,10); return n>=0&&n<=60?n:null; }, err:"Bitte eine Zahl zwischen 0 und 60 eingeben."}
+  standTest:{label:"Aufsteh-Test (Wiederholungen in 30 Sek.)", type:"number", check:v=>{ const n=parseInt(v,10); return n>=0&&n<=60?n:null; }, err:"Bitte eine Zahl zwischen 0 und 60 eingeben."},
+  plantCount:{label:"Verschiedene Pflanzen an einem Tag", type:"number", check:v=>{ const n=parseInt(v,10); return n>=0&&n<=80?n:null; }, err:"Bitte eine Zahl zwischen 0 und 80 eingeben."}
 };
 function saveField(k){
   const el=document.getElementById("f-"+k), f=FIELDS[k]; if(!el||!f) return;
@@ -764,8 +845,8 @@ function saveField(k){
 }
 function basisFieldsCard(){
   const st=IK.todoStatus(S,IN.TODOS), byField=k=>st.find(t=>t.input&&t.input.field===k);
-  return `<div class="card"><h2>Deine Basis</h2><p class="note">Aus deiner Starter-Liste. Sie stehen auch auf deinem Handout und deiner Morgen-Karte.</p>
-    ${Object.keys(FIELDS).map(k=>{ const t=byField(k), open=!t||t.inputOpen, vid=t&&(t.unlocked?t.afterInput:t.after);
+  return `<div class="card"><h2>Deine Basis</h2><p class="note">Aus deinen To-dos. Sie stehen auch auf deinem Handout und deiner Morgen-Karte.</p>
+    ${Object.keys(FIELDS).filter(k=>k!=="plantCount").map(k=>{ const t=byField(k), open=!t||t.videoOk, vid=t&&t.after;
       return open||filledField(k) ? fieldInput({field:k, type:FIELDS[k].type, label:FIELDS[k].label})
         : `<div class="kv" style="align-items:center"><span class="note" style="font-weight:600">${esc(FIELDS[k].label)}</span><button class="btn link small" data-a="video" data-v="${vid}" style="min-height:0;padding:0">frei mit Video ${vid}</button></div>`; }).join("")}</div>`;
 }
@@ -1060,6 +1141,7 @@ function loadDemo(){
   rows.forEach((r,i)=>{ const day=IK.addDays(start,i+(i>=7?1:0));
     (seenOn[i]||[]).forEach(id=>IK.markSeen(S,id,ts(day,"12:00")));
     IK.saveCheckIn(S,{basis:{bunt:!!r[0],morgenlicht:!!r[1],bewegt30:!!r[2]},bausteine:i>=7?bst(i):{},erholt:r[3],bauch:r[4],energie:r[5],stress:r[6],schlafStunden:r[7],pflanzen:r[8],bewegungMin:r[9]},day,ts(day,"21:00")); });
+  S.todosDone={d2:S.onboardingCompletedAt, d5:S.onboardingCompletedAt}; S.plantCount=18;
   S.wakeTime="06:45"; S.lightSpot="Weg zum Bäcker"; S.why="Mit meinen Enkeln noch auf Berge steigen."; S.standTest=11; S.standTestAt=S.onboardingCompletedAt;
   IK.unlockEvents(S,uctx()).forEach(x=>{ S.noticesSeen[x.id]=S.onboardingCompletedAt; });
   save(); view="heute"; render(); window.scrollTo(0,0);
@@ -1109,17 +1191,21 @@ document.addEventListener("click", e=>{
     const ws=Object.keys(VID.WEEKS).map(Number).filter(n=>(v==="basis"?n<=4:n>4)&&n<=weeksTotal());
     kursWeek=ws.find(n=>{ const q=IK.weekVideoProgress(VID.VIDEOS,S,n); return q.seen<q.total; }) ?? ws[0] ?? 1; return render(); }
   if(a==="video"){ if(view!=="video") pushNav(); videoId=v; view="video"; flash=""; freshIds=[]; freshTodos=[]; render(); return window.scrollTo(0,0); }
-  if(a==="seen"){ const before=new Set(IK.newUnlocks(S,uctx()).map(x=>x.id)), tBefore=new Set(IK.todoStatus(S,IN.TODOS).filter(t=>t.unlocked&&(!t.input||t.inputOpen)).map(t=>t.id)); IK.markSeen(S,v);
-    freshTodos=starterActive()?IK.todoStatus(S,IN.TODOS).filter(t=>!t.done&&t.unlocked&&(!t.input||t.inputOpen)&&!tBefore.has(t.id)).map(t=>t.id):[];
+  if(a==="seen"){ const before=new Set(IK.newUnlocks(S,uctx()).map(x=>x.id)), tBefore=new Set(IK.todoStatus(S,IN.TODOS).filter(t=>t.unlocked).map(t=>t.id)); IK.markSeen(S,v);
+    freshTodos=starterActive()?IK.todoStatus(S,IN.TODOS).filter(t=>!t.done&&t.unlocked&&!tBefore.has(t.id)).map(t=>t.id):[];
     const fresh=IK.newUnlocks(S,uctx()).filter(x=>!before.has(x.id));
     fresh.filter(x=>x.type==="baustein").forEach(x=>markNotice(x.id)); // erklärt die Baustein-Karte darunter
     freshIds=fresh.filter(x=>x.type!=="baustein").map(x=>x.id); save(); haptic(fresh.length?"unlock":"tap");
     const b=IK.bausteinForVideo(v); flash=b?`Gesehen. Damit ist „${b.label}“ freigeschaltet.`:"Als gesehen markiert."; return render(); }
   if(a==="goto"){ let g=null; try{ g=JSON.parse(el.dataset.g); }catch(err){} if(el.dataset.n) markNotice(el.dataset.n); sheetOpen=false; lockFor=null; return goTo(g); }
   if(a==="lock"){ lockFor=v; haptic("tap"); return render(); }
+  if(a==="todo-save") return todoSave(v);
+  if(a==="todo-chip"){ const i=document.getElementById("f-"+el.dataset.f); if(i){ i.value=v; } haptic("tap"); return; }
+  if(a==="fort-tab"){ fortTab=v; haptic("tap"); return render(); }
+  if(a==="erfolge"){ pushNav(); fortTab="erfolge"; erfolgeWeek=+v; go("fortschritt"); return; }
   if(a==="lock-close"){ lockFor=null; return render(); }
   if(a==="notice-ok"){ markNotice(v); freshIds=freshIds.filter(x=>x!==v); sheetItem=null; return render(); }
-  if(a==="todo-tick"){ S.todosDone=S.todosDone||{}; if(S.todosDone[v]) delete S.todosDone[v]; else S.todosDone[v]=new Date().toISOString(); save(); return render(); }
+  if(a==="todo-tick"){ S.todosDone=S.todosDone||{}; if(S.todosDone[v]) delete S.todosDone[v]; else { S.todosDone[v]=new Date().toISOString(); haptic("success"); } save(); return render(); }
   if(a==="field"){ focusTodo=null; return saveField(v); }
   if(a==="mat"){ pushNav(); if(el.dataset.goLib){ view="bibliothek"; libTab="handouts"; wissen=null; } mat=v; render(); return window.scrollTo(0,0); }
   if(a==="mat-close"){ if(navStack.length) return back(); mat=null; render(); return window.scrollTo(0,0); }
@@ -1151,10 +1237,12 @@ document.addEventListener("click", e=>{
   if(a==="wipe-no"){ confirmWipe=false; return render(); }
   if(a==="wipe-yes"){ S=blank(); save(); confirmWipe=false; view="heute"; ob="welcome"; obD=null; flash=""; render(); return window.scrollTo(0,0); }
 });
-document.addEventListener("keydown", e=>{ if(tour&&e.key==="Escape"){ endTour(); return go("heute"); } if((sheetOpen||lockFor)&&e.key==="Escape"){ sheetOpen=false; lockFor=null; return render(); } if(e.key!=="Enter") return; const t=e.target; if(t&&t.id&&t.id.startsWith("f-")){ e.preventDefault(); saveField(t.id.slice(2)); } });
+document.addEventListener("keydown", e=>{ if(tour&&e.key==="Escape"){ endTour(); return go("heute"); } if((sheetOpen||lockFor)&&e.key==="Escape"){ sheetOpen=false; lockFor=null; return render(); } if(e.key!=="Enter") return; const t=e.target; if(t&&t.id&&t.id.startsWith("f-")){ e.preventDefault(); if(view==="todo") todoSave(focusTodo); else saveField(t.id.slice(2)); } });
 document.addEventListener("submit", e=>{ if(e.target.dataset.form==="code"){ e.preventDefault(); unlock(document.getElementById("code").value); } });
 document.addEventListener("change", e=>{
   if(e.target.matches("[data-kf]")){ kursFilter=e.target.value; haptic("tap"); return render(); }
+  if(e.target.matches("[data-tf]")){ todoFilter=e.target.value; haptic("tap"); return render(); }
+  if(e.target.matches("[data-ew]")){ erfolgeWeek=+e.target.value; haptic("tap"); return render(); }
   if(e.target.id!=="imp") return; const f=e.target.files[0]; if(!f) return; const r=new FileReader();
   r.onload=()=>{ try{ adopt(JSON.parse(r.result)); S.lastBackup=Date.now(); save(); afterRestore("Sicherung geladen. Alle Einträge sind wieder da."); }
     catch(err){ flash=err instanceof SyntaxError?"Diese Datei ist keine innen-kultur-Sicherung.":err.message; render(); } };

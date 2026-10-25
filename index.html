@@ -631,10 +631,77 @@ body.evening .tcard .trow{border-top-color:rgba(255,255,255,.08)}
 .tcard .btn,.lnow .btn,.ldone .btn{background:var(--tbtn-bg);color:var(--tbtn-ink)}
 .tcard .btn.ghost,.lnow .btn.ghost{background:var(--tbtn2-bg);color:var(--tbtn2-ink)}
 .cfoot .btn{box-shadow:var(--shadow-lg)}
+/* To-dos: eins pro Tag */
+.tday{align-items:flex-start}
+.tday .tic,.tdrow .dn,.wrow .ic,.wtile .ic{flex:none;display:grid;place-items:center;background:var(--s);color:var(--t)}
+.tday .tic{width:44px;height:44px;border-radius:14px}
+.tday .tic svg,.wrow .ic svg,.wtile .ic svg,.kic svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tday .chev{align-self:center}
+.tprog{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
+.tdots{display:flex;gap:4px}
+.tdots i{width:16px;height:6px;border-radius:3px;background:var(--line)}
+.tdots i.on{background:var(--c)}
+@media (prefers-reduced-motion:no-preference){.tdots i.on{animation:tfade .5s ease both}@keyframes tfade{from{opacity:0;transform:scaleX(.3)}to{opacity:1;transform:none}}}
+.tcount{font-size:12.5px;font-weight:600;color:var(--muted)}
+.tdwrap{display:flex;flex-direction:column;gap:14px;max-width:640px;width:100%}
+.tseg{display:flex;gap:5px}
+.tseg i{flex:1;height:8px;border-radius:4px;background:var(--line)}
+.tseg i.on{background:var(--c)}
+.tseg i.now{background:var(--bar)}
+.tdhd{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:4px}
+.tdhd b{font-size:17px}
+.tdhd .vsel{margin:0}
+.tdlist{padding:4px 16px;gap:0}
+.tdrow{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;border:0;border-top:1px solid var(--line);background:none;padding:10px 0;text-align:left;color:var(--ink);font:inherit}
+.tdrow:first-child{border-top:0}
+.tdrow .dn{width:44px;height:44px;border-radius:14px;flex-direction:column;gap:0;line-height:1}
+.tdrow .dn small{font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.tdrow .dn b{font-family:var(--f-head);font-weight:800;font-size:16px}
+.tdrow .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.tdrow .tx b{font-size:14.5px;font-weight:600;line-height:1.3}
+.tdrow.locked .tx b{color:var(--muted)}
+.tdrow.is-done .note{color:var(--t)}
+.tdrow .st{flex:none;width:28px;height:28px;border-radius:14px;display:grid;place-items:center;font-size:11px;background:var(--btn2-bg);color:var(--muted)}
+.tdrow .st svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+.tdrow .st.on{background:var(--darm);color:#fff;font-weight:800;font-size:14px}
+.tdrow .st.nx{background:var(--navy);color:#fff}
+body.evening .tdrow .st.nx{background:var(--btn-bg);color:var(--btn-ink)}
+.tfocus{display:flex;flex-direction:column;gap:14px;max-width:560px;width:100%}
+.tf-top{display:flex;align-items:center;justify-content:space-between}
+.tq{margin:0;font-family:var(--f-head);font-weight:800;font-size:23px;letter-spacing:-.025em;line-height:1.2}
+.tfield{gap:10px}
+.tfield label{font-size:13px;font-weight:700;color:var(--muted)}
+.tfield input{min-height:54px;border:0;border-radius:14px;background:var(--bg);padding:0 16px;font:500 17px var(--f-body);color:var(--ink);width:100%;box-shadow:inset 0 0 0 1.5px var(--line)}
+.tfield input:focus{outline:none;box-shadow:inset 0 0 0 2px var(--blue)}
+.tchips{display:flex;flex-wrap:wrap;gap:6px}
+.tchip{min-height:38px;padding:0 13px;border:0;border-radius:999px;background:var(--btn2-bg);color:var(--btn2-ink);font:600 14px var(--f-body)}
+.tfocus>.btn.link{align-self:center}
+.kic{display:flex;align-items:center;gap:8px}
+.kic svg{width:18px;height:18px}
+.wins{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.wins li{display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.4}
+.wins .ok{flex:none;margin-top:1px;width:20px;height:20px;border-radius:10px;background:var(--c);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:800}
+.bilanz{gap:14px}
+.bilanz .wins-list{display:flex;flex-direction:column;gap:12px;width:100%;text-align:left}
+.bilanz .btn.link{align-self:center}
+.segc.seg2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.wtiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.wtile{border-radius:20px;background:var(--s);color:var(--t);padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.wtile .ic{background:none;width:auto;height:auto;justify-content:start}
+.wtile b{font-family:var(--f-head);font-weight:800;font-size:26px;letter-spacing:-.03em;line-height:1}
+.wtile b small{font-size:13px;font-weight:700;letter-spacing:0}
+.wtile>span:last-child{font-size:12px;line-height:1.3}
+.wlist{padding:6px 16px;gap:0}
+.wrow{display:flex;align-items:center;gap:12px;min-height:54px;border-top:1px solid var(--line);font-size:14.5px;line-height:1.35}
+.wrow:first-child{border-top:0}
+.wrow .ic{width:36px;height:36px;border-radius:12px}
+.wrun{flex-direction:row;align-items:center;justify-content:space-between;gap:12px}
+.wrun>span{display:flex;flex-direction:column;gap:2px}
+.wrun .btn{flex:none;white-space:nowrap}
 /* Gesperrt-Blatt */
 .sheet.lock{gap:16px}
-.sheet.lock .lk-pill{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 12px;border-radius:999px;background:var(--btn2-bg);color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
-.sheet.lock .lk-pill svg,.lk-cover .lk svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+.lk-pill{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 12px;border-radius:999px;background:var(--btn2-bg);color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.lk-pill svg,.lk-cover .lk svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
 /* Kopf im Stil der Bibliotheks-Kachel */
 .lk-cover{position:relative;overflow:hidden;min-height:150px;border-radius:22px;padding:16px 18px;display:flex;flex-direction:column;justify-content:space-between;gap:18px;background:var(--s)}
 .lk-cover>.bl{position:absolute;right:-34px;bottom:-40px;width:150px;height:150px;opacity:.35}
