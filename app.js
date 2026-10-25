@@ -577,7 +577,7 @@ function noticeCard(e){
   const n=noticeOf(e); if(!n) return "";
   return tcard(n.pillar,`<span class="k">${esc(n.kicker)}</span><b class="tt">${esc(n.title)}</b>
     <dl class="www"><div><dt>Wieso</dt><dd>${esc(n.why)}</dd></div><div><dt>Wann</dt><dd>${esc(n.when)}</dd></div><div><dt>Wo</dt><dd>${esc(n.where)}</dd></div></dl>
-    <div class="btns">${n.go?`<button class="btn small" ${gAttr(n.go)} data-n="${e.id}">${esc(n.go.label||"Hin")}</button>`:""}<button class="btn small soft" data-a="notice-ok" data-v="${e.id}">Verstanden</button></div>`,"notice");
+    <div class="btns">${n.go?`<button class="btn small" ${gAttr(n.go)} data-n="${e.id}">${esc(n.go.label||"Hin")}</button>`:""}<button class="btn small ghost" data-a="notice-ok" data-v="${e.id}">Verstanden</button></div>`,"notice");
 }
 // Neueste Freischaltung zuerst: Zeitpunkt = wann das auslösende Video gesehen bzw. die Woche abgeschlossen wurde.
 function unlockTime(e){
@@ -650,7 +650,7 @@ function lockHTML(){
     <div><span class="eyebrow" style="color:var(--t)">Noch gesperrt · ${esc(it.kind)} · Woche ${it.week}</span><h2 id="lk-t">${esc(it.short?it.title.replace(/^[^:]+: /,""):it.title)}</h2></div>
     <p class="lwhy">${esc(L.why)}</p>
     <div><b class="lhd">${L.steps.length>1?`So schaltest du es frei · ${openN} von ${L.steps.length} offen`:"So schaltest du es frei"}</b><ol class="lsteps">${L.steps.map(li).join("")}</ol></div>
-    ${L.now ? `<div class="lnow"><p>${esc(L.now.q)}</p>${L.now.hint?`<p class="note">${esc(L.now.hint)}</p>`:""}<div class="btns"><button class="btn" ${gAttr(L.now.g)}>${esc(L.now.label)}</button><button class="btn ghost" data-a="lock-close">Später</button></div></div>`
+    ${L.now ? `<div class="lnow"><p>${esc(L.now.q)}</p>${L.now.hint?`<p class="note">${esc(L.now.hint)}</p>`:""}<button class="btn" ${gAttr(L.now.g)}>${esc(L.now.label)}</button></div><button class="btn ghost" data-a="lock-close">Später</button>`
       : `<div class="ldone">${mark(40)}<p>${esc(L.doneMsg)}</p></div><button class="btn ghost" data-a="lock-close">Verstanden</button>`}</section></div>`;
 }
 
@@ -698,9 +698,9 @@ function vStarter(){
 function weekCheckCard(){
   if(!IK.weekCheckOpen(S)) return "";
   const w=IK.currentWeek(S), n=IK.checkinsOf(S,w.id).length;
-  return `<div class="card" style="background:var(--recap-soft)"><b>Woche ${w.index}: Zeit für deinen Wochen-Check</b>
-    <p class="note" style="color:var(--recap-text)">${n} Tage eingetragen. Schau dir deine Woche an und schließ sie ab${w.index===1?". Dabei schaltest du dein Goodie frei":""}.</p>
-    <button class="btn small" data-a="go" data-v="wochencheck" style="background:var(--recap)">Wochen-Check öffnen</button></div>`;
+  return tcard("recap",`<span class="k">Wochen-Check</span><b class="tt">Woche ${w.index} ist bereit</b>
+    <p>${n} Tage eingetragen. Schau dir deine Woche an und schließ sie ab${w.index===1?". Dabei schaltest du dein Goodie frei":""}.</p>
+    <div class="btns"><button class="btn small" data-a="go" data-v="wochencheck">Wochen-Check öffnen</button></div>`);
 }
 function vWochencheck(){
   const w=IK.currentWeek(S);
@@ -829,9 +829,9 @@ function tourIntro(){
     <p class="note">${prod}</p>`;
 }
 function tourSampleNotice(){
-  return `<div class="card notice demo" style="--c:var(--darm);--s:var(--darm-soft)" aria-label="Beispiel einer Hinweis-Karte"><span class="eyebrow" style="color:var(--darm-text)">Beispiel · Neu im Check-in</span><b class="nt">„Bunt gegessen“ ist jetzt in deinem Check-in</b>
+  return tcard("darm",`<span class="k">Beispiel · Neu im Check-in</span><b class="tt">„Bunt gegessen“ ist jetzt in deinem Check-in</b>
     <dl class="www"><div><dt>Wieso</dt><dd>Du weißt jetzt, warum Vielfalt auf dem Teller zählt.</dd></div><div><dt>Wann</dt><dd>Heute Abend im Check-in abhaken.</dd></div><div><dt>Wo</dt><dd>Abend-Check-in · Basis</dd></div></dl>
-    <div class="btns"><span class="btn small" style="background:var(--darm)">Was zählt als Pflanze?</span><span class="btn ghost small">Verstanden</span></div></div>`;
+    <div class="btns"><span class="btn small">Was zählt als Pflanze?</span><span class="btn small ghost">Verstanden</span></div>`,"notice demo").replace('<div class="tcard','<div aria-label="Beispiel einer Hinweis-Karte" class="tcard');
 }
 // Saubere Vorschau statt Hervorhebung, wo das echte Element je nach Stand anders aussieht.
 function tourPreview(k){

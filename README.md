@@ -106,3 +106,4 @@ Nach dem Onboarding begrüßt die App einmalig mit „Herzlich willkommen“ und
 - Tippen auf etwas Gesperrtes (Goodie, Mini-Karte, Handout in Bibliothek oder Kurs) öffnet ein Blatt: warum es gesperrt ist, die Schritte zum Freischalten mit Stand, und was sich jetzt sofort erledigen lässt (Frage mit Knopf dorthin). Ist für heute alles getan, steht dort „Für heute ist alles erledigt“. Logik in `lockInfo()` in app.js.
 - Zurück führt dorthin, wo man herkam (Verlauf `navStack`, auch die Zurück-Taste unter Android). Ein Tipp in der Tab-Leiste beginnt den Verlauf neu.
 - Karten nach dem Video und Freischalt-Hinweise nutzen den Stil der Wissens-Kacheln (`tcard`).
+- Knöpfe: auf Standardflächen blau (Haupt) und grau (Neben), auf getönten Karten weiß und halbweiß, nie mit Rahmen. Farben über `--btn2-*` und `--tbtn-*` in index.html. Einzige Ausnahme: Rot beim endgültigen Löschen aller Daten.
