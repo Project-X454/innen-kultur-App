@@ -20,6 +20,20 @@ const OUT = path.join(ROOT, "videos.js");
 
 // 30-Sekunden-Aufgaben am Videoende (SPEC §4 machJetzt). Schlüssel = Videotitel aus dem Board.
 const MACH_JETZT = {
+  // Woche 1, freigegeben am 25.10.2026
+  "Willkommen: So funktioniert dein Loop": "Wähle von deinen Zielen das eine, das dir am wichtigsten ist.",
+  "Was in deinem Bauch passiert": "Zähle, wie viele verschiedene Pflanzen du heute schon gegessen hast.",
+  "Innere Uhr & Licht: warum Schlaf dein stärkster Hebel ist": "Trag deine feste Aufstehzeit in der App ein und stell den Wecker.",
+  "Bewegung ist mehr als Sport": "Steh jetzt auf und geh 2 Minuten. Das zählt schon für heute.",
+  "Dein Startpunkt: Tracker richtig nutzen": "Prüf deine Erinnerungszeit: Passt sie zu deinem Abend?",
+  "Wann zum Arzt? Warnzeichen bei Bauch und Schlaf": "Speichere dir die Nummer deiner Hausarztpraxis im Handy.",
+  "Das Teller-Prinzip: so baust du eine darmfreundliche Mahlzeit": "Mach ein Foto von deinem nächsten Teller: Ist die Hälfte Pflanzen?",
+  "Die ersten 30 Minuten: deine Morgenroutine": "Stell dir heute Abend ein Glas Wasser neben das Bett.",
+  "Sitzen unterbrechen: Bewegung im Büroalltag": "Stell dir einen Timer, der dich nach 60 Minuten Sitzen erinnert.",
+  "10 Minuten Morgen-Mobility": "Leg dir für morgen früh eine Matte oder ein Handtuch sichtbar hin.",
+  "Detox & Darmreinigung im Check": "Such dir eine Portion Gemüse oder Hülsenfrüchte für morgen aus, statt Geld für ein Detox-Produkt auszugeben.",
+  "Lifespan vs. Healthspan: wie alles zusammenhängt": "Schreib einen Satz: Wofür willst du mit 80 noch fit sein?",
+  // ab Woche 2
   "Die Abendroutine Schritt für Schritt": "Stell dir eine Erinnerung 30 Minuten vor deiner Schlafenszeit. Ab dann bleibt das Handy weg.",
   "Fermentiertes & Probiotika: die Studienlage": "Schau in deinen Kühlschrank: Was davon ist fermentiert? Schreib dir eine Sache auf die Einkaufsliste."
 };
