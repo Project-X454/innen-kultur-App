@@ -239,3 +239,9 @@ test("Starter-Liste: To-dos mit Video erst nach dem Video sichtbar und ausfüllb
   IN.TODOS.filter(t => t.input).forEach(t => assert.ok(t.after || t.afterInput, t.id + " braucht ein Freischalt-Video"));
   IN.TODOS.forEach(t => { if(t.after) assert.ok(VIDEOS.find(v => v.id === t.after), t.after); });
 });
+
+test("Loop-Score-Beispiel in Tour und Fortschritt rechnet mit der echten Formel", () => {
+  const r = IK.loopScoreFromParts(IN.LOOP_EXAMPLE.values);
+  assert.deepEqual([r.score, r.befinden, r.umsetzung, r.dranbleiben], [69, 62, 71, 86]);
+  assert.equal(IN.LOOP_EXAMPLE.values.days, 6); // Text: „im Beispiel an 6“
+});
