@@ -816,16 +816,22 @@ function materialList(tab){
       : m.unlock.weekCompleted ? `Frei mit dem Wochen-Check ${m.unlock.weekCompleted}` : "";
     return cover(free?`data-a="mat" data-v="${m.id}"`:`data-a="lock" data-v="mat:${m.id}"`, `${m.kind} · Woche ${m.week}`, m.short||m.title, m.sub||m.title, how, m.pillar||"recap", !free); }).join("")}</div>`;
 }
+// Detailseiten der Bibliothek: gleicher Aufbau wie ein To-do. Kachel in Themenfarbe, Titel, getönte Karten, weiße Knöpfe darauf.
+function libHead(closeAct, kicker, short, title, lead, p){
+  return `<div class="tfocus libd"><div class="tf-top"><button class="iconbtn" data-a="${closeAct}" aria-label="Zurück">${ICON.back}</button><span class="lk-pill">Bibliothek</span></div>
+    <div class="lk-cover" style="${pvars(p)}"><svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg><span class="k">${esc(kicker)}</span><b class="s">${esc(short)}</b></div>
+    <h1 class="tq">${esc(title)}</h1>${lead?`<p class="lwhy">${lead}</p>`:""}`;
+}
+const printTile=(p,title,sub,label,card)=>tcard(p,`<span class="k kic">${ICON.doc}${esc(title)}</span><p>${sub}</p><div class="btns"><button class="btn small" data-a="print" data-v="${card}">${esc(label)}</button></div>`);
 function vMaterial(){
   const m=matById(mat); if(!m||!IK.materialUnlocked(S,m,VID.VIDEOS)){ mat=null; return vBibliothek(); }
   markNotice("mat-"+m.id);
-  const body = m.card ? `<div class="card soft"><b>${m.kind==="Handout"?"Zwei Seiten A4":"Karte A6"}</b><p class="note" style="color:var(--ink)">Zum Ausdrucken, oder im Druck-Dialog „Als PDF sichern“ wählen.${m.card==="handout1"||m.card==="morgen"?" Deine Angaben aus der Starter-Liste stehen schon drin.":""}</p>
-      <button class="btn small" data-a="print" data-v="${m.card}">${m.kind} als PDF speichern</button></div>`
-    : m.recipes&&m.recipes.length ? m.recipes.map(r=>`<div class="card"><b>${esc(r.title)}</b><span class="note">${r.minutes} Min. · ${r.plants} Pflanzen</span><p class="note" style="color:var(--ink)">${(r.ingredients||[]).map(esc).join(" · ")}</p><ol>${(r.steps||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ol></div>`).join("")
-    : `<div class="card soft"><b>Freigeschaltet</b><p class="note" style="color:var(--ink)">Die Rezepte kommen mit dem nächsten Update der App automatisch hier rein.</p></div>`;
-  return `<button class="back" data-a="mat-close">${ICON.back.replace("<svg",'<svg width="20" height="20"')}Zurück</button>
-  <span class="eyebrow" style="color:var(--recap-text)">${esc(m.kind)} · Woche ${m.week}</span><h1>${esc(m.title.replace(/^[^:]+: /,""))}</h1>
-  ${lay(`<div class="card"><p style="margin:0">${esc(m.why)}</p><p class="note"><b>Wann:</b> ${esc(m.when)}</p></div>`, body, "side-r")}`;
+  const p=m.pillar||"recap";
+  const body = m.card ? printTile(p, m.kind==="Handout"?"Zwei Seiten A4":"Karte A6", `Zum Ausdrucken oder im Druck-Dialog „Als PDF sichern“ wählen.${m.card==="handout1"||m.card==="morgen"?" Deine Angaben aus den To-dos stehen schon drin.":""}`, `${m.kind} als PDF speichern`, m.card)
+    : m.recipes&&m.recipes.length ? m.recipes.map(r=>`<div class="card recipe"><b class="rt-t">${esc(r.title)}</b><span class="rmeta"><span style="${pvars(p)}">${r.minutes} Min.</span><span style="${pvars("darm")}">${r.plants} Pflanzen</span></span><p class="note" style="color:var(--ink)">${(r.ingredients||[]).map(esc).join(" · ")}</p><ol>${(r.steps||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ol></div>`).join("")
+    : tcard(p,`<span class="k">Freigeschaltet</span><b class="tt">Die Rezepte sind unterwegs</b><p>Sie kommen mit dem nächsten Update der App automatisch hier rein.</p>`);
+  return libHead("mat-close", `${m.kind} · Woche ${m.week}`, m.short||m.title, (m.sub||m.title).replace(/^[^:]+: /,""), esc(m.why), p)
+    + `<div class="libwhen"><span class="lhd">Wann</span><span>${esc(m.when)}</span></div>${body}</div>`;
 }
 
 /* ---------- Profilfelder aus den To-dos ---------- */
@@ -1008,19 +1014,17 @@ function vBibliothek(){
   const T=[["wissen","Wissen"],["rezepte","Rezepte"],["plaene","Pläne"],["handouts","Handouts"]];
   const body = libTab==="wissen"
     ? `<div class="covers">${Object.keys(EX).map(k=>{ const e=EX[k]; return cover(`data-a="wissen" data-v="${k}"`, `Wissen · ${({darm:"Darm",schlaf:"Schlaf",beweg:"Bewegung",recap:"Recap"})[e.p]}`, WISSEN_COVER[k]||e.short, e.title, e.check, e.p, false); }).join("")}</div>`
-    : materialList(libTab) + `<div class="card soft"><h2>${libTab==="handouts"?"Weitere Handouts":libTab==="rezepte"?"Weitere Rezepte":"Pläne folgen"}</h2><p class="note">${libTab==="handouts"?"Das Handout einer Woche wird frei, sobald du alle Kernvideos der Woche gesehen hast. Ab Woche 2 folgen sie mit den nächsten Updates.":"Rezepte und Pläne schalten sich als Goodies mit deinen Wochen-Checks frei."}</p></div>`;
+    : materialList(libTab) + `<div class="libnote">${mark(36)}<span><b>${libTab==="handouts"?"Weitere Handouts":libTab==="rezepte"?"Weitere Rezepte":"Pläne folgen"}</b><span class="note">${libTab==="handouts"?"Das Handout einer Woche wird frei, sobald du alle Kernvideos der Woche gesehen hast. Ab Woche 2 folgen sie mit den nächsten Updates.":"Rezepte und Pläne schalten sich als Goodies mit deinen Wochen-Checks frei."}</span></span></div>`;
   return `${brandBar()}<div class="top"><div class="t"><small>Zum Nachlesen</small><b>Bibliothek</b></div></div>
   <div class="segc" role="group" aria-label="Bereich">${T.map(([k,l])=>`<button data-a="libtab" data-v="${k}" aria-pressed="${libTab===k}">${l}</button>`).join("")}</div>${body}`;
 }
 function vWissen(){
-  const e=EX[wissen];
-  return `<button class="back" data-a="wissen-close">${ICON.back.replace("<svg",'<svg width="20" height="20"')}Zurück</button>
-  <span class="eyebrow" style="color:${PT[e.p]}">${IK.PILLARS[e.p].label}</span><h1>${e.title}</h1>
-  ${lay(`<div class="card"><h2>So zählt es</h2><p style="margin:0">${e.rule}</p><p class="note">${e.check}</p></div>
-  <div class="card"><b>${e.groupsLabel}</b><div class="mini">${e.mini.map(([a,b])=>`<div><b>${esc(a)}</b><span>${esc(b)}</span></div>`).join("")}</div>
-    ${e.examples?`<b>Beispiel-Teller</b><p style="margin:0;font-size:14px">${e.examples}</p>`:""}${e.tip?`<p class="note">${e.tip}</p>`:""}</div>`,
-  `<div class="card soft"><b>${e.card==="aktiv"?"Aktivitäts-Karte":e.card==="morgen"?"Morgen-Karte":"Kühlschrank-Karte"} (A6)</b><p class="note" style="color:var(--ink)">Zum Ausdrucken oder im Druck-Dialog „Als PDF sichern“ wählen.</p>
-    <button class="btn small" data-a="print" data-v="${e.card}">Karte als PDF speichern</button></div>`,"side-r")}`;
+  const e=EX[wissen], p=e.p, cardName=e.card==="aktiv"?"Aktivitäts-Karte":e.card==="morgen"?"Morgen-Karte":"Kühlschrank-Karte";
+  return libHead("wissen-close", `Wissen · ${AREA[p]}`, WISSEN_COVER[wissen]||e.short, e.title, "", p)
+    + tcard(p,`<span class="k">So zählt es</span><p class="big">${e.rule}</p><p class="note" style="color:var(--t)">${e.check}</p>`)
+    + `<div class="card libmini" style="${pvars(p)}"><b>${e.groupsLabel}</b><div class="mini">${e.mini.map(([a,b])=>`<div><b>${esc(a)}</b><span>${esc(b)}</span></div>`).join("")}</div>
+      ${e.examples?`<div class="libex"><span class="lhd">Beispiel-Teller</span><p>${e.examples}</p></div>`:""}${e.tip?`<p class="note">${e.tip}</p>`:""}</div>`
+    + printTile(p, `${cardName} (A6)`, "Zum Ausdrucken oder im Druck-Dialog „Als PDF sichern“ wählen.", "Karte als PDF speichern", e.card) + `</div>`;
 }
 function cardHTML(k){
   const hd=t=>`<div class="hd"><span style="display:flex;align-items:center;gap:2mm;font-family:var(--f-head);font-size:11pt;letter-spacing:0;text-transform:none;color:var(--ink)">${logo("#FFFFFF").replace('width="34" height="34"','width="18" height="18"')}innen kultur</span><span>${t}</span></div>`;

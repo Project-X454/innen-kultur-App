@@ -113,4 +113,4 @@ Nach dem Onboarding begrüßt die App einmalig mit „Herzlich willkommen“ und
 ## Kleine Erfolge
 - Nach dem 7. Check-in zeigt der Erfolgsmoment einen Wochenrückblick nach Bereich: erledigte To-dos mit ihrem Wert, Routinen-Tage und Bausteine, dazu das Warum. Danach weiter zum Wochen-Check.
 - Fortschritt hat zwei Ansichten: „Loop-Score“ und „Deine Erfolge“. Der Wochenfilter steht rechts neben der Überschrift. Ab Woche 2 führt die Zeile auf Heute dorthin.
-- Texte im Rückblick kommen aus `win` je To-do in inhalte.js. Für Woche 2 bis 8 braucht es je 7 To-dos vom Team.
+- Texte im Rückblick kommen aus `win` je To-do in inhalte.js. Für Woche 2 bis 8 braucht es je 7 To-dos vom Team.- Bibliothek: Detailseiten (Wissen, Mini-Karte, Handout, Goodie) folgen dem Aufbau der To-do-Seite: Kachel in Themenfarbe, Titel, getönte Karten mit weißem Knopf (`libHead()`, `printTile()` in app.js).
