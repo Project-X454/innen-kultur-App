@@ -58,7 +58,7 @@ const latestBaseline = () => S.baselines.length ? S.baselines[S.baselines.length
 const weeksTotal = () => S.product==="komplett" ? 8 : 4;
 
 /* ---------- Zustand der Oberfläche ---------- */
-let view="heute", videoId=null, kursWeek=null, ob="welcome", obD=null, draft=null, flash="", libTab="wissen", wissen=null, confirmWipe=false, transfer=null, rebase=false, pending=null, lastView=null, mat=null, focusTodo=null, freshIds=[], freshTodos=[];
+let view="heute", videoId=null, kursWeek=null, kursFilter="alle", ob="welcome", obD=null, draft=null, flash="", libTab="wissen", wissen=null, confirmWipe=false, transfer=null, rebase=false, pending=null, lastView=null, mat=null, focusTodo=null, freshIds=[], freshTodos=[];
 function go(v){ if(v==="kurs"&&view!=="video") kursWeek=null; view=v; flash=v==="heute"?flash:""; confirmWipe=false; transfer=null; wissen=null; rebase=false; mat=null; focusTodo=null; freshIds=[]; freshTodos=[];
   sheetOpen=false; if(v==="checkin"){ draft=null; ciStep=1; ciMore=false; } render(); window.scrollTo(0,0); }
 
@@ -477,9 +477,16 @@ function vKurs(){
     ? `<button data-a="kurspart" data-v="komplett" aria-pressed="${part==="komplett"}">Komplett</button>` : `<button data-a="go" data-v="profil" aria-pressed="false" aria-label="Komplett freischalten">${LOCK}Komplett</button>`}</div>`;
   const chip=n=>{ const q=IK.weekVideoProgress(VID.VIDEOS,S,n), on=kursWeek===n, f=q.total?q.seen/q.total:0;
     return `<button class="wchip" data-a="kursweek" data-v="${n}" aria-pressed="${on}" aria-label="Woche ${n}, ${q.seen} von ${q.total} gesehen"><svg viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="12" fill="none" stroke="${on?"currentColor":"var(--line)"}" stroke-opacity="${on?0.25:1}" stroke-width="3.5"/><circle cx="15" cy="15" r="12" fill="none" stroke="${on?"currentColor":"var(--blue)"}" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="${C*f} ${C}" transform="rotate(-90 15 15)"/></svg><span>Woche ${n}</span></button>`; };
+  // Themenfilter: „Alle“ zeigt die empfohlene Reihenfolge neutral, ein Thema färbt die Liste in seiner Farbe.
+  const PL={darm:"Darm",schlaf:"Schlaf",beweg:"Bewegung",recap:"Recap"};
+  const present=Object.keys(PL).filter(p=>vids.some(v=>v.pillar===p));
+  if(kursFilter!=="alle"&&!present.includes(kursFilter)) kursFilter="alle";
+  const shown=kursFilter==="alle"?vids:vids.filter(v=>v.pillar===kursFilter);
+  const vfil=present.length>1?`<div class="vfil" role="group" aria-label="Nach Thema filtern"><button data-a="kursfilter" data-v="alle" aria-pressed="${kursFilter==="alle"}">Alle</button>${present.map(p=>`<button data-a="kursfilter" data-v="${p}" aria-pressed="${kursFilter===p}" style="${pvars(p)}"><i></i>${PL[p]}</button>`).join("")}</div>`:"";
   const row=v=>{ const seen=IK.isSeen(S,v.id), isNext=nx&&nx.id===v.id, b=IK.bausteinForVideo(v.id)||IK.BASIS.find(x=>x.videoId===v.id);
-    const vars = v.pillar==="intro" ? "--s:var(--chip);--t:var(--muted)" : pvars(v.pillar);
-    return `<button class="vrow" data-a="video" data-v="${v.id}" style="${vars}"><span class="vn">${v.id}</span><span class="tx"><b>${esc(v.title)}</b><span class="note">${v.type} · ${v.durationMin} Min.${b?" · "+esc(b.label):""}</span></span>
+    const vars = kursFilter!=="alle"&&PL[v.pillar] ? pvars(v.pillar) : "--s:var(--chip);--t:var(--muted)";
+    const topic = kursFilter==="alle"&&PL[v.pillar] ? PL[v.pillar]+" · " : "";
+    return `<button class="vrow" data-a="video" data-v="${v.id}" style="${vars}"><span class="vn">${v.id}</span><span class="tx"><b>${esc(v.title)}</b><span class="note">${topic}${v.type} · ${v.durationMin} Min.${b?" · "+esc(b.label):""}</span></span>
       <span class="st${seen?" on":""}${isNext?" nx":""}" aria-hidden="true">${seen?CHECK:isNext?"▶":""}</span><span class="sr">${seen?"gesehen":isNext?"als Nächstes":"offen"}</span></button>`; };
   const ho=hoOf(kursWeek), hoFree=p.handoutFree&&ho;
   const kern=VID.VIDEOS.filter(v=>v.week===kursWeek&&v.type==="Kern").map(v=>v.id);
@@ -490,7 +497,7 @@ function vKurs(){
   <div class="wchips" role="group" aria-label="Kurswochen">${partWeeks.map(chip).join("")}</div>
   <div style="display:flex;flex-direction:column;gap:2px;padding:0 4px"><b style="font-family:var(--f-head);font-size:22px;font-weight:800;letter-spacing:-.02em">${esc(VID.WEEKS[kursWeek].title)}</b><span class="note">Woche ${kursWeek} · ${p.seen} von ${p.total} Videos · alles frei, in deinem Tempo</span></div>
   ${hcard}
-  <div class="vlist">${vids.map(row).join("")}</div>`;
+  ${vfil}<div class="vlist${kursFilter!=="alle"?" vlist-f":""}">${shown.map(row).join("")}</div>`;
 }
 
 const hoOf = w => IN.MATERIALS.find(m=>m.kind==="Handout"&&m.week===w) || null;
@@ -1035,6 +1042,7 @@ document.addEventListener("click", e=>{
   if(a==="bst"){ readNums(); draft.bausteine[v]=draft.bausteine[v]!==true; haptic("tap"); return render(); }
   if(a==="pick-new"){ readNums(); const n=draft.newBausteinIds, i=n.indexOf(v); if(i>=0) n.splice(i,1); else if(n.length<IK.MAX_NEW_PER_WEEK) n.push(v); return render(); }
   if(a==="kursweek"){ kursWeek=+v; return render(); }
+  if(a==="kursfilter"){ kursFilter=v; haptic("tap"); return render(); }
   if(a==="kurspart"){ // springt in die erste Woche des Teils, in der noch ein Video offen ist
     const ws=Object.keys(VID.WEEKS).map(Number).filter(n=>(v==="basis"?n<=4:n>4)&&n<=weeksTotal());
     kursWeek=ws.find(n=>{ const q=IK.weekVideoProgress(VID.VIDEOS,S,n); return q.seen<q.total; }) ?? ws[0] ?? 1; return render(); }
