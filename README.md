@@ -107,3 +107,4 @@ Nach dem Onboarding begrüßt die App einmalig mit „Herzlich willkommen“ und
 - Zurück führt dorthin, wo man herkam (Verlauf `navStack`, auch die Zurück-Taste unter Android). Ein Tipp in der Tab-Leiste beginnt den Verlauf neu.
 - Karten nach dem Video und Freischalt-Hinweise nutzen den Stil der Wissens-Kacheln (`tcard`).
 - Knöpfe: auf Standardflächen blau (Haupt) und grau (Neben), auf getönten Karten weiß und halbweiß, nie mit Rahmen. Farben über `--btn2-*` und `--tbtn-*` in index.html. Einzige Ausnahme: Rot beim endgültigen Löschen aller Daten.
+- Gesperrt-Blatt: Kopf im Stil der Bibliotheks-Kachel (Themenfarbe, Logo-Form, Kurzname), Schritt-Nummern in der Themenfarbe.

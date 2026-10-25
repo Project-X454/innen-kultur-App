@@ -344,7 +344,7 @@ function sheetHTML(){
       ${open?`<div class="nbody"><dl class="www"><div><dt>Wieso</dt><dd>${esc(n.why)}</dd></div><div><dt>Wann</dt><dd>${esc(n.when)}</dd></div><div><dt>Wo</dt><dd>${esc(n.where)}</dd></div></dl>
         <div class="btns">${n.go?`<button class="btn small" ${gAttr(n.go)} data-n="${e.id}">${esc(n.go.label||"Hin")}</button>`:""}<button class="btn ghost small" data-a="notice-ok" data-v="${e.id}">Verstanden</button></div></div>`:""}</div>`; };
   return `<div class="sheet-bg" data-a="sheet-close"><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t" data-a="noop"><span class="grab" aria-hidden="true"></span>
-    <div class="sh"><h2 id="sh-t">Neu für dich</h2><button class="iconbtn" data-a="sheet-close" aria-label="Schließen" style="background:var(--chip);box-shadow:none">${ICON.close}</button></div>
+    <div class="sh"><h2 id="sh-t">Neu für dich</h2><button class="iconbtn" data-a="sheet-close" aria-label="Schließen" style="background:var(--btn2-bg);box-shadow:none">${ICON.close}</button></div>
     ${list.length ? `<div>${list.map(item).join("")}</div><button class="btn ghost" data-a="notice-all">Alle als gelesen markieren</button>`
       : `<div style="display:flex;justify-content:center;padding:8px 0">${mark(56,"var(--card)")}</div><p class="note" style="font-size:15px;line-height:1.5;text-align:center">Alles gesehen. Neues erscheint hier, sobald du etwas freischaltest, zum Beispiel mit deinem nächsten Video.</p>`}</section></div>`;
 }
@@ -646,8 +646,9 @@ function lockHTML(){
   const L=lockInfo(it), p=it.pillar||"recap", openN=L.steps.filter(x=>!x.done).length;
   const li=(x,i)=>`<li class="${x.done?"on":""}"><span class="n" aria-hidden="true">${x.done?CHECK:i+1}</span><span><b>${esc(x.t)}</b>${x.sub?`<small>${esc(x.sub)}</small>`:""}</span><span class="sr">${x.done?"erledigt":"offen"}</span></li>`;
   return `<div class="sheet-bg" data-a="lock-close"><section class="sheet lock" role="dialog" aria-modal="true" aria-labelledby="lk-t" data-a="noop" style="${pvars(p)}"><span class="grab" aria-hidden="true"></span>
-    <div class="sh"><span class="lk-ic">${LOCK}</span><button class="iconbtn" data-a="lock-close" aria-label="Schließen" style="background:var(--chip);box-shadow:none">${ICON.close}</button></div>
-    <div><span class="eyebrow" style="color:var(--t)">Noch gesperrt · ${esc(it.kind)} · Woche ${it.week}</span><h2 id="lk-t">${esc(it.short?it.title.replace(/^[^:]+: /,""):it.title)}</h2></div>
+    <div class="sh"><span class="lk-pill">${LOCK}Noch gesperrt</span><button class="iconbtn" data-a="lock-close" aria-label="Schließen" style="background:var(--btn2-bg);box-shadow:none">${ICON.close}</button></div>
+    <div class="lk-cover"><svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg><span class="k">${esc(it.kind)} · Woche ${it.week}</span><b class="s">${esc(it.short||it.title)}</b><span class="lk" aria-hidden="true">${LOCK}</span></div>
+    <h2 id="lk-t">${esc(it.sub||it.title.replace(/^[^:]+: /,""))}</h2>
     <p class="lwhy">${esc(L.why)}</p>
     <div><b class="lhd">${L.steps.length>1?`So schaltest du es frei · ${openN} von ${L.steps.length} offen`:"So schaltest du es frei"}</b><ol class="lsteps">${L.steps.map(li).join("")}</ol></div>
     ${L.now ? `<div class="lnow"><p>${esc(L.now.q)}</p>${L.now.hint?`<p class="note">${esc(L.now.hint)}</p>`:""}<button class="btn" ${gAttr(L.now.g)}>${esc(L.now.label)}</button></div><button class="btn ghost" data-a="lock-close">Später</button>`
