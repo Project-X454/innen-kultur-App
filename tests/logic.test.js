@@ -227,3 +227,15 @@ test("Hinweise: jede Freischaltung einmal, gesehene verschwinden", () => {
   IK.markSeen(s, "2.1");
   assert.ok(IK.newUnlocks(s, ctx(s)).some(e => e.id === "bst-ballaststoff"));
 });
+
+test("Starter-Liste: To-dos mit Video erst nach dem Video sichtbar und ausfüllbar", () => {
+  const s = fresh(), st = id => IK.todoStatus(s, IN.TODOS).find(t => t.id === id);
+  assert.equal(st("t1").unlocked, true);
+  assert.equal(st("t3").unlocked, false); assert.equal(st("t3").inputOpen, false);
+  IK.markSeen(s, "1.2");
+  assert.equal(st("t3").unlocked, true); assert.equal(st("t3").inputOpen, true); assert.equal(st("t4").unlocked, true);
+  assert.equal(st("t9").unlocked, true); assert.equal(st("t9").inputOpen, false);
+  IK.markSeen(s, "1.11"); assert.equal(st("t9").inputOpen, true);
+  IN.TODOS.filter(t => t.input).forEach(t => assert.ok(t.after || t.afterInput, t.id + " braucht ein Freischalt-Video"));
+  IN.TODOS.forEach(t => { if(t.after) assert.ok(VIDEOS.find(v => v.id === t.after), t.after); });
+});

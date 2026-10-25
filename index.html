@@ -281,6 +281,10 @@ td:not(:first-child){text-align:right}
 .todo-mini .btn{flex:none}
 .todo{gap:10px}
 .todo.done{opacity:.72}
+.todo.locked{background:var(--bg);border:1.5px dashed var(--line)}
+.todo.locked b{color:var(--muted)}
+.todo-mini.locked b{color:var(--muted)}
+.tick.lock{border:2px dashed var(--line);background:transparent}
 .todo.focus{box-shadow:0 0 0 2px var(--blue)}
 .todo-hd{display:flex;gap:12px;align-items:flex-start}
 .todo-hd>span{display:flex;flex-direction:column;gap:2px;min-width:0}
@@ -303,8 +307,11 @@ button.tick{cursor:pointer;min-width:44px;min-height:44px;width:44px;height:44px
 body.touring{overflow:hidden}
 #tour{position:fixed;inset:0;z-index:100}
 .tour-dim{position:fixed;inset:0;background:rgba(18,32,48,.62)}
-.tour-hole{position:fixed;border-radius:20px;box-shadow:0 0 0 9999px rgba(18,32,48,.62),0 0 0 3px var(--coral);pointer-events:none;transition:all .25s ease}
-.tour-card{position:fixed;width:min(380px,calc(100vw - 16px));max-height:calc(100vh - 16px);overflow:auto;background:var(--card);color:var(--ink);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:10px;box-shadow:0 24px 60px -20px rgba(0,0,0,.5)}
+.tour-hole{position:fixed;display:none;border-radius:20px;box-shadow:0 0 0 9999px rgba(18,32,48,.62),0 0 0 3px var(--coral);pointer-events:none}
+body.touring .enter{animation:none}
+#tour{touch-action:none}
+.tour-card{touch-action:pan-y;overscroll-behavior:contain}
+.tour-card{position:fixed;width:min(380px,calc(100vw - 16px));max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px);overflow:auto;background:var(--card);color:var(--ink);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:10px;box-shadow:0 24px 60px -20px rgba(0,0,0,.5)}
 .tour-card.wide{width:min(460px,calc(100vw - 16px))}
 .tour-card.center{top:50%;left:50%;transform:translate(-50%,-50%)}
 .tour-card .eyebrow{color:var(--coral)}
