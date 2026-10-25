@@ -308,13 +308,21 @@ function vKurs(){
   if(kursWeek==null||!weeks.includes(kursWeek)) kursWeek=IK.currentCourseWeek(VID.VIDEOS,S,maxW);
   const p=IK.weekVideoProgress(VID.VIDEOS,S,kursWeek), nx=IK.nextVideo(VID.VIDEOS,S,maxW);
   const vids=VID.VIDEOS.filter(v=>v.week===kursWeek).sort((a,b)=>a.order-b.order);
-  const tab=n=>{ const q=IK.weekVideoProgress(VID.VIDEOS,S,n); return `<button data-a="kursweek" data-v="${n}" aria-pressed="${kursWeek===n}">${q.total&&q.seen===q.total?CHECK+" ":""}W${n}</button>`; };
-  const more = S.product==="komplett" ? "" : `<button data-a="go" data-v="profil">W5–8 Komplett</button>`;
+  // Zwei Kursteile: Basis (W1–4) und Komplett (W5–8). Es werden nur die Wochen des gewählten Teils gezeigt.
+  const part=kursWeek<=4?"basis":"komplett", partWeeks=Object.keys(VID.WEEKS).map(Number).filter(n=>part==="basis"?n<=4:n>4);
+  const partProg=k=>{ const ws=Object.keys(VID.WEEKS).map(Number).filter(n=>k==="basis"?n<=4:n>4); return ws.reduce((a,n)=>{ const q=IK.weekVideoProgress(VID.VIDEOS,S,n); return [a[0]+q.seen,a[1]+q.total]; },[0,0]); };
+  const pb=partProg("basis"), pk=partProg("komplett"), kOpen=maxW>4;
+  const partSw=`<div class="partsw" role="group" aria-label="Kursteil">
+    <button data-a="kurspart" data-v="basis" aria-pressed="${part==="basis"}"><b>Basis</b><span>Woche 1–4 · ${pb[0]} von ${pb[1]}</span></button>
+    ${kOpen?`<button data-a="kurspart" data-v="komplett" aria-pressed="${part==="komplett"}"><b>Komplett</b><span>Woche 5–8 · ${pk[0]} von ${pk[1]}</span></button>`
+      :`<button data-a="go" data-v="profil" class="locked"><b>Komplett</b><span>Woche 5–8 · freischalten</span></button>`}</div>`;
+  const tab=n=>{ const q=IK.weekVideoProgress(VID.VIDEOS,S,n); return `<button data-a="kursweek" data-v="${n}" aria-pressed="${kursWeek===n}">${q.total&&q.seen===q.total?CHECK+" ":""}Woche ${n}</button>`; };
   const row=v=>{ const seen=IK.isSeen(S,v.id), isNext=nx&&nx.id===v.id, b=IK.bausteinForVideo(v.id);
     return `<button class="vrow" data-a="video" data-v="${v.id}"><span class="dot" style="--c:${PC[pillarOf(v)]}"></span><span class="st${seen?" on":""}${isNext?" nx":""}" aria-hidden="true">${seen?CHECK:isNext?"▸":""}</span>
       <span class="tx"><b>${esc(v.title)}</b><span class="note">${v.type} · ${v.durationMin} Min.${b?" · "+esc(b.label):""}</span></span><span class="sr">${seen?"gesehen":"offen"}</span></button>`; };
   return `<div class="top"><div class="t"><small>Wissen · alle Videos frei</small><b>Kurs</b></div></div>
-  <div class="tabsrow" role="group" aria-label="Kurswochen">${weeks.map(tab).join("")}${more}</div>
+  ${partSw}
+  <div class="tabsrow wk4" role="group" aria-label="Kurswochen">${partWeeks.map(tab).join("")}</div>
   <div class="row" style="padding:0 4px"><b style="font-family:var(--f-head);font-size:20px">Woche ${kursWeek} · ${esc(VID.WEEKS[kursWeek].title)}</b></div>
   <p class="note" style="padding:0 4px">${p.seen} von ${p.total} Videos gesehen · alles freigeschaltet</p>
   ${lay(`<div class="card" style="gap:0;padding:6px 16px">${vids.map(row).join("")}</div>`,
@@ -514,6 +522,9 @@ document.addEventListener("click", e=>{
   if(a==="bst"){ readNums(); draft.bausteine[v]=draft.bausteine[v]!==true; return render(); }
   if(a==="pick-new"){ readNums(); const n=draft.newBausteinIds, i=n.indexOf(v); if(i>=0) n.splice(i,1); else if(n.length<IK.MAX_NEW_PER_WEEK) n.push(v); return render(); }
   if(a==="kursweek"){ kursWeek=+v; return render(); }
+  if(a==="kurspart"){ // springt in die erste Woche des Teils, in der noch ein Video offen ist
+    const ws=Object.keys(VID.WEEKS).map(Number).filter(n=>(v==="basis"?n<=4:n>4)&&n<=weeksTotal());
+    kursWeek=ws.find(n=>{ const q=IK.weekVideoProgress(VID.VIDEOS,S,n); return q.seen<q.total; }) ?? ws[0] ?? 1; return render(); }
   if(a==="video"){ videoId=v; view="video"; flash=""; render(); return window.scrollTo(0,0); }
   if(a==="seen"){ IK.markSeen(S,v); save(); const b=IK.bausteinForVideo(v); flash=b?`Gesehen. Damit ist „${b.label}“ freigeschaltet.`:"Als gesehen markiert."; return render(); }
   if(a==="unseen"){ IK.markUnseen(S,v); save(); flash=""; return render(); }
