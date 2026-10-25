@@ -105,7 +105,7 @@ const TOUR = [
   {kind:"preview", preview:"learn", view:"heute", title:"Weiterlernen",
     text:"Hier steht immer dein nächstes Video. Am Ende jedes Videos wartet eine Mach-jetzt-Aufgabe, die in 30 Sekunden erledigt ist."},
   {view:"heute", target:"nav.tabs .ci, aside.side .btn", title:"Check-in von überall",
-    text:"Den Check-in öffnest du von jedem Screen aus: auf dem Handy mit dem runden Knopf unten in der Mitte, am Computer oben links. Daneben erreichst du Heute, Kurs, Fortschritt und Bibliothek."},
+    text:"Den Check-in öffnest du von jedem Screen aus: auf dem Handy mit dem Logo unten in der Mitte, am Computer oben links. Daneben erreichst du Heute, Kurs, Fortschritt und Bibliothek."},
   {view:"kurs", target:".kseg", title:"Der Kurs: alle Videos sind frei",
     text:"Schau in deinem Tempo, so viel du willst. Die Wochen geben dir eine sinnvolle Reihenfolge. Basis sind Woche 1 bis 4, Komplett zusätzlich Woche 5 bis 8."},
   {view:"kurs", target:".vrow:nth-child(2), .vrow", title:"Videos schalten deinen Tracker frei",
