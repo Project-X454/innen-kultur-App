@@ -291,11 +291,25 @@ function readNums(){
 }
 
 /* ---------- Fortschritt (Screen 10, erster Stand) ---------- */
+function loopRing(score){ const C=2*Math.PI*46;
+  return `<svg viewBox="0 0 110 110" role="img" aria-label="Loop-Score ${score} von 100"><circle cx="55" cy="55" r="46" fill="none" stroke="var(--line)" stroke-width="10"/><circle cx="55" cy="55" r="46" fill="none" stroke="var(--coral)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C*score/100} ${C}" transform="rotate(-90 55 55)"/><text x="55" y="63" text-anchor="middle" font-family="Epilogue,sans-serif" font-weight="800" font-size="30" fill="var(--ink)">${score}</text></svg>`; }
+const loopPart=(l,v,c)=>`<div><div class="row"><span>${l}</span><b class="num">${v}</b></div><div class="bar" style="--c:${c}"><i style="width:${v}%"></i></div></div>`;
+// Beispiel mit Erklärung der drei Teile. withStart = zusätzlich Startpunkt → jetzt.
+function loopExample(withStart){
+  const E=IN.LOOP_EXAMPLE, r=IK.loopScoreFromParts(E.values), W=IK.WEIGHTS, pc=x=>Math.round(x*100)+" %";
+  return `<div class="loopex"><div class="ring">${loopRing(r.score)}<div class="parts">${loopPart("Befinden",r.befinden,"var(--schlaf)")}${loopPart("Umsetzung",r.umsetzung,"var(--darm)")}${loopPart("Dranbleiben",r.dranbleiben,"var(--recap)")}</div></div>
+    <ul class="loopex-l"><li><b>Befinden · zählt ${pc(W.befinden)}</b><span>Wie erholt, energiegeladen und entspannt du warst und wie sich dein Bauch angefühlt hat.</span></li>
+      <li><b>Umsetzung · zählt ${pc(W.umsetzung)}</b><span>Wie viele Basis-Routinen und Bausteine du geschafft hast.</span></li>
+      <li><b>Dranbleiben · zählt ${pc(W.dranbleiben)}</b><span>An wie vielen der 7 Tage du eingecheckt hast, im Beispiel an 6.</span></li></ul>
+    ${withStart?`<b>Startpunkt → jetzt</b><table><tbody>${E.start.map(([l,a,b])=>`<tr><td>${l}</td><td>${a} → ${fmt1(b)}</td><td style="font-weight:700;width:56px">${fmtSigned(Math.round((b-a)*10)/10)}</td></tr>`).join("")}</tbody></table>
+    <p class="note">Werte von 1 bis 5: dein Startpunkt aus dem Onboarding gegen den Durchschnitt deiner letzten Woche.</p>`:""}</div>`;
+}
 function vFortschritt(){
   const weeks=S.weeks.map(w=>{ const c=IK.checkinsOf(S,w.id), act=IK.activeBausteine(w); return {w, c, ls:IK.loopScore(c,act), st:IK.weekStats(c,act)}; });
   const cur=weeks[weeks.length-1];
   const head=`<div class="top"><div class="t"><small>Wie rund dein Loop läuft</small><b>Fortschritt</b></div><button class="iconbtn" data-a="go" data-v="profil" aria-label="Profil und Daten">${logo("#FFFFFF")}</button></div>`;
-  if(!cur||cur.ls.score==null) return head+(S.why?`<div class="card soft why-card"><span class="eyebrow" style="color:var(--recap-text)">Dein Warum</span><b>${esc(S.why)}</b></div>`:"")+`<div class="card"><h2>Noch kein Loop-Score</h2><p class="note">Er erscheint nach deinem ersten Check-in mit den vier Skalen.</p><button class="btn small" data-a="go" data-v="checkin">Zum Check-in</button></div>`;
+  if(!cur||cur.ls.score==null) return head+(S.why?`<div class="card soft why-card"><span class="eyebrow" style="color:var(--recap-text)">Dein Warum</span><b>${esc(S.why)}</b></div>`:"")+lay(`<div class="card"><h2>Noch kein Loop-Score</h2><p class="note">Er erscheint nach deinem ersten Check-in mit den vier Skalen und wird mit jedem Tag genauer. So sieht er nach einer Woche aus:</p><button class="btn small" data-a="go" data-v="checkin">Zum Check-in</button></div>`,
+  `<div class="card example"><span class="eyebrow" style="color:var(--recap-text)">Beispiel nach einer Woche</span>${loopExample(true)}</div>`);
   const s=cur.ls, running=cur.w.status==="running", C=2*Math.PI*46;
   const ring=`<svg viewBox="0 0 110 110" role="img" aria-label="Loop-Score ${s.score} von 100"><circle cx="55" cy="55" r="46" fill="none" stroke="var(--line)" stroke-width="10"/><circle cx="55" cy="55" r="46" fill="none" stroke="var(--coral)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C*s.score/100} ${C}" transform="rotate(-90 55 55)"/><text x="55" y="63" text-anchor="middle" font-family="Epilogue,sans-serif" font-weight="800" font-size="30" fill="var(--ink)">${s.score}</text></svg>`;
   const part=(l,v,c)=>`<div><div class="row"><span>${l}</span><b class="num">${v}</b></div><div class="bar" style="--c:${c}"><i style="width:${v}%"></i></div></div>`;
@@ -611,6 +625,18 @@ function tourSampleNotice(){
     <dl class="www"><div><dt>Wieso</dt><dd>Du weißt jetzt, warum Vielfalt auf dem Teller zählt.</dd></div><div><dt>Wann</dt><dd>Heute Abend im Check-in abhaken.</dd></div><div><dt>Wo</dt><dd>Abend-Check-in · Basis</dd></div></dl>
     <div class="btns"><span class="btn small" style="background:var(--darm)">Was zählt als Pflanze?</span><span class="btn ghost small">Verstanden</span></div></div>`;
 }
+// Saubere Vorschau statt Hervorhebung, wo das echte Element je nach Stand anders aussieht.
+function tourPreview(k){
+  if(k==="learn"){ const v=VID.VIDEOS.find(x=>x.id==="1.1"), b=IK.BASIS.find(x=>x.key==="bunt");
+    return `<div class="tour-prev"><div class="learn" style="pointer-events:none"><span class="thumb" style="--s:${PS.darm};--c:${PC.darm}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5 19 12 8 19Z"/></svg></span>
+      <span class="tx"><span class="eyebrow" style="color:${PT.darm}">Weiterlernen · Ernährung & Darm</span><b>1.1 ${esc(v.title)}</b><span class="note">${v.durationMin} Min. · schaltet „${esc(b.label)}“ frei</span></span></div>
+      <div class="card" style="background:var(--navy);color:#fff;gap:4px"><span class="eyebrow" style="color:#C9D6E6">Mach jetzt · 30 Sekunden</span><span style="font-size:14px">${esc(v.machJetzt||"")}</span></div></div>`; }
+  if(k==="material"){ const row=(kind,title,how,on)=>`<div class="tour-mat${on?" on":""}"><span class="eyebrow" style="color:var(--recap-text)">${kind}</span><b>${title}</b><span class="note">${how}</span></div>`;
+    return `<div class="tour-prev">${row("Mini-Karte · Woche 1","Pflanzen-Teller","frei direkt nach Video 1.6",true)}${row("Handout · Woche 1","Deine Basis auf zwei Seiten","frei nach allen 5 Kernvideos der Woche",false)}${row("Goodie · Woche 1","Bunte Teller in 15 Minuten","frei mit deinem Wochen-Check",false)}
+      <p class="note">Alles liegt danach in der Bibliothek. Gesperrtes zeigt, wodurch es frei wird.</p></div>`; }
+  if(k==="loop") return `<div class="tour-prev"><span class="eyebrow" style="color:var(--recap-text)">Beispiel</span>${loopExample(false)}</div>`;
+  return "";
+}
 function tourLogic(){
   return `<ul class="tour-logic">${IN.UNLOCK_OVERVIEW.map(([a,b,c])=>`<li><b>${esc(a)}</b><span>frei ${esc(b)}</span><small>${esc(c)}</small></li>`).join("")}</ul>`;
 }
@@ -619,7 +645,7 @@ function drawTour(){
   const st=IN.TOUR[tour.i], last=tour.i===IN.TOUR.length-1, first=tour.i===0, el=tourTarget(st);
   let o=document.getElementById("tour"); if(!o){ o=document.createElement("div"); o.id="tour"; document.body.appendChild(o); }
   const r=el?{}:null; tourEl=null;
-  const extra = first ? tourIntro() : st.kind==="notice" ? tourSampleNotice() : st.kind==="logic" ? tourLogic() : "";
+  const extra = first ? tourIntro() : st.kind==="notice" ? tourSampleNotice() : st.kind==="logic" ? tourLogic() : st.kind==="preview" ? tourPreview(st.preview) : "";
   const nx=IK.nextVideo(VID.VIDEOS,S,weeksTotal());
   const btns = first
     ? `<button class="btn" data-a="tour-next">Tour starten · 2 Min.</button><button class="btn link small" data-a="tour-end">Später ansehen</button>`

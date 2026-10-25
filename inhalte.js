@@ -100,7 +100,7 @@ const TOUR = [
     text:"Jeden Abend ca. 1 Minute: abhaken, was geklappt hat, und kurz einschätzen, wie es dir ging. Daraus entstehen dein Fortschritt und dein Loop-Score. Auf Heute siehst du immer, ob er für heute noch offen ist."},
   {view:"heute", target:".starter-card", title:"Deine Starter-Liste",
     text:"10 kleine Aufgaben für Woche 1, z. B. Aufstehzeit festlegen oder den Morgenlicht-Ort finden. Vieles hakt sich von selbst ab, sobald du es erledigt hast. Ein Knopf bringt dich jeweils direkt hin."},
-  {view:"heute", target:".learn", title:"Weiterlernen",
+  {kind:"preview", preview:"learn", view:"heute", title:"Weiterlernen",
     text:"Hier steht immer dein nächstes Video. Am Ende jedes Videos wartet eine Mach-jetzt-Aufgabe, die in 30 Sekunden erledigt ist."},
   {view:"heute", target:"nav.tabs .ci, aside.side .btn", title:"Check-in von überall",
     text:"Den Check-in öffnest du von jedem Screen aus: auf dem Handy mit dem runden Knopf unten in der Mitte, am Computer oben links. Daneben erreichst du Heute, Kurs, Fortschritt und Bibliothek."},
@@ -108,17 +108,22 @@ const TOUR = [
     text:"Schau in deinem Tempo, so viel du willst. Die Wochen geben dir eine sinnvolle Reihenfolge. Basis sind Woche 1 bis 4, Komplett zusätzlich Woche 5 bis 8."},
   {view:"kurs", target:".vrow:nth-child(2), .vrow", title:"Videos schalten deinen Tracker frei",
     text:"Eine Routine oder ein Baustein erscheint im Check-in erst, wenn du das Video dazu gesehen hast. So weißt du immer, warum du etwas abhakst."},
-  {view:"kurs", target:".kurs-extra", title:"Handout und Goodie jeder Woche",
+  {kind:"preview", preview:"material", view:"kurs", title:"Handout und Goodie jeder Woche",
     text:"Das Handout einer Woche wird frei, sobald du ihre Kernvideos gesehen hast. Das Goodie gibt es als Dankeschön für deinen Wochen-Check, unabhängig davon, wie die Woche lief."},
   {kind:"notice", view:"heute", title:"Wenn etwas frei wird, sagen wir es dir",
     text:"Jede Freischaltung kommt mit einer Karte: wieso, wann und wo. Ein Knopf führt dich direkt hin. Die Karte bleibt auf Heute, bis du sie bestätigst."},
   {view:"bibliothek", target:".tabsrow", title:"Die Bibliothek",
     text:"Wissenskarten zum Nachlesen, Rezepte, Pläne und Handouts. Was noch gesperrt ist, zeigt dir, wodurch es frei wird. Ein Tipp darauf bringt dich zum passenden Video."},
-  {view:"fortschritt", target:"main .card", title:"Dein Fortschritt",
-    text:"Nach dem ersten Check-in siehst du deinen Loop-Score. Nach Woche 1 vergleichen wir mit deinem Startpunkt. Hier steht auch dein Warum, sobald du es notiert hast."},
+  {kind:"preview", preview:"loop", view:"fortschritt", title:"Dein Loop-Score",
+    text:"Eine Zahl von 0 bis 100, die zeigt, wie rund dein Loop gerade läuft. Sie entsteht aus deinen Check-ins, hier ein Beispiel nach einer Woche. Nach Woche 1 vergleichen wir außerdem mit deinem Startpunkt."},
   {kind:"logic", view:"heute", title:"So wird was frei",
     text:"Damit du nichts suchen musst, hier alles auf einen Blick. Du findest die Tour jederzeit wieder unter Profil."}
 ];
+// Beispiel für den Loop-Score (Tour und leerer Fortschritt). Der Score wird mit derselben Formel wie in der App berechnet.
+const LOOP_EXAMPLE = {
+  values:{erholt:3.8, energie:3.4, bauch:3.7, stress:3.0, basisPct:68, bausteinePct:75, days:6},
+  start:[["Schlafqualität",2,3.8],["Energie",3,3.4],["Bauchgefühl",3,3.7]]
+};
 // Übersicht für die letzte Tour-Karte: was, wodurch, wo.
 const UNLOCK_OVERVIEW = [
   ["Basis-Routine im Check-in", "nach ihrem Video (1.1, 1.2, 1.3)", "Check-in"],
@@ -133,6 +138,6 @@ const UNLOCK_OVERVIEW = [
 // Warnzeichen aus Video 1.5 für Handout Woche 1. Vom Team zu liefern und vor der Veröffentlichung ärztlich zu prüfen.
 const WARNZEICHEN = [];
 
-const api = {TODOS, BASIS_NOTICE, MATERIALS, MACH_JETZT_GO, TOUR, UNLOCK_OVERVIEW, WARNZEICHEN};
+const api = {TODOS, BASIS_NOTICE, MATERIALS, MACH_JETZT_GO, TOUR, LOOP_EXAMPLE, UNLOCK_OVERVIEW, WARNZEICHEN};
 if(typeof module!=="undefined" && module.exports) module.exports = api; else root.IK_INHALT = api;
 })(typeof globalThis!=="undefined" ? globalThis : this);
