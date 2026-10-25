@@ -39,7 +39,7 @@ Alternativ eine Subdomain (z. B. `app.innen-kultur.de`) per CNAME auf GitHub Pag
 
 ## Dateien
 
-- `index.html` – Gerüst und Gestaltung (CI „Weiß & Blau“)
+- `index.html` – Gerüst und Gestaltung (CI „Weiß & Blau“). Im Browser ab 960 px Breite: Seitenleiste statt Tab-Leiste und Inhalte in zwei Spalten; mobil bleibt alles wie gehabt.
 - `app.js` – Screens, Abläufe, Speicher, Sicherung und Übertragung
 - `logic.js` – Rechenmodul ohne Oberfläche: Loop-Score, Startpunkt-Vergleich, größter Hebel, Tracker-Wochen, Freischaltung der Bausteine
 - `videos.js` – Videoliste. Vorläufig: Woche 2 aus dem Mockup, sonst Platzhalter. Wird durch den CSV-Export des Kursplan-Boards ersetzt.
