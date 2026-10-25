@@ -159,7 +159,17 @@ td:not(:first-child){text-align:right}
 .hist span{background:var(--soft);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--navy)}
 
 /* Bibliothek: Wissen */
+.partsw{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.partsw button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:56px;padding:10px 14px;border:1.5px solid var(--line);border-radius:var(--r-btn);background:var(--card);color:var(--ink);text-align:left}
+.partsw button b{font-family:var(--f-head);font-size:16px}
+.partsw button span{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.partsw button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff}
+.partsw button[aria-pressed="true"] span{color:#C9D6E6}
+.partsw button.locked{border-style:dashed}
 .tabsrow{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+.tabsrow.wk4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;overflow:visible}
+.tabsrow.wk4 button{padding:8px 4px;font-size:14px;white-space:nowrap}
+@media (min-width:960px){.tabsrow.wk4{display:flex}.tabsrow.wk4 button{padding:8px 14px;font-size:inherit}}
 .tabsrow button{flex:none;min-height:40px;border:0;border-radius:999px;padding:8px 14px;font-weight:600;background:var(--card);color:var(--muted)}
 .tabsrow button[aria-pressed="true"]{background:var(--navy);color:#fff}
 .mini{display:grid;grid-template-columns:1fr 1fr;gap:8px}
