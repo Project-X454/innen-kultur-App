@@ -179,6 +179,7 @@ function finishOnboarding(){
   S.goals=obD.goals; S.reminderTime=obD.reminderTime; S.consentHealthDataAt=S.consentHealthDataAt||now;
   S.baselines.push(Object.assign({createdAt:now}, obD.baseline)); S.onboardingCompletedAt=now;
   obD=null; save(); view="heute"; render(); window.scrollTo(0,0);
+  if(!S.tourDoneAt) startTour();
 }
 
 /* ---------- Heute (Screen 04) ---------- */
@@ -336,9 +337,11 @@ function vKurs(){
   <div class="row" style="padding:0 4px"><b style="font-family:var(--f-head);font-size:20px">Woche ${kursWeek} · ${esc(VID.WEEKS[kursWeek].title)}</b></div>
   <p class="note" style="padding:0 4px">${p.seen} von ${p.total} Videos gesehen · alles freigeschaltet</p>
   ${lay(`<div class="card" style="gap:0;padding:6px 16px">${vids.map(row).join("")}</div>`,
-  `<div class="card soft"><span><b>Handout Woche ${kursWeek}</b> · ${p.handoutFree?"frei, folgt als Datei":`nach allen Kernvideos (${p.kernSeen} von ${p.kernTotal})`}</span>
+  `<div class="card soft kurs-extra"><span><b>Handout Woche ${kursWeek}</b> · ${p.handoutFree?(hoOf(kursWeek)?"frei":"frei, folgt als Datei"):`nach allen Kernvideos (${p.kernSeen} von ${p.kernTotal})`}</span>
+    ${p.handoutFree&&hoOf(kursWeek)?`<button class="btn small" data-a="mat" data-v="${hoOf(kursWeek).id}" data-go-lib="1" style="align-self:flex-start">Handout öffnen</button>`:""}
     <span class="note" style="color:var(--ink)"><b>Goodie</b> · nach dem Wochen-Check</span></div>`,"side-r")}`;
 }
+const hoOf = w => IN.MATERIALS.find(m=>m.kind==="Handout"&&m.week===w) || null;
 function vVideo(){
   const v=VID.VIDEOS.find(x=>x.id===videoId); if(!v){ view="kurs"; return vKurs(); }
   const seen=IK.isSeen(S,v.id), b=IK.bausteinForVideo(v.id), list=VID.VIDEOS.filter(x=>x.week<=weeksTotal()).sort((a,c)=>a.week-c.week||a.order-c.order);
@@ -438,7 +441,7 @@ function todoGoBtn(t, onList){
 function starterCard(){
   if(!starterActive()) return "";
   const st=IK.todoStatus(S,IN.TODOS), done=st.filter(t=>t.done).length, open=st.filter(t=>!t.done).slice(0,2);
-  return `<div class="card"><div class="row"><b>Deine Starter-Liste</b><b class="num" style="font-size:14px">${done} von ${st.length}</b></div>
+  return `<div class="card starter-card"><div class="row"><b>Deine Starter-Liste</b><b class="num" style="font-size:14px">${done} von ${st.length}</b></div>
     <div class="bar" style="--c:var(--recap)"><i style="width:${Math.round(done/st.length*100)}%"></i></div>
     ${open.map(t=>`<div class="todo-mini"><span><b>${esc(t.title)}</b><span class="note">${esc(t.when)}</span></span>${todoGoBtn(t)}</div>`).join("")}
     <button class="btn link small" data-a="go" data-v="starter" style="align-self:flex-start;min-height:0;padding:0">Alle To-dos ansehen</button></div>`;
@@ -569,6 +572,75 @@ function handout1(){
     <span class="ft">innen-kultur.de · Seite 2 von 2 · Ersetzt keine ärztliche Beratung.</span></div>`;
 }
 
+/* ---------- Willkommen und App-Tour (nach dem Onboarding, jederzeit unter Profil) ---------- */
+let tour=null;
+function startTour(){ tour={i:0}; showTourStep(); }
+function endTour(){
+  tour=null; S.tourDoneAt=S.tourDoneAt||new Date().toISOString(); save();
+  const o=document.getElementById("tour"); if(o) o.remove();
+  document.body.classList.remove("touring");
+}
+function showTourStep(){
+  const st=IN.TOUR[tour.i];
+  view=st.view; mat=null; wissen=null; kursWeek=null; flash=""; freshIds=[]; render(); window.scrollTo(0,0);
+  document.body.classList.add("touring");
+  requestAnimationFrame(drawTour);
+}
+function tourTarget(st){
+  if(!st.target) return null;
+  for(const sel of st.target.split(",")){ const el=[...document.querySelectorAll(sel.trim())].find(e=>e.getClientRects().length); if(el) return el; }
+  return null;
+}
+function tourIntro(){
+  const prod = S.product==="komplett" ? "Dein Komplettkurs: 8 Wochen, dazu 3 Monate Club." : "Dein Basiskurs: 4 Wochen. Woche 5 bis 8 kannst du später dazunehmen.";
+  return `<ul class="tour-list"><li><b>Wissen</b><span>Kurze Videos, alle sofort frei, Woche für Woche sinnvoll sortiert.</span></li>
+    <li><b>Umsetzung</b><span>Jeden Abend 1 Minute Check-in. Dazu kleine Routinen, die mit jeder Woche wachsen.</span></li>
+    <li><b>Fortschritt</b><span>Dein Loop-Score und der Vergleich mit deinem Startpunkt.</span></li></ul>
+    <p class="note">${prod}</p>`;
+}
+function tourSampleNotice(){
+  return `<div class="card notice demo" style="--c:var(--darm);--s:var(--darm-soft)" aria-label="Beispiel einer Hinweis-Karte"><span class="eyebrow" style="color:var(--darm-text)">Beispiel · Neu im Check-in</span><b class="nt">„Bunt gegessen“ ist jetzt in deinem Check-in</b>
+    <dl class="www"><div><dt>Wieso</dt><dd>Du weißt jetzt, warum Vielfalt auf dem Teller zählt.</dd></div><div><dt>Wann</dt><dd>Heute Abend im Check-in abhaken.</dd></div><div><dt>Wo</dt><dd>Abend-Check-in · Basis</dd></div></dl>
+    <div class="btns"><span class="btn small" style="background:var(--darm)">Was zählt als Pflanze?</span><span class="btn ghost small">Verstanden</span></div></div>`;
+}
+function tourLogic(){
+  return `<ul class="tour-logic">${IN.UNLOCK_OVERVIEW.map(([a,b,c])=>`<li><b>${esc(a)}</b><span>frei ${esc(b)}</span><small>${esc(c)}</small></li>`).join("")}</ul>`;
+}
+function drawTour(){
+  if(!tour) return;
+  const st=IN.TOUR[tour.i], last=tour.i===IN.TOUR.length-1, first=tour.i===0, el=tourTarget(st);
+  let o=document.getElementById("tour"); if(!o){ o=document.createElement("div"); o.id="tour"; document.body.appendChild(o); }
+  const r=el?{}:null;
+  const extra = first ? tourIntro() : st.kind==="notice" ? tourSampleNotice() : st.kind==="logic" ? tourLogic() : "";
+  const nx=IK.nextVideo(VID.VIDEOS,S,weeksTotal());
+  const btns = first
+    ? `<button class="btn" data-a="tour-next">Tour starten · 2 Min.</button><button class="btn link small" data-a="tour-end">Später ansehen</button>`
+    : last
+    ? `${nx?`<button class="btn" data-a="tour-finish" data-v="${nx.id}">Los geht's mit Video ${nx.id}</button>`:""}<button class="btn ghost" data-a="tour-finish">Zu Heute</button>`
+    : `<div class="tour-row"><button class="btn ghost small" data-a="tour-back">Zurück</button><button class="btn small" data-a="tour-next">Weiter</button></div><button class="btn link small" data-a="tour-end">Tour beenden</button>`;
+  o.innerHTML=`${r?`<div class="tour-hole"></div>`:`<div class="tour-dim"></div>`}
+    <div class="tour-card${r?"":" center"}${extra?" wide":""}" role="dialog" aria-modal="true" aria-labelledby="tour-t" aria-describedby="tour-d">
+      <span class="eyebrow">${first?"Willkommen":`Tour · ${tour.i} von ${IN.TOUR.length-1}`}</span>
+      <h2 id="tour-t">${esc(st.title)}</h2><p id="tour-d">${esc(st.text)}</p>${extra}
+      <div class="tour-btns">${btns}</div>
+      ${first||last?"":`<div class="tour-dots" aria-hidden="true">${IN.TOUR.slice(1).map((_,i)=>`<i class="${i+1===tour.i?"on":""}"></i>`).join("")}</div>`}</div>`;
+  const c=o.querySelector(".tour-card");
+  if(el){ // Element und Karte passen untereinander: zu hohe Elemente werden oben angeschnitten hervorgehoben
+    const vw=innerWidth, vh=innerHeight, ch=c.offsetHeight, cw=c.offsetWidth, gap=14, pad=6;
+    const room=vh-ch-gap-2*pad-16;
+    const fixed=getComputedStyle(el.closest("nav,aside")||el).position==="fixed";
+    if(!fixed){ const b0=el.getBoundingClientRect(); window.scrollBy(0, b0.top-(pad+12)); } // Element nach oben, Karte darunter
+    const b=el.getBoundingClientRect();
+    const h=Math.min(b.height, fixed?b.height:Math.max(60, room));
+    const hole=o.querySelector(".tour-hole"); hole.style.cssText=`top:${b.top-pad}px;left:${b.left-pad}px;width:${b.width+2*pad}px;height:${h+2*pad}px`;
+    const hb=b.top+h+pad;
+    let top = hb+gap+ch<=vh-8 ? hb+gap : b.top-pad-gap-ch>=8 ? b.top-pad-gap-ch : Math.max(8, vh-ch-8);
+    let left = Math.min(Math.max(8, b.left+b.width/2-cw/2), vw-cw-8);
+    c.style.top=top+"px"; c.style.left=left+"px"; }
+  const f=o.querySelector('[data-a="tour-next"],[data-a="tour-finish"]'); if(f) f.focus({preventScroll:true});
+}
+window.addEventListener("resize",()=>{ if(tour) drawTour(); });
+
 /* ---------- Bibliothek (Screens 11 und 14) ---------- */
 const EX={
   pflanzen:{p:"darm",title:"Der Pflanzen-Teller",short:"Bunt gegessen: der Pflanzen-Teller",check:"Im Check-in ab Tag 1 als „Bunt gegessen“.",
@@ -642,6 +714,8 @@ function vProfil(){
   <div class="masonry"><div class="card"><h2>Dein Startpunkt</h2>
     ${b?IK.BASELINE.map(x=>`<div class="kv"><span>${x.label}</span><b class="num">${b[x.key]} von 5</b></div>`).join("")+`<p class="note">Erfasst am ${new Date(b.createdAt).toLocaleDateString("de-DE")}.</p>`:`<p class="note">Noch nicht erfasst.</p>`}
     <button class="btn ghost small" data-a="rebase">Neu erfassen</button></div>
+  <div class="card"><h2>App-Tour</h2><p class="note">In 2 Minuten durch alle Bereiche, mit einer Übersicht, wodurch Handouts, Goodies und Bausteine frei werden.</p>
+    <div class="btns"><button class="btn small" data-a="tour-start">Tour ansehen</button></div></div>
   ${basisFieldsCard()}
   ${bausteineCard()}
   <div class="card"><h2>Erinnerung</h2><div class="times" role="group" aria-label="Uhrzeit für die Erinnerung">${["20:00","21:00","22:00",null].map(t=>`<button type="button" data-a="ptime" data-v="${t||""}" aria-pressed="${S.reminderTime===t}">${t||"Aus"}</button>`).join("")}</div>
@@ -728,6 +802,12 @@ function loadDemo(){
 document.addEventListener("click", e=>{
   const el=e.target.closest("[data-a]"); if(!el||el.disabled) return;
   const a=el.dataset.a, v=el.dataset.v;
+  if(a==="tour-next"){ tour.i=Math.min(tour.i+1,IN.TOUR.length-1); return showTourStep(); }
+  if(a==="tour-back"){ tour.i=Math.max(tour.i-1,0); return showTourStep(); }
+  if(a==="tour-end"){ endTour(); return go("heute"); }
+  if(a==="tour-finish"){ endTour(); if(v){ videoId=v; view="video"; flash=""; render(); return window.scrollTo(0,0); } return go("heute"); }
+  if(a==="tour-start"){ return startTour(); }
+  if(tour) return; // während der Tour reagiert nur die Tour
   if(a==="go") return go(v);
   if(a==="ob") return startOnboarding(v);
   if(a==="demo") return loadDemo();
@@ -757,7 +837,7 @@ document.addEventListener("click", e=>{
   if(a==="notice-ok"){ markNotice(v); freshIds=freshIds.filter(x=>x!==v); return render(); }
   if(a==="todo-tick"){ S.todosDone=S.todosDone||{}; if(S.todosDone[v]) delete S.todosDone[v]; else S.todosDone[v]=new Date().toISOString(); save(); return render(); }
   if(a==="field"){ focusTodo=null; return saveField(v); }
-  if(a==="mat"){ mat=v; render(); return window.scrollTo(0,0); }
+  if(a==="mat"){ if(el.dataset.goLib){ view="bibliothek"; libTab="handouts"; wissen=null; } mat=v; render(); return window.scrollTo(0,0); }
   if(a==="mat-close"){ mat=null; render(); return window.scrollTo(0,0); }
   if(a==="weekcheck-done"){ const w=IK.currentWeek(S); IK.completeWeek(S); save(); view="heute";
     flash=`Woche ${w.index} abgeschlossen. Mit deinem nächsten Check-in startet Woche ${w.index+1}.`; render(); return window.scrollTo(0,0); }
@@ -787,7 +867,7 @@ document.addEventListener("click", e=>{
   if(a==="wipe-no"){ confirmWipe=false; return render(); }
   if(a==="wipe-yes"){ S=blank(); save(); confirmWipe=false; view="heute"; ob="welcome"; obD=null; flash=""; render(); return window.scrollTo(0,0); }
 });
-document.addEventListener("keydown", e=>{ if(e.key!=="Enter") return; const t=e.target; if(t&&t.id&&t.id.startsWith("f-")){ e.preventDefault(); saveField(t.id.slice(2)); } });
+document.addEventListener("keydown", e=>{ if(tour&&e.key==="Escape"){ endTour(); return go("heute"); } if(e.key!=="Enter") return; const t=e.target; if(t&&t.id&&t.id.startsWith("f-")){ e.preventDefault(); saveField(t.id.slice(2)); } });
 document.addEventListener("submit", e=>{ if(e.target.dataset.form==="code"){ e.preventDefault(); unlock(document.getElementById("code").value); } });
 document.addEventListener("change", e=>{
   if(e.target.id!=="imp") return; const f=e.target.files[0]; if(!f) return; const r=new FileReader();

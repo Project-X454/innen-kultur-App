@@ -299,6 +299,33 @@ button.tick{cursor:pointer;min-width:44px;min-height:44px;width:44px;height:44px
 .basis button.locked small{font-size:11.5px;font-weight:600;color:var(--t)}
 .wk-card.locked{opacity:.8}
 
+/* App-Tour */
+body.touring{overflow:hidden}
+#tour{position:fixed;inset:0;z-index:100}
+.tour-dim{position:fixed;inset:0;background:rgba(18,32,48,.62)}
+.tour-hole{position:fixed;border-radius:20px;box-shadow:0 0 0 9999px rgba(18,32,48,.62),0 0 0 3px var(--coral);pointer-events:none;transition:all .25s ease}
+.tour-card{position:fixed;width:min(380px,calc(100vw - 16px));max-height:calc(100vh - 16px);overflow:auto;background:var(--card);color:var(--ink);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:10px;box-shadow:0 24px 60px -20px rgba(0,0,0,.5)}
+.tour-card.wide{width:min(460px,calc(100vw - 16px))}
+.tour-card.center{top:50%;left:50%;transform:translate(-50%,-50%)}
+.tour-card .eyebrow{color:var(--coral)}
+.tour-card h2{margin:0;font-family:var(--f-head);font-size:21px;line-height:1.2;letter-spacing:-.02em}
+.tour-card p{margin:0;font-size:15px;line-height:1.5}
+.tour-btns{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.tour-row{display:grid;grid-template-columns:1fr 2fr;gap:8px}
+.tour-dots{display:flex;gap:5px;justify-content:center}
+.tour-dots i{width:6px;height:6px;border-radius:50%;background:var(--line)}
+.tour-dots i.on{background:var(--coral);width:16px;border-radius:3px}
+.tour-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.tour-list li{display:flex;flex-direction:column;gap:1px;padding:10px 12px;background:var(--bg);border-radius:12px;font-size:14px;line-height:1.4}
+.tour-tab{width:100%;border-collapse:collapse;font-size:13px;line-height:1.35}
+.tour-tab th{text-align:left;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:0 6px 6px 0}
+.tour-tab td{border-top:1px solid var(--line);padding:7px 6px 7px 0;vertical-align:top}
+.tour-logic{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.tour-logic li{display:flex;flex-direction:column;gap:1px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;line-height:1.4}
+.tour-logic small{font-size:12px;color:var(--muted)}
+.notice.demo{box-shadow:none;background:var(--bg)}
+@media (prefers-reduced-motion:reduce){.tour-hole{transition:none}}
+
 /* Kühlschrank-Karten: nur im Druck sichtbar */
 #print{display:none}
 @page{size:105mm 148mm;margin:0}
