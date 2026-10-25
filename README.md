@@ -96,3 +96,7 @@ Nach dem Onboarding begrüßt die App einmalig mit „Herzlich willkommen“ und
 - App-Symbole in `icons/` auf das neue Logo „Innere Schleife“ umstellen
 - Video-Player mit Fortschritts-Event (ab 90 % = gesehen) anbinden. Die Videoliste kommt bereits aus dem Kursplan-Board.
 - Bei jedem Update `VERSION` in `sw.js` hochzählen, damit Geräte die neue Version laden
+
+## Menü und Logo
+- Die Leiste unten ist dunkles Navy und hebt sich vom Inhalt ab. Der Check-in in der Mitte hat die Form des Logos.
+- Das Logo steht in der Kopfzeile von Heute, Kurs, Fortschritt und Bibliothek, im „Geschafft“-Moment nach dem Check-in und im leeren Neu-Blatt.
