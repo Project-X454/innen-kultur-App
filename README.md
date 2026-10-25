@@ -65,6 +65,15 @@ Alternativ eine Subdomain (z. B. `app.innen-kultur.de`) per CNAME auf GitHub Pag
 - `sw.js` – Offline-Betrieb
 - `icons/` – App-Symbole
 
+## Gestaltung (Redesign Oktober 2026)
+
+- **Heute** zeigt eine Fokus-Karte, die sich nach der Tageszeit richtet. Die Reihenfolge: Wochen-Check, abends der Check-in, morgens das Morgenlicht, tagsüber das nächste Video, sonst „erledigt“. „Später“ blendet einen Fokus für den Tag aus.
+- **Routinen tagsüber abhaken:** Die drei Basis-Kacheln auf Heute lassen sich direkt antippen. Vor dem Check-in merkt sich die App das nur für heute (`dayTicks`), danach ändert ein Tipp den Eintrag des Tages.
+- **Glocke mit Neu-Blatt:** Freischaltungen sammeln sich hinter der Glocke und öffnen sich als Blatt von unten mit Wieso, Wann und Wo.
+- **Check-in in 3 Schritten:** Kacheln, dann Skalen, dann der Erfolgsmoment mit Zwischenstand und dem, was morgen wartet.
+- **Abendmodus:** von 18 bis 4 Uhr dunkel, unter Profil → Darstellung abschaltbar. Die Druckvorlagen bleiben hell.
+- **Haptik:** kurzes Tippen beim Abhaken, Erfolgs-Muster beim Speichern, weicher Impuls bei Freischaltungen, kräftig beim Wochenabschluss. Android nutzt `navigator.vibrate`. Auf dem iPhone läuft es über einen Safari-Umweg mit einem unsichtbaren Switch-Feld, der mit iOS-Updates wegfallen kann. Unter Profil abschaltbar.
+
 ## Willkommen und App-Tour
 
 Nach dem Onboarding begrüßt die App einmalig mit „Herzlich willkommen“ und dem, was Käufer erwartet. Danach führt eine Tour in 11 Schritten über die echten Screens: Check-in, Starter-Liste, Weiterlernen, Navigation, Kurs, Videos, Handout und Goodie, Freischalt-Hinweise mit Beispiel, Bibliothek, Fortschritt. Am Ende kommt eine Übersicht, was wodurch frei wird. Die Tour lässt sich überspringen und jederzeit unter **Profil → App-Tour** neu starten. Texte und Reihenfolge stehen in `inhalte.js` (`TOUR`, `UNLOCK_OVERVIEW`).
