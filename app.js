@@ -134,13 +134,13 @@ function vOnboarding(){
   if(ob==="consent") return vConsent();
   if(ob==="baseline") return vBaseline(false);
   const pill = S.product==="komplett" ? "Komplettkurs · 8 Wochen" : S.product==="basis" ? "Basiskurs · 4 Wochen" : "Online-Kurs · 4 oder 8 Wochen";
-  const P=[["darm","Ernährung & Darm","Was du isst, prägt deinen Bauch"],["schlaf","Schlaf","Wo dein Körper sich erholt"],["beweg","Bewegung","Der Antrieb für alles andere"],["recap","Recap · Healthspan","Was das für die nächsten Jahre heißt"]];
-  return lay(`<div class="brand">${logo("#F5F7FA")}innen kultur</div>
-  <span class="pill">${pill}</span>
-  <h1 style="font-size:40px">Gesundheit beginnt <em>innen.</em></h1>
+  const P=[["darm","Säule 1","Ernährung & Darm"],["schlaf","Säule 2","Schlaf"],["beweg","Säule 3","Bewegung"],["recap","Jede Woche","Recap"]];
+  return lay(`<div class="brand wbrand">${mark(44)}<span>innen kultur</span></div>
+  <span class="wpill">${pill}</span>
+  <h1 class="wh">Gesundheit beginnt <span class="acc">innen.</span></h1>
   <p class="lead">Jede Woche ein kleiner Loop: verstehen, ausprobieren, sehen, was es mit dir macht.</p>`,
-  `${P.map(([k,t,s])=>`<div class="pillar" style="--s:${PS[k]};--c:${PC[k]}"><span class="ic">${ICON[k]}</span><span><b>${t}</b><span>${s}</span></span></div>`).join("")}
-  <button class="btn" data-a="ob" data-v="${S.product?"goals":"code"}" style="margin-top:12px">Los geht's</button>
+  `<div class="wtiles4">${P.map(([k,kick,t])=>`<div class="wtile4" style="${pvars(k)}"><svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg><span class="k">${kick}</span><b>${t}</b></div>`).join("")}</div>
+  <button class="btn" data-a="ob" data-v="${S.product?"goals":"code"}" style="margin-top:8px">Los geht's</button>
   <button class="btn link" data-a="ob" data-v="restore">Daten von einem anderen Gerät übernehmen</button>`,"hero");
 }
 function obHead(back,step,of){
@@ -193,15 +193,17 @@ function vConsent(){
   <button class="btn" data-a="ob" data-v="baseline" ${on?"":"disabled"}>Weiter</button>`;
 }
 function vBaseline(isRebase){
-  const d=obD, b=d.baseline, all=IK.BASELINE.every(x=>b[x.key]);
+  const d=obD, b=d.baseline, all=IK.BASELINE.every(x=>b[x.key]), n=IK.BASELINE.filter(x=>b[x.key]).length;
   const lever=IK.biggestLever(b), lb={darm:["Ernährung & Darm","Bunt gegessen"],schlaf:["Schlaf","Morgenlicht und feste Aufstehzeit"],beweg:["Bewegung","30 Min bewegt"]}[lever];
+  const bars=IK.BASELINE.map(x=>{ const v=b[x.key], col=x.pillar?PC[x.pillar]:"var(--navy)";
+    return `<div><b>${v||"?"}</b>${v?`<i style="--c:${col};height:${v*16}px"></i>`:`<i class="ph"></i>`}<span>${x.short}</span></div>`; }).join("");
   return `${isRebase?`<div class="ob-top"><button class="iconbtn" data-a="rebase-cancel" aria-label="Abbrechen">${ICON.back}</button></div>`:obHead("consent",3,3)}
-  <h1>Wo stehst du gerade?</h1><p class="lead">Ganz spontan, 1 = schlecht, 5 = sehr gut. ${S.product==="komplett"?"Später":"In Woche 4"} vergleichen wir.</p>
+  <div class="obh"><span class="eyebrow" style="color:var(--muted)">${isRebase?"Startpunkt neu erfassen":"Schritt 3 von 3 · dein Startpunkt"}</span><h1>Wo stehst du <span class="acc">gerade?</span></h1><p class="lead">Ganz spontan, 1 = schlecht, 5 = sehr gut. ${S.product==="komplett"?"Später":"In Woche 4"} vergleichen wir.</p></div>
   ${isRebase?`<div class="card soft"><p class="note" style="color:var(--ink)">Wenn du deinen Startpunkt neu erfasst, beginnt der Vergleich „Startpunkt → jetzt“ ab heute neu.</p></div>`:""}
   <div class="card">${IK.BASELINE.map(x=>scale("bl."+x.key,x.label,b[x.key],x.pillar?PC[x.pillar]:"var(--navy)")).join("")}</div>
-  <div class="card soft"><b>Dein Startpunkt</b>
-  <div class="cols" role="img" aria-label="${IK.BASELINE.map(x=>x.label+" "+(b[x.key]||"offen")).join(", ")}">${IK.BASELINE.map(x=>`<div><i style="--c:${x.pillar?PC[x.pillar]:"var(--navy)"};height:${(b[x.key]||0)*16}px"></i><span>${x.short}</span></div>`).join("")}</div>
-  ${lever?`<span><b>Dein größter Hebel: ${lb[0]}.</b> Achte in Woche 1 besonders auf „${lb[1]}“.</span>`:`<span class="note">Tipp die fünf Werte an, dann siehst du deinen größten Hebel.</span>`}</div>
+  ${tcard("schlaf",`<span class="k">Dein Startpunkt · ${n} von 5</span>
+    <div class="cols cols-ph" role="img" aria-label="${IK.BASELINE.map(x=>x.label+" "+(b[x.key]||"offen")).join(", ")}">${bars}</div>
+    ${lever&&all?`<p><b>Dein größter Hebel: ${lb[0]}.</b> Achte in Woche 1 besonders auf „${lb[1]}“.</p>`:`<p>${n?`Noch ${5-n} ${5-n===1?"Wert":"Werte"}, dann siehst du deinen größten Hebel.`:"Tipp die fünf Werte an, dann siehst du deinen größten Hebel."}</p>`}`)}
   <button class="btn" data-a="${isRebase?"rebase-save":"finish"}" ${all?"":"disabled"}>${isRebase?"Startpunkt speichern":"Woche 1 starten"}</button>`;
 }
 function startOnboarding(step){ obD=obD||{goals:S.goals.slice(), reminderTime:S.reminderTime, consent:!!S.consentHealthDataAt, baseline:{}}; ob=step; flash=""; render(); window.scrollTo(0,0); }
@@ -864,23 +866,39 @@ function weekCheckCard(){
     <p>${n} Tage eingetragen. Schau dir deine Woche an und schließ sie ab${w.index===1?". Dabei schaltest du dein Goodie frei":""}.</p>
     <div class="btns"><button class="btn small" data-a="go" data-v="wochencheck">Wochen-Check öffnen</button></div>`);
 }
+// Was dir gut tat: Routine mit dem größten Unterschied bei einer Skala (mindestens 2 Tage mit und ohne).
+function weekInsight(c){
+  const sc=[["energie","mehr Energie",1],["erholt","dich erholter gefühlt",1],["bauch","ein besseres Bauchgefühl",1],["stress","weniger Stress",-1]];
+  let best=null;
+  IK.BASIS.forEach(b=>{ const on=c.filter(x=>x.basis&&x.basis[b.key]), off=c.filter(x=>!(x.basis&&x.basis[b.key]));
+    if(on.length<2||off.length<2) return;
+    sc.forEach(([k,txt,dir])=>{ const av=a=>{ const v=a.map(x=>x[k]).filter(v=>typeof v==="number"); return v.length?v.reduce((p,q)=>p+q,0)/v.length:null; };
+      const a=av(on), z=av(off); if(a==null||z==null) return; const d=(a-z)*dir;
+      if(d>=0.3&&(!best||d>best.d)) best={d,b,txt,a,z}; }); });
+  return best ? `An Tagen mit „${esc(best.b.label)}“ hattest du im Schnitt <b>${best.txt}</b> (${fmt1(best.a)} statt ${fmt1(best.z)}).` : "";
+}
 function vWochencheck(){
   const w=IK.currentWeek(S);
   if(!w||!IK.weekCheckOpen(S)){ view="heute"; return vHeute(); }
   const c=IK.checkinsOf(S,w.id), act=IK.activeBausteine(w), ls=IK.loopScore(c,act), stats=IK.weekStats(c,act);
   const prev=S.weeks.filter(x=>x.index<w.index).slice(-1)[0], pls=prev?IK.loopScore(IK.checkinsOf(S,prev.id),IK.activeBausteine(prev)):null;
-  const cands=IK.newWeekCandidates(S).slice(0,IK.MAX_NEW_PER_WEEK).map(IK.bausteinById);
-  const row=(l,on,col)=>`<div class="kv"><span><span class="dot" style="--c:${col}"></span>${esc(l)}</span><b class="num">${on} von ${c.length} Tagen</b></div>`;
-  return `<div class="top"><div class="t"><small>Woche ${w.index} · ${c.length} Tage eingetragen</small><b>Wochen-Check</b></div><button class="iconbtn" data-a="back" data-v="heute" aria-label="Schließen">${ICON.close}</button></div>
-  ${lay(`<div class="card"><b>Deine Basis</b>${IK.BASIS.map(b=>row(b.label,c.filter(x=>x.basis&&x.basis[b.key]).length,PC[b.pillar])).join("")}
-    ${act.map(b=>{ const r=stats.bausteine.find(x=>x.id===b.id); return `<div class="kv"><span><span class="dot" style="--c:${PC[b.pillar]}"></span>${esc(b.label)}</span><b class="num">${r&&r.rate!=null?Math.round(r.rate*100)+" %":"–"}</b></div>`; }).join("")}</div>
-  <div class="card"><div class="row"><b>Loop-Score</b><b class="num" style="font-size:22px">${ls.score==null?"–":ls.score}</b></div>
-    <p class="note">${pls&&pls.score!=null&&ls.score!=null?`Woche ${prev.index}: ${pls.score}. ${ls.score>pls.score?"Dein Loop läuft runder.":ls.score<pls.score?"Etwas weniger als letzte Woche. Das ist normal, wichtig ist das Dranbleiben.":"Genau wie letzte Woche."}`:"Dein erster Wert. Ab nächster Woche siehst du den Vergleich."}</p></div>`,
-  `<div class="card soft"><b>Als Nächstes</b>
-    <p class="note" style="color:var(--ink)">${cands.length?`Mit deiner nächsten Woche kommen ins Check-in: ${cands.map(b=>esc(b.label)).join(", ")}.`:`Neue Bausteine schaltest du mit den Kernvideos der nächsten Kurswoche frei.`}</p>
-    ${w.index===1?`<p class="note" style="color:var(--ink)">Mit dem Abschluss wird dein Goodie frei: „Bunte Teller in 15 Minuten“.</p>`:""}</div>
-  <button class="btn" data-a="weekcheck-done">Woche ${w.index} abschließen</button>
-  <p class="note" style="text-align:center">Die ausführliche Auswertung mit Zusammenhängen kommt mit einem späteren Update.</p>`,"side-r")}`;
+  const cands=IK.newWeekCandidates(S).map(IK.bausteinById);
+  const cmp=IK.compareToStart(latestBaseline(), stats.avg).filter(r=>!r.text&&r.diff>0).sort((a,b)=>b.diff-a.diff)[0];
+  const trend = pls&&pls.score!=null&&ls.score!=null ? `${ls.score>=pls.score?"+":"−"}${Math.abs(ls.score-pls.score)} zur Vorwoche` : cmp ? `${esc(cmp.label)} ${fmtSigned(cmp.diff)} seit dem Start` : "Dein erster Wert";
+  const tile=(b)=>`<div class="wtile" style="${pvars(b.pillar)}"><span class="ic">${ICON[b.pillar]}</span><b>${c.filter(x=>x.basis&&x.basis[b.key]).length}<small> von ${c.length}</small></b><span>Tage ${esc(b.label==="30 Min bewegt"?"30 Min bewegt":b.label)}</span></div>`;
+  const ins=weekInsight(c), gd=w.index===1?matById("goodie1"):null;
+  return `<div class="wcwrap"><div class="tf-top"><span class="eyebrow" style="color:var(--muted)">Woche ${w.index} · ${c.length} Tage eingetragen</span><button class="iconbtn" data-a="back" data-v="heute" aria-label="Schließen">${ICON.close}</button></div>
+  <h1>Dein <span class="acc">Wochen-Check</span></h1>
+  ${lay(`<section class="card wchero" aria-label="Loop-Score">${ls.score!=null?loopRing(ls.score):""}<span><span class="eyebrow" style="color:var(--muted)">Loop-Score · Woche ${w.index}</span><b>${ls.score!=null?scoreWord(ls.score):"Noch kein Wert"}</b><span class="note" style="color:var(--darm-text)">${trend}</span></span></section>
+    <div class="wtiles">${IK.BASIS.map(tile).join("")}</div>
+    ${act.length?`<div class="card wlist">${act.map(b=>{ const r=stats.bausteine.find(x=>x.id===b.id); return `<div class="wrow" style="${pvars(b.pillar)}"><span class="ic">${ICON[b.pillar]}</span><span style="flex:1">${esc(b.label)}</span><b class="num">${r&&r.rate!=null?Math.round(r.rate*100)+" %":"–"}</b></div>`; }).join("")}</div>`:""}
+    ${ins?`<div class="card"><span class="eyebrow" style="color:var(--muted)">Was dir gut tat</span><p style="margin:0;font-size:16px;line-height:1.45">${ins}</p><span class="note">Aus deinen Check-ins dieser Woche berechnet</span></div>`:""}`,
+  `<div class="card"><span class="eyebrow" style="color:var(--muted)">Nächste Woche neu</span>
+    ${cands.length?`<div class="wlist">${cands.slice(0,6).map(b=>`<div class="wrow" style="${pvars(b.pillar)}"><span class="ic">${ICON[b.pillar]}</span><span>${esc(b.label)}</span></div>`).join("")}</div>
+      <p class="note">${cands.length>IK.MAX_NEW_PER_WEEK?`Bis zu ${IK.MAX_NEW_PER_WEEK} kommen dazu. Du wählst sie bei deinem ersten Check-in der neuen Woche.`:"Sie sind ab deinem nächsten Check-in dabei."}</p>`
+      :`<p class="note" style="color:var(--ink)">Neue Bausteine schaltest du mit den Kernvideos der nächsten Kurswoche frei.</p>`}</div>
+    ${gd?`<div class="wgoodie" style="${pvars(gd.pillar||"beweg")}"><svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg><span class="k">Goodie · wird jetzt frei</span><b>${esc(gd.title.replace(/^[^:]+: /,""))}</b></div>`:""}
+    <button class="btn wcdone" data-a="weekcheck-done">Woche ${w.index} abschließen</button>`,"side-r")}</div>`;
 }
 
 /* ---------- Materialien in der Bibliothek ---------- */
@@ -899,20 +917,22 @@ function materialList(tab){
 }
 // Detailseiten der Bibliothek: gleicher Aufbau wie ein To-do. Kachel in Themenfarbe, Titel, getönte Karten, weiße Knöpfe darauf.
 function libHead(closeAct, kicker, short, title, lead, p){
-  return `<div class="tfocus libd"><div class="tf-top"><button class="iconbtn" data-a="${closeAct}" aria-label="Zurück">${ICON.back}</button><span class="lk-pill">Bibliothek</span></div>
-    <div class="lk-cover" style="${pvars(p)}"><svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg><span class="k">${esc(kicker)}</span><b class="s">${esc(short)}</b></div>
-    <h1 class="tq">${esc(title)}</h1>${lead?`<p class="lwhy">${lead}</p>`:""}`;
+  return `<div class="libd"><header class="libhero" style="${pvars(p)}"><svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg>
+      <div class="tf-top"><button class="iconbtn" data-a="${closeAct}" aria-label="Zurück">${ICON.back}</button><span class="lk-pill">Bibliothek</span></div>
+      <span class="k">${esc(kicker)}</span><b class="s">${esc(short)}</b><h1 class="tq">${esc(title)}</h1>${lead?`<p class="lwhy">${lead}</p>`:""}</header>`;
 }
-const printTile=(p,title,sub,label,card)=>tcard(p,`<span class="k kic">${ICON.doc}${esc(title)}</span><p>${sub}</p><div class="btns"><button class="btn small" data-a="print" data-v="${card}">${esc(label)}</button></div>`);
+// Inhaltskarten unter dem farbigen Kopf: weiß, Etikett in Themenfarbe, Akzent in Koralle
+const infoCard=(p,kicker,inner,cls)=>`<div class="card linfo${cls?" "+cls:""}" style="${pvars(p)}"><span class="eyebrow" style="color:var(--t)">${kicker}</span>${inner}</div>`;
+const printTile=(p,title,sub,label,card)=>`<div class="card lprint" style="${pvars(p)}"><span class="lpic">${ICON.doc}</span><span class="lptx"><b>${esc(title)}</b><span class="note">${sub}</span></span><button class="btn small" data-a="print" data-v="${card}">${esc(label)}</button></div>`;
 function vMaterial(){
   const m=matById(mat); if(!m||!IK.materialUnlocked(S,m,VID.VIDEOS)){ mat=null; return vBibliothek(); }
   markNotice("mat-"+m.id);
   const p=m.pillar||"recap";
   const body = m.card ? printTile(p, m.kind==="Handout"?"Zwei Seiten A4":"Karte A6", `Zum Ausdrucken oder im Druck-Dialog „Als PDF sichern“ wählen.${m.card==="handout1"||m.card==="morgen"?" Deine Angaben aus den To-dos stehen schon drin.":""}`, `${m.kind} als PDF speichern`, m.card)
     : m.recipes&&m.recipes.length ? m.recipes.map(r=>`<div class="card recipe"><b class="rt-t">${esc(r.title)}</b><span class="rmeta"><span style="${pvars(p)}">${r.minutes} Min.</span><span style="${pvars("darm")}">${r.plants} Pflanzen</span></span><p class="note" style="color:var(--ink)">${(r.ingredients||[]).map(esc).join(" · ")}</p><ol>${(r.steps||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ol></div>`).join("")
-    : tcard(p,`<span class="k">Freigeschaltet</span><b class="tt">Die Rezepte sind unterwegs</b><p>Sie kommen mit dem nächsten Update der App automatisch hier rein.</p>`);
+    : infoCard(p,"Freigeschaltet",`<b style="font-size:18px">Die Rezepte sind unterwegs</b><p class="note" style="color:var(--ink)">Sie kommen mit dem nächsten Update der App automatisch hier rein.</p>`);
   return libHead("mat-close", `${m.kind} · Woche ${m.week}`, m.short||m.title, (m.sub||m.title).replace(/^[^:]+: /,""), esc(m.why), p)
-    + `<div class="libwhen"><span class="lhd">Wann</span><span>${esc(m.when)}</span></div>${body}</div>`;
+    + `<div class="libbody">${infoCard(p,"Wann",`<p style="margin:0;font-size:16px;line-height:1.5">${esc(m.when)}</p>`)}${body}</div></div>`;
 }
 
 /* ---------- Profilfelder aus den To-dos ---------- */
@@ -1102,10 +1122,11 @@ function vBibliothek(){
 function vWissen(){
   const e=EX[wissen], p=e.p, cardName=e.card==="aktiv"?"Aktivitäts-Karte":e.card==="morgen"?"Morgen-Karte":"Kühlschrank-Karte";
   return libHead("wissen-close", `Wissen · ${AREA[p]}`, WISSEN_COVER[wissen]||e.short, e.title, "", p)
-    + tcard(p,`<span class="k">So zählt es</span><p class="big">${e.rule}</p><p class="note" style="color:var(--t)">${e.check}</p>`)
-    + `<div class="card libmini" style="${pvars(p)}"><b>${e.groupsLabel}</b><div class="mini">${e.mini.map(([a,b])=>`<div><b>${esc(a)}</b><span>${esc(b)}</span></div>`).join("")}</div>
-      ${e.examples?`<div class="libex"><span class="lhd">Beispiel-Teller</span><p>${e.examples}</p></div>`:""}${e.tip?`<p class="note">${e.tip}</p>`:""}</div>`
-    + printTile(p, `${cardName} (A6)`, "Zum Ausdrucken oder im Druck-Dialog „Als PDF sichern“ wählen.", "Karte als PDF speichern", e.card) + `</div>`;
+    + `<div class="libbody">`
+    + infoCard(p,"So zählt es",`<p class="lrule">${e.rule}</p><p class="lcheck"><span class="ok" aria-hidden="true">${CHECK}</span>${e.check}</p>`)
+    + infoCard(p,esc(e.groupsLabel),`<div class="mini">${e.mini.map(([a,b])=>`<div><b>${esc(a)}</b><span>${esc(b)}</span></div>`).join("")}</div>
+      ${e.examples?`<div class="libex"><span class="lhd">Beispiel-Teller</span><p>${e.examples}</p></div>`:""}${e.tip?`<p class="ltip">${e.tip}</p>`:""}`,"libmini")
+    + printTile(p, `${cardName} (A6)`, "Zum Ausdrucken oder im Druck-Dialog „Als PDF sichern“ wählen.", "Karte als PDF speichern", e.card) + `</div></div>`;
 }
 function cardHTML(k){
   const hd=t=>`<div class="hd"><span style="display:flex;align-items:center;gap:2mm;font-family:var(--f-head);font-size:11pt;letter-spacing:0;text-transform:none;color:var(--ink)">${logo("#FFFFFF").replace('width="34" height="34"','width="18" height="18"')}innen kultur</span><span>${t}</span></div>`;
@@ -1132,44 +1153,43 @@ function cardHTML(k){
 function printCard(k){ const el=document.getElementById("print"); el.innerHTML=k==="morgen"?morgenCard():k==="handout1"?handout1():cardHTML(k); el.className=k==="handout1"?"a4":""; setTimeout(()=>window.print(),150); }
 
 /* ---------- Profil: Startpunkt, Erinnerung, Daten ---------- */
+let xferOpen=false;
+const prow=(attrs,label,val,cls)=>`<button class="prow${cls?" "+cls:""}" ${attrs}><span class="pl">${label}</span>${val?`<span class="pv">${val}</span>`:""}<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>`;
+const pgroup=(title,inner)=>`<section class="pgroup" aria-label="${esc(title)}"><span class="eyebrow">${esc(title)}</span><div class="pcard">${inner}</div></section>`;
+const pseg=(label,act,opts,cur)=>`<div class="pseg"><span class="pl">${label}</span><div class="segc seg${opts.length}" role="group" aria-label="${label}">${opts.map(([v,l])=>`<button data-a="${act}" data-v="${v}" aria-pressed="${cur===v}">${l}</button>`).join("")}</div></div>`;
 function vProfil(){
   const b=latestBaseline(), lb=S.lastBackup?new Date(S.lastBackup):null, days=lb?Math.floor((Date.now()-lb)/864e5):null;
-  const status=!lb?"Noch keine Sicherung gespeichert.":days===0?"Letzte Sicherung: heute.":`Letzte Sicherung: vor ${days} ${days===1?"Tag":"Tagen"}.`;
-  return `<div class="top"><div class="t"><small>Alles bleibt auf diesem Gerät</small><b>Profil und Daten</b></div><button class="iconbtn" data-a="back" data-v="heute" aria-label="Schließen">${ICON.close}</button></div>
+  const status=!lb?"noch nie":days===0?"heute":`vor ${days} ${days===1?"Tag":"Tagen"}`;
+  const tg=IK.GOALS.find(g=>g.id===S.topGoal), cw=IK.currentWeek(S), st=IK.todoStatus(S,IN.TODOS), tf=k=>st.find(t=>t.input&&t.input.field===k);
+  const fieldRow=(k,label)=>{ const t=tf(k), v=S[k]!=null&&String(S[k]).trim()!==""?esc(String(S[k]))+(UNIT[k]||""):"";
+    const attrs = t ? (t.unlocked||t.done||!starterActive() ? gAttr({kind:"todo", id:t.id}) : `data-a="lock" data-v="todo:${t.id}"`) : `data-a="noop"`;
+    return prow(attrs, label, v||(t&&!t.unlocked&&starterActive()?`Tag ${t.day}`:"eintragen")); };
+  const hero = tcard("recap",`<span class="k">Dein Warum</span>${S.why?`<b class="pwhy">„${esc(S.why)}“</b>`:`<b class="tt">Noch nicht notiert</b><p>Das kommt als To-do an Tag 7, nach Video 1.11.</p>`}
+    <p>${tg?`Wichtigstes Ziel: ${esc(tg.label)} · `:""}${S.product==="komplett"?"Komplett":"Basis"}, Woche ${cw?cw.index:1} von ${weeksTotal()}</p>`,"phero");
+  const un=IK.unlockedBausteine(S), paused=S.pausedBausteinIds||[];
+  const bst = un.length ? pgroup("Deine Bausteine", un.map(x=>{ const p=paused.includes(x.id), a=cw&&cw.activeBausteinIds.includes(x.id);
+      return `<div class="prow static" style="${pvars(x.pillar)}"><span class="dot" style="--c:${PC[x.pillar]}"></span><span class="pl">${esc(x.label)}<small>${p?"pausiert":a?"in deinem Check-in":"kommt mit der nächsten Woche"}</small></span><button class="btn small ghost" data-a="${p?"resume":"pause"}" data-v="${x.id}">${p?"Aufnehmen":"Pausieren"}</button></div>`; }).join("")) : "";
+  return `<div class="pwrap"><div class="top"><div class="t"><small>Alles bleibt auf diesem Gerät</small><b>Profil</b></div><button class="iconbtn" data-a="back" data-v="heute" aria-label="Schließen">${ICON.close}</button></div>
   ${pending?`<div class="card soft"><p class="okmsg">Übertragung erkannt. Auf diesem Gerät sind schon Einträge. Mit „Übernehmen“ werden sie durch den übertragenen Stand ersetzt.</p><div class="btns"><button class="btn small" data-a="pend-yes">Übernehmen</button><button class="btn ghost small" data-a="pend-no">Verwerfen</button></div></div>`:""}
   ${flash?`<div class="card soft"><p class="okmsg">${flash}</p></div>`:""}
-  <div class="masonry"><div class="card"><h2>Dein Startpunkt</h2>
-    ${b?IK.BASELINE.map(x=>`<div class="kv"><span>${x.label}</span><b class="num">${b[x.key]} von 5</b></div>`).join("")+`<p class="note">Erfasst am ${new Date(b.createdAt).toLocaleDateString("de-DE")}.</p>`:`<p class="note">Noch nicht erfasst.</p>`}
-    <button class="btn ghost small" data-a="rebase">Neu erfassen</button></div>
-  <div class="card"><h2>Darstellung</h2>
-    <span class="note" style="font-weight:600">Abendmodus</span>
-    <div class="opt2" role="group" aria-label="Abendmodus"><button data-a="set-theme" data-v="auto" aria-pressed="${S.eveningMode!=="off"}">Ab 18 Uhr dunkel</button><button data-a="set-theme" data-v="off" aria-pressed="${S.eveningMode==="off"}">Immer hell</button></div>
-    <span class="note" style="font-weight:600">Haptik</span>
-    <div class="opt2" role="group" aria-label="Haptik"><button data-a="set-haptic" data-v="on" aria-pressed="${S.haptics!==false}">An</button><button data-a="set-haptic" data-v="off" aria-pressed="${S.haptics===false}">Aus</button></div>
-    <span class="note" style="font-weight:600">Schriftgröße</span>
-    <div class="opt2" role="group" aria-label="Schriftgröße"><button data-a="set-text" data-v="normal" aria-pressed="${S.textSize!=="gross"}">Normal</button><button data-a="set-text" data-v="gross" aria-pressed="${S.textSize==="gross"}" style="font-size:18px">Größer</button></div>
-    <p class="note">Ein kurzes Tippen beim Abhaken und ein Erfolgs-Muster beim Speichern. Auf Android-Handys zuverlässig, auf dem iPhone über einen Safari-Umweg, der nicht überall spürbar ist.</p></div>
-  <div class="card remcard"><h2>Erinnerung</h2>${reminderBody()}</div>
-  ${!isStandalone()?`<div class="card"><h2>Home-Bildschirm</h2><p class="note">Auf dem Home-Bildschirm startet innen kultur wie eine App und deine Einträge bleiben sicher gespeichert.</p><div class="btns">${installEvt?`<button class="btn small" data-a="install">Jetzt hinzufügen</button>`:`<button class="btn small" data-a="install-how">So geht's</button>`}</div></div>`:""}
-  <div class="card"><h2>App-Tour</h2><p class="note">In 2 Minuten durch alle Bereiche, mit einer Übersicht, wodurch Handouts, Goodies und Bausteine frei werden.</p>
-    <div class="btns"><button class="btn small" data-a="tour-start">Tour ansehen</button></div></div>
-  ${basisFieldsCard()}
-  ${bausteineCard()}
-  <div class="card"><h2>Sicherung</h2><p class="note">${status} Speichere die Datei z. B. in iCloud Drive, Google Drive oder auf deinem PC. Nach jedem Wochen-Check erinnert dich die App daran.</p>
-    <div class="btns"><button class="btn small" data-a="backup">Sicherung speichern</button><label class="btn ghost small" for="imp">Sicherung laden</label><input id="imp" type="file" accept=".json,application/json" hidden></div></div>
-  <div class="card"><h2>Auf anderes Gerät übertragen</h2><p class="note">Zeig den QR-Code an und scanne ihn mit der Kamera des anderen Geräts. Die Daten stecken im Code und laufen nicht über einen Server.</p>
-    ${transfer?`<div class="qr">${transfer.svg||'<p class="note">Zu viele Daten für einen QR-Code. Nutze den Code unten.</p>'}</div><div class="mono" id="tcode">${transfer.code}</div><div class="btns"><button class="btn ghost small" data-a="copy">Code kopieren</button></div>`
-      :`<div class="btns"><button class="btn small" data-a="transfer">QR-Code anzeigen</button></div>`}
-    <label class="note" for="tin" style="font-weight:600">Code vom anderen Gerät einfügen</label><textarea id="tin" rows="2" placeholder="Übertragungscode"></textarea>
-    <div class="btns"><button class="btn ghost small" data-a="receive">Übernehmen</button></div></div>
-  <div class="card"><h2>Als App installieren</h2><p class="note"><b>iPhone (Safari):</b> Teilen-Symbol → „Zum Home-Bildschirm“<br><b>Android (Chrome):</b> Menü ⋮ → „App installieren“<br><b>PC (Chrome/Edge):</b> Installieren-Symbol in der Adressleiste</p>
-    <p class="note">Wichtig auf dem iPhone: Als App installiert bleiben deine Daten zuverlässig erhalten.</p></div>
-  <div class="card"><h2>Freischaltung</h2><div class="kv"><span>Code</span><b>${esc(S.code||"Demo")}</b></div><div class="kv"><span>Umfang</span><b>${S.product==="komplett"?"Komplett · 8 Wochen":"Basis · 4 Wochen"}</b></div>
-    ${S.product!=="komplett"?`<label class="note" for="up" style="font-weight:600">Upgrade auf Komplett</label><input id="up" type="text" placeholder="KOMPLETT-…"><div class="btns"><button class="btn ghost small" data-a="upgrade">Woche 5–8 freischalten</button></div>`:""}</div>
-  <div class="card"><h2>Einwilligung und Löschen</h2>
-    <p class="note">Einwilligung erteilt am ${S.consentHealthDataAt?new Date(S.consentHealthDataAt).toLocaleDateString("de-DE"):"–"}. Wenn du sie widerrufst, löschen wir alle Einträge auf diesem Gerät.</p>
-    ${confirmWipe?`<p class="err">Wirklich alle Einträge auf diesem Gerät löschen? Das lässt sich nicht rückgängig machen.</p><div class="btns"><button class="btn small" data-a="wipe-yes" style="background:var(--beweg)">Ja, alles löschen</button><button class="btn ghost small" data-a="wipe-no">Abbrechen</button></div>`
-      :`<button class="btn danger" data-a="wipe">Einwilligung widerrufen und alle Daten löschen</button>`}</div></div>`;
+  ${lay(`${hero}
+  ${pgroup("Deine Basis", fieldRow("wakeTime","Aufstehzeit")+fieldRow("lightSpot","Morgenlicht-Ort")+fieldRow("standTest","Aufsteh-Test")+fieldRow("why","Dein Warum"))}
+  ${pgroup("Dein Startpunkt", (b?`<div class="pbase">${IK.BASELINE.map(x=>`<span><b>${b[x.key]}</b><small>${x.short}</small></span>`).join("")}</div>`:"")+prow(`data-a="rebase"`, b?"Neu erfassen":"Jetzt erfassen", b?`erfasst am ${new Date(b.createdAt).toLocaleDateString("de-DE")}`:""))}
+  ${bst}
+  ${pgroup("Darstellung", pseg("Abendmodus","set-theme",[["auto","Ab 18 Uhr"],["off","Immer hell"]],S.eveningMode==="off"?"off":"auto")+pseg("Schriftgröße","set-text",[["normal","Normal"],["gross","Größer"]],S.textSize==="gross"?"gross":"normal")+pseg("Haptik","set-haptic",[["on","An"],["off","Aus"]],S.haptics===false?"off":"on"))}`,
+  `${pgroup("Erinnerung", `<div class="pinner">${reminderBody()}</div>`)}
+  ${!isStandalone()?pgroup("App", prow(installEvt?`data-a="install"`:`data-a="install-how"`,"Auf den Home-Bildschirm","1 Minute")):""}
+  ${pgroup("Daten", prow(`data-a="backup"`,"Sicherung speichern",`zuletzt ${status}`)+`<label class="prow" for="imp"><span class="pl">Sicherung laden</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></label><input id="imp" type="file" accept=".json,application/json" hidden>`
+    +prow(`data-a="xfer"`,"Auf anderes Gerät übertragen", xferOpen?"offen":"per QR-Code")
+    +(xferOpen?`<div class="pinner"><p class="note">Zeig den QR-Code an und scanne ihn mit der Kamera des anderen Geräts. Die Daten stecken im Code und laufen nicht über einen Server.</p>
+      ${transfer?`<div class="qr">${transfer.svg||'<p class="note">Zu viele Daten für einen QR-Code. Nutze den Code unten.</p>'}</div><div class="mono" id="tcode">${transfer.code}</div><div class="btns"><button class="btn ghost small" data-a="copy">Code kopieren</button></div>`:`<div class="btns"><button class="btn small" data-a="transfer">QR-Code anzeigen</button></div>`}
+      <label class="note" for="tin" style="font-weight:600">Code vom anderen Gerät einfügen</label><textarea id="tin" rows="2" placeholder="Übertragungscode"></textarea><div class="btns"><button class="btn ghost small" data-a="receive">Übernehmen</button></div></div>`:""))}
+  ${pgroup("Kurs", `<div class="prow static"><span class="pl">Freischaltung<small>${esc(S.code||"Demo")}</small></span><span class="pv">${S.product==="komplett"?"Komplett · 8 Wochen":"Basis · 4 Wochen"}</span></div>`
+    +(S.product!=="komplett"?`<div class="pinner"><label class="note" for="up" style="font-weight:600">Upgrade auf Komplett (Woche 5 bis 8)</label><input id="up" type="text" placeholder="KOMPLETT-…"><div class="btns"><button class="btn ghost small" data-a="upgrade">Freischalten</button></div></div>`:"")
+    +prow(`data-a="tour-start"`,"App-Tour ansehen","2 Min."))}
+  ${pgroup("Einwilligung", `<div class="pinner"><p class="note">Erteilt am ${S.consentHealthDataAt?new Date(S.consentHealthDataAt).toLocaleDateString("de-DE"):"–"}. Wenn du sie widerrufst, löschen wir alle Einträge auf diesem Gerät.</p>
+    ${confirmWipe?`<p class="err">Wirklich alle Einträge auf diesem Gerät löschen? Das lässt sich nicht rückgängig machen.</p><div class="btns"><button class="btn small" data-a="wipe-yes" style="background:var(--beweg)">Ja, alles löschen</button><button class="btn ghost small" data-a="wipe-no">Abbrechen</button></div>`:""}</div>`
+    +(confirmWipe?"":prow(`data-a="wipe"`,"Widerrufen und alle Daten löschen","","danger")))}`)}</div>`;
 }
 
 function bausteineCard(){
@@ -1321,6 +1341,7 @@ document.addEventListener("click", e=>{
   if(a==="rebase-save"){ S.baselines.push(Object.assign({createdAt:new Date().toISOString()}, obD.baseline)); save(); rebase=false; obD=null; flash="Neuer Startpunkt gespeichert."; render(); return window.scrollTo(0,0); }
   if(a==="backup") return backup();
   if(a==="transfer") return makeTransfer();
+  if(a==="xfer"){ xferOpen=!xferOpen; if(!xferOpen) transfer=null; return render(); }
   if(a==="copy"){ (navigator.clipboard?navigator.clipboard.writeText(transfer.code):Promise.reject()).then(()=>{el.textContent="Kopiert";}).catch(()=>{const t=document.getElementById("tcode"), s=getSelection(), r=document.createRange(); r.selectNodeContents(t); s.removeAllRanges(); s.addRange(r); el.textContent="Markiert, jetzt kopieren";}); return; }
   if(a==="receive"){ const t=document.getElementById("tin").value; if(!t.trim()) return;
     decode(t).then(o=>{ adopt(o); transfer=null; afterRestore("Übertragung übernommen. Dieses Gerät hat jetzt denselben Stand."); })
