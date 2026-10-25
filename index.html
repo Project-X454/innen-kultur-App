@@ -31,6 +31,8 @@
   --recap:#A87A2C; --recap-soft:#F6EFDF; --recap-text:#6B4A10;
   --f-head:"Epilogue",system-ui,sans-serif; --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
   --r-card:24px; --r-btn:14px;
+  /* Knöpfe: auf Standardflächen blau (Haupt) und grau (Neben), auf getönten Karten weiß (Haupt) und halbweiß (Neben) */
+  --btn2-bg:#E8EDF3; --btn2-ink:#142231; --tbtn-bg:#FFFFFF; --tbtn-ink:#142231; --tbtn2-bg:rgba(255,255,255,.55); --tbtn2-ink:#142231;
 }
 /* Abendmodus: ab 18 Uhr automatisch (Profil: abschaltbar). Druckvorlagen (#print) bleiben hell. */
 body.evening{color-scheme:dark;
@@ -40,6 +42,7 @@ body.evening{color-scheme:dark;
   --tab-bg:rgba(23,40,58,.94); --shadow:none; --shadow-lg:0 18px 40px -18px rgba(0,0,0,.6);
   --darm-soft:#223A2E; --darm-text:#9CCBAE; --schlaf-soft:#223650; --schlaf-text:#A9C4E6; --bar:#2C4560;
   --beweg-soft:#3D2A23; --beweg-text:#F0A58F; --recap-soft:#3A311D; --recap-text:#E3C07A;
+  --btn2-bg:#22364B; --btn2-ink:#EEF3F8; --tbtn-bg:#EEF3F8; --tbtn-ink:#0F1B28; --tbtn2-bg:rgba(255,255,255,.1); --tbtn2-ink:#EEF3F8;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
@@ -355,7 +358,6 @@ body.touring .enter{animation:none}
 .loopex-l li{display:flex;flex-direction:column;gap:1px;font-size:13.5px;line-height:1.4}
 .loopex-l span{color:var(--muted)}
 .card.example{border:1.5px dashed var(--line)}
-.notice.demo{box-shadow:none;background:var(--bg)}
 @media (prefers-reduced-motion:reduce){.tour-hole{transition:none}}
 
 /* ==================== Redesign 2026: ruhig, klar, wertig ==================== */
@@ -585,7 +587,7 @@ body.evening .wbars i.cur{background:var(--coral)}
 .cover .cv .bl{position:absolute;right:-30px;bottom:-34px;width:120px;height:120px;opacity:.35}
 .cover .cv .lk{position:absolute;top:12px;right:12px;width:30px;height:30px;border-radius:15px;background:rgba(255,255,255,.85);display:grid;place-items:center;color:#142231}
 .cover .cv .lk svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
-.cover.locked .cv{opacity:.8}
+.cover.locked .cv{opacity:1}
 .cover>span{display:flex;flex-direction:column;gap:2px;padding:0 2px}
 .cover>span b{font-size:14px;line-height:1.3}
 .cover>span small{font-size:12.5px;color:var(--muted);line-height:1.35}
@@ -615,8 +617,6 @@ html.evening{background:#0F1B28}
 .tcard p{margin:0;font-size:15px;line-height:1.45}
 .tcard .www dt{color:var(--t);opacity:.75}
 .tcard .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
-.tcard .btn.small{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(20,34,49,.08)}
-.tcard .btn.small.soft{background:transparent;box-shadow:inset 0 0 0 1.5px var(--c);color:var(--t)}
 .tcard .trow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:10px;border-top:1px solid rgba(20,34,49,.08)}
 body.evening .tcard .trow{border-top-color:rgba(255,255,255,.08)}
 .tcard .trow:first-of-type{border-top:0;padding-top:2px}
@@ -625,9 +625,15 @@ body.evening .tcard .trow{border-top-color:rgba(255,255,255,.08)}
 .tcard .trow small{font-size:13px;color:var(--muted)}
 .tcard .trow .btn{flex:none}
 .tcard.notice{border-left:0}
+/* Einheitliche Knöpfe, ohne Rahmen */
+.btn{box-shadow:none}
+.btn.ghost{background:var(--btn2-bg);color:var(--btn2-ink)}
+.tcard .btn,.lnow .btn,.ldone .btn{background:var(--tbtn-bg);color:var(--tbtn-ink)}
+.tcard .btn.ghost,.lnow .btn.ghost{background:var(--tbtn2-bg);color:var(--tbtn2-ink)}
+.cfoot .btn{box-shadow:var(--shadow-lg)}
 /* Gesperrt-Blatt */
 .sheet.lock{gap:16px}
-.sheet.lock .lk-ic{width:44px;height:44px;border-radius:14px;background:var(--s);color:var(--t);display:grid;place-items:center}
+.sheet.lock .lk-ic{width:44px;height:44px;border-radius:14px;background:var(--s);background:color-mix(in srgb,var(--c) 24%,var(--card));color:var(--t);display:grid;place-items:center}
 .sheet.lock .lk-ic svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
 .sheet.lock h2{margin:4px 0 0;line-height:1.15}
 .lwhy{margin:0;font-size:15px;line-height:1.5;color:var(--ink)}
@@ -641,11 +647,10 @@ body.evening .tcard .trow{border-top-color:rgba(255,255,255,.08)}
 .lsteps li b{font-size:15px}
 .lsteps li.on b{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
 .lsteps small{font-size:13px;color:var(--muted);line-height:1.35}
-.lnow{background:var(--s);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.lnow{background:var(--s);background:color-mix(in srgb,var(--c) 22%,var(--card));border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:10px}
 .lnow p{margin:0;font-size:15px;line-height:1.45}
 .lnow .note{color:var(--t)}
-.lnow .btns{display:flex;flex-direction:column;gap:8px}
-.ldone{display:flex;gap:12px;align-items:center;background:var(--darm-soft);border-radius:20px;padding:14px 16px}
+.ldone{display:flex;gap:12px;align-items:center;background:var(--darm-soft);background:color-mix(in srgb,var(--darm) 22%,var(--card));border-radius:20px;padding:14px 16px}
 .ldone svg{flex:none}
 .ldone p{margin:0;font-size:15px;line-height:1.45;color:var(--darm-text);font-weight:600}
 
