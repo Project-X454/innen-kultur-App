@@ -58,8 +58,21 @@ function render(){
   else if(view==='video'){ body=vVideo(); tabs=false; }
   else body={heute:vHeute, kurs:vKurs, fortschritt:vFortschritt, bibliothek:vBibliothek, profil:vProfil}[view]();
   const key=(S.onboardingCompletedAt?view:"ob-"+ob)+(rebase?"-rb":"");
-  app.innerHTML=`<main class="${full?"full ":""}${key!==lastView?"enter":""}">${body}</main>${tabs?tabBar():""}`;
+  const side=tabs||view==="video"&&!!S.onboardingCompletedAt&&!rebase; // Video: am Desktop mit Seitenleiste
+  app.className=(side?"nav ":"")+"v-"+(S.onboardingCompletedAt?(rebase?"rebase":view):"ob-"+ob);
+  app.innerHTML=`${side?sideBar():""}<main class="${full?"full ":""}${key!==lastView?"enter":""}">${body}</main>${tabs?tabBar():""}`;
   lastView=key;
+}
+/* Ab 960 px Breite: Seitenleiste statt Tab-Leiste, Inhalte in zwei Spalten (CSS .lay). Mobil gilt die Reihenfolge a, dann b. */
+const lay=(a,b,cls)=>`<div class="lay${cls?" "+cls:""}"><div class="col">${a}</div><div class="col">${b}</div></div>`;
+function sideBar(){
+  const t=[["heute","Heute"],["kurs","Kurs"],["fortschritt","Fortschritt"],["bibliothek","Bibliothek"]];
+  const cur=view==="video"?"kurs":view;
+  const item=([k,l])=>`<button data-a="go" data-v="${k}" ${cur===k?'aria-current="page"':""}>${ICON[k]}<span>${l}</span></button>`;
+  return `<aside class="side" aria-label="App-Navigation"><div class="brand">${logo("#FFFFFF")}innen kultur</div>
+  <button class="btn" data-a="go" data-v="checkin">${ICON.checkin}Abend-Check-in</button>
+  <nav>${t.map(item).join("")}</nav>
+  <div class="side-ft">${item(["profil","Profil und Daten"])}<p class="note">Deine Daten bleiben auf diesem Gerät.</p></div></aside>`;
 }
 function tabBar(){
   const t=[["heute","Heute"],["kurs","Kurs"],["checkin","Check-in"],["fortschritt","Fortschritt"],["bibliothek","Bibliothek"]];
@@ -83,13 +96,13 @@ function vOnboarding(){
   if(ob==="baseline") return vBaseline(false);
   const pill = S.product==="komplett" ? "Komplettkurs · 8 Wochen" : S.product==="basis" ? "Basiskurs · 4 Wochen" : "Online-Kurs · 4 oder 8 Wochen";
   const P=[["darm","Ernährung & Darm","Was du isst, prägt deinen Bauch"],["schlaf","Schlaf","Wo dein Körper sich erholt"],["beweg","Bewegung","Der Antrieb für alles andere"],["recap","Recap · Healthspan","Was das für die nächsten Jahre heißt"]];
-  return `<div class="brand">${logo("#F5F7FA")}innen kultur</div>
+  return lay(`<div class="brand">${logo("#F5F7FA")}innen kultur</div>
   <span class="pill">${pill}</span>
   <h1 style="font-size:40px">Gesundheit beginnt <em>innen.</em></h1>
-  <p class="lead">Jede Woche ein kleiner Loop: verstehen, ausprobieren, sehen, was es mit dir macht.</p>
-  ${P.map(([k,t,s])=>`<div class="pillar" style="--s:${PS[k]};--c:${PC[k]}"><span class="ic">${ICON[k]}</span><span><b>${t}</b><span>${s}</span></span></div>`).join("")}
+  <p class="lead">Jede Woche ein kleiner Loop: verstehen, ausprobieren, sehen, was es mit dir macht.</p>`,
+  `${P.map(([k,t,s])=>`<div class="pillar" style="--s:${PS[k]};--c:${PC[k]}"><span class="ic">${ICON[k]}</span><span><b>${t}</b><span>${s}</span></span></div>`).join("")}
   <button class="btn" data-a="ob" data-v="${S.product?"goals":"code"}" style="margin-top:12px">Los geht's</button>
-  <button class="btn link" data-a="ob" data-v="restore">Ich habe schon ein Konto</button>`;
+  <button class="btn link" data-a="ob" data-v="restore">Ich habe schon ein Konto</button>`,"hero");
 }
 function obHead(back,step,of){
   return `<div class="ob-top"><button class="iconbtn" data-a="ob" data-v="${back}" aria-label="Zurück">${ICON.back}</button>
@@ -190,21 +203,21 @@ function vHeute(){
   const upRow=b=>`<span><span class="dot" style="--c:${PC[b.pillar]}"></span>${esc(b.label)}</span><span class="note" style="font-size:12px">${IK.isSeen(S,b.videoId)?"ab nächster Woche":"nach Video "+b.videoId}</span>`;
   return `<div class="top"><div class="t"><small>${i.label}</small><b>${greet()}</b></div><button class="iconbtn" data-a="go" data-v="profil" aria-label="Profil und Daten">${logo("#FFFFFF")}</button></div>
   ${flash?`<div class="card soft"><p class="okmsg">${flash}</p></div>`:""}
-  ${awaiting?`<div class="card" style="background:var(--recap-soft)"><b>Woche ${w.index} geschafft: 7 Tage eingetragen.</b>
+  ${lay(`${awaiting?`<div class="card" style="background:var(--recap-soft)"><b>Woche ${w.index} geschafft: 7 Tage eingetragen.</b>
     <p class="note" style="color:var(--recap-text)">Der Wochen-Check mit Vergleich und Zusammenhang kommt in einem späteren Update. Bis dahin startet die nächste Woche mit deinem nächsten Check-in.</p>
     <button class="btn small" data-a="go" data-v="fortschritt" style="background:var(--recap)">Loop-Score ansehen</button></div>`:""}
   <div class="card navy"><div class="row"><b style="font-size:16px">${done?"Heute erledigt":"Heute noch offen"}</b><span class="note">${done?CHECK+" eingetragen":"ca. 1 Min."}</span></div>
     <button class="btn white" data-a="go" data-v="checkin">${done?"Check-in bearbeiten":"Abend-Check-in starten"}</button></div>
   ${nx?`<button class="learn" data-a="video" data-v="${nx.id}"><span class="thumb" style="--s:${PS[pillarOf(nx)]};--c:${PC[pillarOf(nx)]}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5 19 12 8 19Z"/></svg></span>
-    <span class="tx"><span class="eyebrow" style="color:${PT[pillarOf(nx)]}">Weiterlernen · ${pillarLabel(nx)}</span><b>${nx.id} ${esc(nx.title)}</b><span class="note">${nx.durationMin} Min.${nb?` · schaltet „${esc(nb.label)}“ frei`:""}</span></span></button>`:""}
-  <div class="card"><div class="row"><b>Dein Wochen-Experiment${w?` · Woche ${w.index}`:""}</b><button class="btn link small" data-a="go" data-v="kurs" style="min-height:0;padding:0;white-space:nowrap">Kurs ansehen</button></div>
+    <span class="tx"><span class="eyebrow" style="color:${PT[pillarOf(nx)]}">Weiterlernen · ${pillarLabel(nx)}</span><b>${nx.id} ${esc(nx.title)}</b><span class="note">${nx.durationMin} Min.${nb?` · schaltet „${esc(nb.label)}“ frei`:""}</span></span></button>`:""}`,
+  `<div class="card"><div class="row"><b>Dein Wochen-Experiment${w?` · Woche ${w.index}`:""}</b><button class="btn link small" data-a="go" data-v="kurs" style="min-height:0;padding:0;white-space:nowrap">Kurs ansehen</button></div>
     <div class="exp">${IK.BASIS.map(b=>`<span><span class="dot" style="--c:${PC[b.pillar]}"></span>${b.label}</span>${w?`<span style="--c:${PC[b.pillar]}">${marks(c=>c.basis[b.key])}</span>`:`<span class="note">ab Tag 1</span>`}`).join("")}
     ${act.map(bRow).join("")}${upcoming.map(upRow).join("")}</div>
     ${!act.length&&!upcoming.length?`<p class="note">Ab Kurswoche 2 kommen Bausteine dazu. Sie erscheinen im Check-in, sobald du das passende Video gesehen hast.</p>`:""}</div>
   <div class="g2">
     <div class="card tile"><span class="note">Wissen · Kurswoche ${cw}</span><b class="num">${vp.seen} / ${vp.total} <small>Videos</small></b><div class="bar"><i style="width:${vp.total?Math.round(vp.seen/vp.total*100):0}%"></i></div></div>
     <div class="card tile"><span class="note">Umsetzung</span><b class="num">${i.days} / 7 <small>Tage</small></b><div class="bar" style="--c:var(--darm)"><i style="width:${Math.round(i.days/7*100)}%"></i></div></div>
-  </div>
+  </div>`)}
   <p class="note" style="text-align:center">${S.product==="komplett"?"Komplett":"Basis"} · ${t} Wochen${S.demo?" · Demo":""}</p>`;
 }
 const pillarOf = v => v.pillar==="intro" ? "recap" : v.pillar;
@@ -239,13 +252,13 @@ function vCheckin(){
     <p class="note" style="color:var(--ink)">Du hast mehr freigeschaltet, als in eine Woche passen. Die übrigen kommen in einer der nächsten Wochen dran.</p>
     ${t.cands.map(id=>{const b=IK.bausteinById(id), on=draft.newBausteinIds.includes(id); return `<button type="button" class="choice" data-a="pick-new" data-v="${id}" aria-pressed="${on}" ${!on&&draft.newBausteinIds.length>=IK.MAX_NEW_PER_WEEK?"disabled":""}><span class="box">${on?CHECK:""}</span><span class="dot" style="--c:${PC[b.pillar]}"></span><b>${esc(b.label)}</b></button>`;}).join("")}</div>` : "";
   return `<div class="top"><div class="t"><small>Woche ${t.week} · Tag ${t.day} von 7</small><b>Abend-Check-in</b></div><button class="iconbtn" data-a="go" data-v="heute" aria-label="Schließen">${ICON.close}</button></div>
-  <div class="card"><div class="row"><b>Basis</b><b style="color:var(--darm-text)">${n} von 3</b></div>
+  ${lay(`<div class="card"><div class="row"><b>Basis</b><b style="color:var(--darm-text)">${n} von 3</b></div>
     <div class="basis">${IK.BASIS.map(b=>`<button type="button" data-a="basis" data-v="${b.key}" aria-pressed="${!!draft.basis[b.key]}" style="--c:${PC[b.pillar]};--t:${PT[b.pillar]}">${draft.basis[b.key]?CHECK+" ":""}${b.label}</button>`).join("")}</div></div>
   ${chooser}
-  <div class="card"><b>Bausteine dieser Woche</b>${ids.length?ids.map(bst).join(""):`<p class="note">Noch keine. Bausteine schaltest du mit den Videos im Kurs frei, höchstens drei neue pro Woche.</p>`}</div>
-  <div class="card"><b>Wie war dein Tag?</b>${IK.SCALES.map(s=>scale("ci."+s.key,s.label,draft[s.key],null,caps[s.key])).join("")}</div>
+  <div class="card"><b>Bausteine dieser Woche</b>${ids.length?ids.map(bst).join(""):`<p class="note">Noch keine. Bausteine schaltest du mit den Videos im Kurs frei, höchstens drei neue pro Woche.</p>`}</div>`,
+  `<div class="card"><b>Wie war dein Tag?</b>${IK.SCALES.map(s=>scale("ci."+s.key,s.label,draft[s.key],null,caps[s.key])).join("")}</div>
   <div class="card"><b>Optional</b><div class="nums">${num("schlafStunden","Schlaf (Std.)","decimal","7,0")}${num("pflanzen","Pflanzen heute","numeric","0")}${num("bewegungMin","Bewegung (Min.)","numeric","0")}</div></div>
-  <button class="btn" data-a="save-ci">Tag ${t.day} ${t.ex?"aktualisieren":"speichern"}</button>`;
+  <button class="btn" data-a="save-ci">Tag ${t.day} ${t.ex?"aktualisieren":"speichern"}</button>`)}`;
 }
 function saveCheckin(){
   readNums();
@@ -278,15 +291,15 @@ function vFortschritt(){
   const done=weeks.filter(x=>x.w.status!=="running");
   const last=done[done.length-1];
   const cmp=last?IK.compareToStart(latestBaseline(), last.st.avg):[];
-  return head+`
+  return head+lay(`
   <div class="card"><div class="row"><b>Loop-Score · Woche ${cur.w.index}</b>${running?`<span class="note">läuft · Zwischenstand</span>`:""}</div>
     <div class="ring">${ring}<div class="parts">${part("Befinden",s.befinden,"var(--schlaf)")}${part("Umsetzung",s.umsetzung,"var(--darm)")}${part("Dranbleiben",s.dranbleiben,"var(--recap)")}</div></div>
-    <div class="hist" aria-label="Loop-Score je Woche">${weeks.map(x=>`<span>W${x.w.index} ${x.ls.score==null?"–":x.ls.score}${x.w.status==="running"?" · läuft":""}</span>`).join("")}</div></div>
-  <div class="card"><b>Startpunkt → jetzt</b>
+    <div class="hist" aria-label="Loop-Score je Woche">${weeks.map(x=>`<span>W${x.w.index} ${x.ls.score==null?"–":x.ls.score}${x.w.status==="running"?" · läuft":""}</span>`).join("")}</div></div>`,
+  `<div class="card"><b>Startpunkt → jetzt</b>
   ${last?`<p class="note">Vergleich mit Woche ${last.w.index}, deiner letzten abgeschlossenen Woche.</p>
     <table><tbody>${cmp.map(r=>`<tr><td>${r.label}</td><td>${r.text?esc(r.text):r.start+" → "+fmt1(r.now)}</td><td style="font-weight:700;width:56px">${r.text?"":fmtSigned(r.diff)}</td></tr>`).join("")}</tbody></table>
     <p class="note">Startwerte 1 bis 5 aus deinem Onboarding. „Entspannt sein“ ist 6 minus dein Ø Stress.</p>`
-    :`<p class="note">Erscheint, sobald deine erste Tracker-Woche abgeschlossen ist.</p>`}</div>`;
+    :`<p class="note">Erscheint, sobald deine erste Tracker-Woche abgeschlossen ist.</p>`}</div>`);
 }
 
 /* ---------- Kurs (Screen 05) und Video (Screen 06) ---------- */
@@ -304,9 +317,9 @@ function vKurs(){
   <div class="tabsrow" role="group" aria-label="Kurswochen">${weeks.map(tab).join("")}${more}</div>
   <div class="row" style="padding:0 4px"><b style="font-family:var(--f-head);font-size:20px">Woche ${kursWeek} · ${esc(VID.WEEKS[kursWeek].title)}</b></div>
   <p class="note" style="padding:0 4px">${p.seen} von ${p.total} Videos gesehen · alles freigeschaltet</p>
-  <div class="card" style="gap:0;padding:6px 16px">${vids.map(row).join("")}</div>
-  <div class="card soft"><span><b>Handout Woche ${kursWeek}</b> · ${p.handoutFree?"frei, folgt als Datei":`nach allen Kernvideos (${p.kernSeen} von ${p.kernTotal})`}</span>
-    <span class="note" style="color:var(--ink)"><b>Goodie</b> · nach dem Wochen-Check</span></div>`;
+  ${lay(`<div class="card" style="gap:0;padding:6px 16px">${vids.map(row).join("")}</div>`,
+  `<div class="card soft"><span><b>Handout Woche ${kursWeek}</b> · ${p.handoutFree?"frei, folgt als Datei":`nach allen Kernvideos (${p.kernSeen} von ${p.kernTotal})`}</span>
+    <span class="note" style="color:var(--ink)"><b>Goodie</b> · nach dem Wochen-Check</span></div>`,"side-r")}`;
 }
 function vVideo(){
   const v=VID.VIDEOS.find(x=>x.id===videoId); if(!v){ view="kurs"; return vKurs(); }
@@ -321,17 +334,17 @@ function vVideo(){
       : "Er kommt mit deiner nächsten Tracker-Woche in den Check-in. Oder du startest gleich:";
     bCard=`<div class="card" style="background:${PS[b.pillar]}"><span style="display:flex;gap:10px;align-items:flex-start"><span class="dot" style="--c:${PC[b.pillar]};margin-top:6px"></span><span><b>Neuer Baustein: ${esc(b.label)}</b><br><span class="note" style="color:var(--ink)">${txt}</span></span></span>
       ${st==="ok"&&!paused?`<button class="btn small" data-a="activate" data-v="${b.id}" style="background:${PC[b.pillar]}">Ab heute mittracken</button>`:""}</div>`; }
-  return `<div class="player"><button class="iconbtn" data-a="go" data-v="kurs" aria-label="Zurück zum Kurs">${ICON.back}</button>
+  return lay(`<div class="player"><button class="iconbtn" data-a="go" data-v="kurs" aria-label="Zurück zum Kurs">${ICON.back}</button>
     <span class="ph">Der Video-Player kommt, sobald die Kurs-Plattform feststeht.</span>
     <div class="bar" style="--c:#fff;background:rgba(255,255,255,.25)"><i style="width:${seen?100:0}%"></i></div>
     <div class="row note" style="color:#C9D6E6"><span>${v.durationMin} Min.</span><span>${seen?"gesehen":"noch nicht gesehen"}</span></div></div>
   <div style="display:flex;flex-direction:column;gap:4px;padding:0 4px"><span class="eyebrow" style="color:${PT[pillarOf(v)]}">Woche ${v.week} · ${pillarLabel(v)} · ${v.type}</span><h1 style="font-size:26px">${esc(v.title)}</h1></div>
-  ${flash?`<div class="card soft"><p class="okmsg">${flash}</p></div>`:""}
-  ${seen?"":`<div class="card"><button class="btn" data-a="seen" data-v="${v.id}">Als gesehen markieren</button><p class="note">Mit dem Player zählt ein Video später automatisch ab 90 Prozent als gesehen.</p></div>`}
+  ${flash?`<div class="card soft"><p class="okmsg">${flash}</p></div>`:""}`,
+  `${seen?"":`<div class="card"><button class="btn" data-a="seen" data-v="${v.id}">Als gesehen markieren</button><p class="note">Mit dem Player zählt ein Video später automatisch ab 90 Prozent als gesehen.</p></div>`}
   ${seen&&v.machJetzt?`<div class="card" style="background:var(--navy);color:#fff"><span class="eyebrow" style="color:#C9D6E6">Mach jetzt · 30 Sekunden</span><span>${esc(v.machJetzt)}</span></div>`:""}
   ${bCard}
   ${next?`<button class="btn ghost" data-a="video" data-v="${next.id}" style="justify-content:space-between"><span>Nächstes: ${esc(next.title)}</span><span aria-hidden="true">›</span></button>`:""}
-  ${seen?`<button class="btn link small" data-a="unseen" data-v="${v.id}" style="align-self:center">Doch nicht gesehen</button>`:""}`;
+  ${seen?`<button class="btn link small" data-a="unseen" data-v="${v.id}" style="align-self:center">Doch nicht gesehen</button>`:""}`,"side-r");
 }
 
 /* ---------- Bibliothek (Screens 11 und 14) ---------- */
@@ -352,8 +365,8 @@ function vBibliothek(){
   if(wissen) return vWissen();
   const T=[["wissen","Wissen"],["rezepte","Rezepte"],["plaene","Pläne"],["handouts","Handouts"]];
   const body = libTab==="wissen"
-    ? Object.keys(EX).map(k=>{const e=EX[k]; return `<button class="card wk-card" data-a="wissen" data-v="${k}" style="--c:${PC[e.p]};border:0;border-left:5px solid ${PC[e.p]};text-align:left">
-        <span class="eyebrow" style="color:${PT[e.p]}">${IK.PILLARS[e.p].label}</span><b style="font-size:16px">${e.short}</b><span class="note">${e.check}</span></button>`;}).join("")
+    ? `<div class="grid">`+Object.keys(EX).map(k=>{const e=EX[k]; return `<button class="card wk-card" data-a="wissen" data-v="${k}" style="--c:${PC[e.p]};border:0;border-left:5px solid ${PC[e.p]};text-align:left">
+        <span class="eyebrow" style="color:${PT[e.p]}">${IK.PILLARS[e.p].label}</span><b style="font-size:16px">${e.short}</b><span class="note">${e.check}</span></button>`;}).join("")+`</div>`
     : `<div class="card soft"><h2>Folgt bald</h2><p class="note" style="color:var(--ink)">${libTab==="handouts"?"Das Handout einer Woche wird frei, sobald du alle Kernvideos der Woche gesehen hast.":"Rezepte und Pläne schalten sich als Goodies mit deinen Wochen-Checks frei."}</p></div>`;
   return `<div class="top"><div class="t"><small>Zum Nachlesen</small><b>Bibliothek</b></div></div>
   <div class="tabsrow" role="group" aria-label="Bereich">${T.map(([k,l])=>`<button data-a="libtab" data-v="${k}" aria-pressed="${libTab===k}">${l}</button>`).join("")}</div>${body}`;
@@ -362,11 +375,11 @@ function vWissen(){
   const e=EX[wissen];
   return `<button class="back" data-a="wissen-close">${ICON.back.replace("<svg",'<svg width="20" height="20"')}Zurück zur Bibliothek</button>
   <span class="eyebrow" style="color:${PT[e.p]}">${IK.PILLARS[e.p].label}</span><h1>${e.title}</h1>
-  <div class="card"><h2>So zählt es</h2><p style="margin:0">${e.rule}</p><p class="note">${e.check}</p></div>
+  ${lay(`<div class="card"><h2>So zählt es</h2><p style="margin:0">${e.rule}</p><p class="note">${e.check}</p></div>
   <div class="card"><b>${e.groupsLabel}</b><div class="mini">${e.mini.map(([a,b])=>`<div><b>${esc(a)}</b><span>${esc(b)}</span></div>`).join("")}</div>
-    ${e.examples?`<b>Beispiel-Teller</b><p style="margin:0;font-size:14px">${e.examples}</p>`:""}${e.tip?`<p class="note">${e.tip}</p>`:""}</div>
-  <div class="card soft"><b>${e.card==="aktiv"?"Aktivitäts-Karte":"Kühlschrank-Karte"} (A6)</b><p class="note" style="color:var(--ink)">Zum Ausdrucken oder im Druck-Dialog „Als PDF sichern“ wählen.</p>
-    <button class="btn small" data-a="print" data-v="${e.card}">Karte als PDF speichern</button></div>`;
+    ${e.examples?`<b>Beispiel-Teller</b><p style="margin:0;font-size:14px">${e.examples}</p>`:""}${e.tip?`<p class="note">${e.tip}</p>`:""}</div>`,
+  `<div class="card soft"><b>${e.card==="aktiv"?"Aktivitäts-Karte":"Kühlschrank-Karte"} (A6)</b><p class="note" style="color:var(--ink)">Zum Ausdrucken oder im Druck-Dialog „Als PDF sichern“ wählen.</p>
+    <button class="btn small" data-a="print" data-v="${e.card}">Karte als PDF speichern</button></div>`,"side-r")}`;
 }
 function cardHTML(k){
   const hd=t=>`<div class="hd"><span style="display:flex;align-items:center;gap:2mm;font-family:var(--f-head);font-size:11pt;letter-spacing:0;text-transform:none;color:var(--ink)">${logo("#FFFFFF").replace('width="34" height="34"','width="18" height="18"')}innen kultur</span><span>${t}</span></div>`;
@@ -399,7 +412,7 @@ function vProfil(){
   return `<div class="top"><div class="t"><small>Alles bleibt auf diesem Gerät</small><b>Profil und Daten</b></div><button class="iconbtn" data-a="go" data-v="heute" aria-label="Schließen">${ICON.close}</button></div>
   ${pending?`<div class="card soft"><p class="okmsg">Übertragung erkannt. Auf diesem Gerät sind schon Einträge. Mit „Übernehmen“ werden sie durch den übertragenen Stand ersetzt.</p><div class="btns"><button class="btn small" data-a="pend-yes">Übernehmen</button><button class="btn ghost small" data-a="pend-no">Verwerfen</button></div></div>`:""}
   ${flash?`<div class="card soft"><p class="okmsg">${flash}</p></div>`:""}
-  <div class="card"><h2>Dein Startpunkt</h2>
+  <div class="masonry"><div class="card"><h2>Dein Startpunkt</h2>
     ${b?IK.BASELINE.map(x=>`<div class="kv"><span>${x.label}</span><b class="num">${b[x.key]} von 5</b></div>`).join("")+`<p class="note">Erfasst am ${new Date(b.createdAt).toLocaleDateString("de-DE")}.</p>`:`<p class="note">Noch nicht erfasst.</p>`}
     <button class="btn ghost small" data-a="rebase">Neu erfassen</button></div>
   ${bausteineCard()}
@@ -419,7 +432,7 @@ function vProfil(){
   <div class="card"><h2>Einwilligung und Löschen</h2>
     <p class="note">Einwilligung erteilt am ${S.consentHealthDataAt?new Date(S.consentHealthDataAt).toLocaleDateString("de-DE"):"–"}. Wenn du sie widerrufst, löschen wir alle Einträge auf diesem Gerät.</p>
     ${confirmWipe?`<p class="err">Wirklich alle Einträge auf diesem Gerät löschen? Das lässt sich nicht rückgängig machen.</p><div class="btns"><button class="btn small" data-a="wipe-yes" style="background:var(--beweg)">Ja, alles löschen</button><button class="btn ghost small" data-a="wipe-no">Abbrechen</button></div>`
-      :`<button class="btn danger" data-a="wipe">Einwilligung widerrufen und alle Daten löschen</button>`}</div>`;
+      :`<button class="btn danger" data-a="wipe">Einwilligung widerrufen und alle Daten löschen</button>`}</div></div>`;
 }
 
 function bausteineCard(){

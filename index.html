@@ -194,6 +194,69 @@ td:not(:first-child){text-align:right}
 .player .iconbtn{background:rgba(255,255,255,.12);color:#fff}
 .player .ph{flex:1;display:grid;place-items:center;text-align:center;font-size:14px;color:#C9D6E6;padding:0 20px}
 
+/* Spalten-Gerüst: mobil unsichtbar (Inhalte stehen wie gehabt untereinander) */
+.lay,.col,.masonry{display:contents}
+.grid{display:flex;flex-direction:column;gap:12px}
+.side{display:none}
+
+/* Desktop-Browser ab 960 px: Seitenleiste, breitere Inhalte, zwei Spalten */
+@media (min-width:960px){
+  body{font-size:15.5px}
+  #app.nav{padding-left:248px}
+  #app.nav .tabs{display:none}
+  .side{display:flex;flex-direction:column;gap:22px;position:fixed;z-index:20;top:0;bottom:0;left:0;width:248px;background:var(--card);border-right:1px solid var(--line);padding:28px 16px 20px;overflow-y:auto}
+  .side .brand{font-size:21px;padding:0 8px}
+  .side .brand svg{width:30px;height:30px}
+  .side nav{display:flex;flex-direction:column;gap:4px}
+  .side nav button,.side-ft button{display:flex;align-items:center;gap:12px;width:100%;min-height:44px;border:0;background:none;border-radius:12px;padding:10px 12px;font-size:15px;font-weight:600;color:var(--muted);text-align:left}
+  .side [aria-current="page"]{background:var(--soft);color:var(--blue);font-weight:700}
+  .side svg{flex:none;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .side .btn svg{stroke:#fff;stroke-width:2.4}
+  .side-ft{margin-top:auto;display:flex;flex-direction:column;gap:8px}
+  .side-ft .note{padding:0 12px;font-size:12px}
+
+  main{max-width:1120px;padding:40px 40px 56px;gap:16px}
+  main.full{padding-bottom:56px}
+  #app.nav .top .iconbtn[data-v="profil"]{display:none}
+  .top{padding:0 0 4px}
+  .top small{font-size:14px}
+  .top b{font-size:34px}
+  .card{padding:20px 22px}
+  .lay{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+  .lay.side-r{grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr)}
+  .col{display:flex;flex-direction:column;gap:16px;min-width:0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+  .masonry{display:block;columns:2;column-gap:20px}
+  .masonry>.card{break-inside:avoid;margin-bottom:20px}
+  .masonry>.card:last-child{margin-bottom:0}
+  .player{min-height:0;aspect-ratio:16/9}
+  .btn.small{width:auto}
+  .card>.btn.small{align-self:flex-start}
+  .tabsrow{flex-wrap:wrap;overflow:visible}
+
+  /* Check-in: fokussiert ohne Navigation, aber zweispaltig */
+  .v-checkin main{max-width:1040px}
+
+  /* Onboarding und Startpunkt: als Panel in der Seitenmitte */
+  #app[class*="v-ob-"],#app.v-rebase{min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:56px 24px}
+  #app[class*="v-ob-"] main,#app.v-rebase main{width:100%;max-width:640px;margin:0;background:var(--card);border-radius:28px;padding:40px 48px;box-shadow:0 24px 60px -32px rgba(30,58,90,.35)}
+  #app[class*="v-ob-"] main .card:not(.soft):not(.navy),#app.v-rebase main .card:not(.soft):not(.navy){background:var(--bg)}
+  #app[class*="v-ob-"] .choice{background:var(--card)}
+  #app.v-ob-welcome main{max-width:1080px;padding:56px 64px}
+  .lay.hero{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:56px;align-items:center}
+  .lay.hero h1{font-size:56px!important}
+  .lay.hero .lead{font-size:18px}
+  .lay.hero .col{gap:18px}
+}
+@media (min-width:960px) and (hover:hover){
+  .btn:not([disabled]):hover{filter:brightness(1.08)}
+  .side nav button:not([aria-current]):hover,.side-ft button:not([aria-current]):hover{background:var(--bg);color:var(--ink)}
+  .learn,.vrow,.wk-card,.choice,.tabsrow button{transition:background-color .15s,box-shadow .15s}
+  .learn:hover,.wk-card:hover{box-shadow:0 10px 28px -18px rgba(30,58,90,.45)}
+  .vrow:hover{background:var(--bg)}
+  .choice:not([disabled]):hover,.tabsrow button:not([disabled]):not([aria-pressed="true"]):hover{background:var(--soft)}
+}
+
 /* Kühlschrank-Karten: nur im Druck sichtbar */
 #print{display:none}
 @page{size:105mm 148mm;margin:0}
