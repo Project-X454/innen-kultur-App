@@ -158,10 +158,10 @@ const ctx = s => ({videos:VIDEOS, materials:IN.MATERIALS, today:"2026-10-10"});
 test("Inhalte: jedes Video, auf das ein To-do, eine Routine oder ein Material zeigt, gibt es", () => {
   const ids = new Set(VIDEOS.map(v => v.id));
   IK.BASIS.forEach(b => assert.ok(ids.has(b.videoId), b.videoId));
-  IN.TODOS.forEach(t => [...((t.auto||{}).videos||[]), ...((t.go||{}).ids||[])].forEach(id => assert.ok(ids.has(id), t.id + " " + id)));
+  IN.TODOS.forEach(t => assert.ok(ids.has(t.after), t.id + " " + t.after));
   IN.MATERIALS.forEach(m => { if(m.unlock.video) assert.ok(ids.has(m.unlock.video), m.id); });
-  assert.equal(IN.TODOS.length, 10);
-  assert.equal(new Set(IN.TODOS.map(t => t.id)).size, 10);
+  assert.equal(IN.TODOS.length, 7);
+  assert.equal(new Set(IN.TODOS.map(t => t.id)).size, 7);
   Object.keys(IN.BASIS_NOTICE).forEach(k => assert.ok(IK.BASIS.find(b => b.key === k), k));
 });
 
@@ -175,21 +175,26 @@ test("Basis-Routine: erst nach ihrem Video im Check-in, ältere Haken bleiben", 
   assert.equal(IK.basisUnlocked(s, "morgenlicht"), true);
 });
 
-test("Starter-Liste: automatische Haken für Videos, Check-in, Profilfelder und Wochen-Check", () => {
-  const s = fresh(), st = () => Object.fromEntries(IK.todoStatus(s, IN.TODOS).map(t => [t.id, t.done]));
-  assert.equal(Object.values(st()).filter(Boolean).length, 0);
-  ["1.1", "1.2"].forEach(id => IK.markSeen(s, id));
-  assert.equal(st().t1, false);
-  IK.markSeen(s, "1.3"); assert.equal(st().t1, true);
-  IK.markSeen(s, "1.4"); assert.equal(st().t2, false);
-  IK.saveCheckIn(s, {}, "2026-10-01", at("2026-10-01")); assert.equal(st().t2, true);
-  s.wakeTime = "06:45"; s.lightSpot = "  "; assert.equal(st().t3, true); assert.equal(st().t4, false);
-  s.why = "Mit meinen Enkeln wandern"; assert.equal(st().t9, false);
-  IK.markSeen(s, "1.11"); assert.equal(st().t9, true);
-  s.todosDone = {t6: "2026-10-02"}; assert.equal(st().t6, true); assert.equal(st().t7, false);
-  for(let d = 2; d <= 7; d++) IK.saveCheckIn(s, {}, `2026-10-0${d}`, at(`2026-10-0${d}`));
-  assert.equal(st().t10, false);
-  IK.completeWeek(s, at("2026-10-07", 22)); assert.equal(st().t10, true);
+test("To-dos: eins pro Tracker-Tag, frei mit Tag und Video, Profilfelder haken ab", () => {
+  const s = fresh(), st = id => IK.todoStatus(s, IN.TODOS, "2026-10-01").find(t => t.id === id);
+  assert.equal(IN.TODOS.length, 7);
+  assert.deepEqual(IN.TODOS.map(t => t.day), [1, 2, 3, 4, 5, 6, 7]);
+  IN.TODOS.forEach(t => { assert.ok(["darm", "schlaf", "beweg", "recap"].includes(t.pillar), t.id); assert.ok(VIDEOS.find(v => v.id === t.after), t.id + " braucht ein Video"); });
+  assert.equal(st("d1").status, "locked"); assert.equal(st("d1").dayOk, true); assert.equal(st("d1").videoOk, false);
+  IK.markSeen(s, "1.2"); assert.equal(st("d1").status, "today");
+  assert.equal(st("d4").dayOk, false); assert.equal(st("d4").status, "locked");
+  s.wakeTime = "06:45"; assert.equal(st("d1").status, "done");
+  IK.markSeen(s, "1.1");
+  IK.saveCheckIn(s, {}, "2026-10-01", at("2026-10-01"));
+  assert.equal(IK.trackerDay(s, "2026-10-01").day, 1);
+  assert.equal(IK.trackerDay(s, "2026-10-02").day, 2);
+  const s2 = id => IK.todoStatus(s, IN.TODOS, "2026-10-02").find(t => t.id === id);
+  assert.equal(s2("d2").status, "today");
+  s.todosDone = {d2: "x"}; assert.equal(s2("d2").status, "done");
+  for(let d = 2; d <= 5; d++) IK.saveCheckIn(s, {}, `2026-10-0${d}`, at(`2026-10-0${d}`));
+  assert.equal(IK.todoStatus(s, IN.TODOS, "2026-10-06").find(t => t.id === "d3").status, "locked"); // Video 1.3 fehlt
+  IK.markSeen(s, "1.3"); assert.equal(IK.todoStatus(s, IN.TODOS, "2026-10-06").find(t => t.id === "d3").status, "open");
+  assert.equal(IK.todoStatus(s, IN.TODOS, "2026-10-06").find(t => t.id === "d6").status, "today");
 });
 
 test("Wochen-Check: offen nach 7 Tagen oder ab 5 Tagen nach 9 Kalendertagen", () => {
@@ -228,16 +233,12 @@ test("Hinweise: jede Freischaltung einmal, gesehene verschwinden", () => {
   assert.ok(IK.newUnlocks(s, ctx(s)).some(e => e.id === "bst-ballaststoff"));
 });
 
-test("Starter-Liste: To-dos mit Video erst nach dem Video sichtbar und ausfüllbar", () => {
-  const s = fresh(), st = id => IK.todoStatus(s, IN.TODOS).find(t => t.id === id);
-  assert.equal(st("t1").unlocked, true);
-  assert.equal(st("t3").unlocked, false); assert.equal(st("t3").inputOpen, false);
-  IK.markSeen(s, "1.2");
-  assert.equal(st("t3").unlocked, true); assert.equal(st("t3").inputOpen, true); assert.equal(st("t4").unlocked, true);
-  assert.equal(st("t9").unlocked, true); assert.equal(st("t9").inputOpen, false);
-  IK.markSeen(s, "1.11"); assert.equal(st("t9").inputOpen, true);
-  IN.TODOS.filter(t => t.input).forEach(t => assert.ok(t.after || t.afterInput, t.id + " braucht ein Freischalt-Video"));
-  IN.TODOS.forEach(t => { if(t.after) assert.ok(VIDEOS.find(v => v.id === t.after), t.after); });
+test("To-dos: nach 7 Tagen ist alles frei, nach Woche 1 beginnt Woche 2 bei Tag 1", () => {
+  const s = fresh(); VIDEOS.filter(v => v.week === 1).forEach(v => IK.markSeen(s, v.id));
+  for(let d = 1; d <= 7; d++) IK.saveCheckIn(s, {}, `2026-10-0${d}`, at(`2026-10-0${d}`));
+  assert.ok(IK.todoStatus(s, IN.TODOS, "2026-10-08").every(t => t.unlocked));
+  assert.equal(IK.trackerDay(s, "2026-10-08").day, 7);
+  IK.completeWeek(s); assert.deepEqual(IK.trackerDay(s, "2026-10-08"), {week: 2, day: 1});
 });
 
 test("Loop-Score-Beispiel in Tour und Fortschritt rechnet mit der echten Formel", () => {
