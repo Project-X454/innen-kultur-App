@@ -49,7 +49,7 @@ const BAUSTEINE = [
   {id:"letzte_mz",    pillar:"schlaf", label:"Letzte Mahlzeit 3 Std. vor dem Schlafen", courseWeek:3, videoId:"3.2", kind:"daily"},
   {id:"zone2",        pillar:"beweg",  label:"Zone-2-Minuten",        courseWeek:3, videoId:"3.3",  kind:"daily"},
   {id:"in_ruhe",      pillar:"darm",   label:"In Ruhe gegessen",      courseWeek:4, videoId:"4.1",  kind:"daily"},
-  {id:"koffein",      pillar:"schlaf", label:"Kein Koffein nach dem Mittag", courseWeek:4, videoId:"4.2b", kind:"daily"},
+  {id:"koffein",      pillar:"schlaf", label:"Kein Koffein nach dem Mittag", courseWeek:4, videoId:"4.2",  kind:"daily"},
   {id:"runterfahren", pillar:"beweg",  label:"Runterfahr-Routine",    courseWeek:4, videoId:"4.3",  kind:"daily"}
 ];
 

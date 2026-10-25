@@ -27,6 +27,19 @@ Rechenmodul testen (Node 18 oder neuer): `node --test`
 - [~] 6. Fortschritt (10): Loop-Score und Startpunkt → jetzt sind da, Wochenverlauf und Zusammenhänge fehlen
 - [~] 7. Bibliothek (11, 14): Tab Wissen mit Kühlschrank-Karten ist da, Goodies, Abschluss (12) und Upgrade fehlen
 
+## Kursplan übernehmen
+
+Die Videos kommen aus dem Kursplan-Board. Nach Änderungen dort:
+
+1. Im Board auf **„Als CSV exportieren“** klicken.
+2. Die Datei als `data/kursplan.csv` speichern und die alte Datei ersetzen.
+3. Im Repository-Ordner `node tools/kursplan-import.js` ausführen. Das Skript schreibt `videos.js` neu.
+4. `node --test` ausführen und `VERSION` in `sw.js` hochzählen.
+
+Die Nummer aus dem Board (z. B. 2.1) ist die Video-ID. Die Bausteine in `logic.js` hängen an diesen IDs: 2.1–2.3, 3.1–3.3, 4.1–4.3.
+Verschiebt man im Board eines dieser Videos, warnt das Skript, und die `videoId` in `logic.js` muss angepasst werden.
+Videos im Ideen-Pool kommen nicht in die App.
+
 ## Veröffentlichen mit GitHub Pages
 
 Repository → **Settings → Pages** → Source: **Deploy from a branch** → Branch: **main**, Ordner: **/ (root)** → **Save**.
@@ -42,7 +55,9 @@ Alternativ eine Subdomain (z. B. `app.innen-kultur.de`) per CNAME auf GitHub Pag
 - `index.html` – Gerüst und Gestaltung (CI „Weiß & Blau“). Im Browser ab 960 px Breite: Seitenleiste statt Tab-Leiste und Inhalte in zwei Spalten; mobil bleibt alles wie gehabt.
 - `app.js` – Screens, Abläufe, Speicher, Sicherung und Übertragung
 - `logic.js` – Rechenmodul ohne Oberfläche: Loop-Score, Startpunkt-Vergleich, größter Hebel, Tracker-Wochen, Freischaltung der Bausteine
-- `videos.js` – Videoliste. Vorläufig: Woche 2 aus dem Mockup, sonst Platzhalter. Wird durch den CSV-Export des Kursplan-Boards ersetzt.
+- `videos.js` – Videoliste mit allen 89 Videos aus dem Kursplan-Board (Woche 1–8). Wird automatisch erzeugt, nicht von Hand bearbeiten.
+- `data/kursplan.csv` – CSV-Export des Kursplan-Boards, Quelle für `videos.js`
+- `tools/kursplan-import.js` – erzeugt `videos.js` aus `data/kursplan.csv`
 - `tests/` – Tests für das Rechenmodul
 - `manifest.webmanifest` – Name, Symbol, Farben für die Installation
 - `sw.js` – Offline-Betrieb
@@ -52,5 +67,5 @@ Alternativ eine Subdomain (z. B. `app.innen-kultur.de`) per CNAME auf GitHub Pag
 
 - Freischaltcodes fälschungssicher machen (signierte Codes, weiterhin ohne Server)
 - App-Symbole in `icons/` auf das neue Logo „Innere Schleife“ umstellen
-- Echte Videoliste (Kursplan-Board) und Video-Player mit Fortschritts-Event (ab 90 % = gesehen) anbinden
+- Video-Player mit Fortschritts-Event (ab 90 % = gesehen) anbinden. Die Videoliste kommt bereits aus dem Kursplan-Board.
 - Bei jedem Update `VERSION` in `sw.js` hochzählen, damit Geräte die neue Version laden

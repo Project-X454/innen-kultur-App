@@ -309,7 +309,7 @@ function vKurs(){
   const p=IK.weekVideoProgress(VID.VIDEOS,S,kursWeek), nx=IK.nextVideo(VID.VIDEOS,S,maxW);
   const vids=VID.VIDEOS.filter(v=>v.week===kursWeek).sort((a,b)=>a.order-b.order);
   const tab=n=>{ const q=IK.weekVideoProgress(VID.VIDEOS,S,n); return `<button data-a="kursweek" data-v="${n}" aria-pressed="${kursWeek===n}">${q.total&&q.seen===q.total?CHECK+" ":""}W${n}</button>`; };
-  const more = S.product==="komplett" ? `<button disabled>W5–8 folgen</button>` : `<button data-a="go" data-v="profil">W5–8 Komplett</button>`;
+  const more = S.product==="komplett" ? "" : `<button data-a="go" data-v="profil">W5–8 Komplett</button>`;
   const row=v=>{ const seen=IK.isSeen(S,v.id), isNext=nx&&nx.id===v.id, b=IK.bausteinForVideo(v.id);
     return `<button class="vrow" data-a="video" data-v="${v.id}"><span class="dot" style="--c:${PC[pillarOf(v)]}"></span><span class="st${seen?" on":""}${isNext?" nx":""}" aria-hidden="true">${seen?CHECK:isNext?"▸":""}</span>
       <span class="tx"><b>${esc(v.title)}</b><span class="note">${v.type} · ${v.durationMin} Min.${b?" · "+esc(b.label):""}</span></span><span class="sr">${seen?"gesehen":"offen"}</span></button>`; };
@@ -486,7 +486,7 @@ function loadDemo(){
     [1,1,1,4,4,4,3,7.5,21,35],[1,1,0,4,4,3,3,7,18,20]];
   const ts=(day,h)=>new Date(day+"T"+h).toISOString();
   VID.VIDEOS.filter(v=>v.week===1).forEach(v=>IK.markSeen(S,v.id,ts(IK.addDays(start,-1),"19:00")));
-  const seenOn={2:["2.0","2.1","2.2","2.3","2.3b"], 9:["3.0","3.1","2.1b"]};
+  const seenOn={2:["2.0","2.1","2.2","2.3","2.4"], 9:["3.0","3.1","2.5"]};
   const bst=i=>({ballaststoff:i%3!==0, bildschirm:i%2===0, kraft:i%3===0, fermentiert:i%2===1});
   rows.forEach((r,i)=>{ const day=IK.addDays(start,i+(i>=7?1:0));
     (seenOn[i]||[]).forEach(id=>IK.markSeen(S,id,ts(day,"12:00")));
