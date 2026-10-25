@@ -486,7 +486,7 @@ function loadDemo(){
     [1,1,1,4,4,4,3,7.5,21,35],[1,1,0,4,4,3,3,7,18,20]];
   const ts=(day,h)=>new Date(day+"T"+h).toISOString();
   VID.VIDEOS.filter(v=>v.week===1).forEach(v=>IK.markSeen(S,v.id,ts(IK.addDays(start,-1),"19:00")));
-  const seenOn={2:["2.0","2.1","2.2","2.3","2.3b"], 9:["3.0","3.1","2.1b"]};
+  const seenOn={2:["2.0","2.1","2.2","2.3","2.4"], 9:["3.0","3.1","2.5"]};
   const bst=i=>({ballaststoff:i%3!==0, bildschirm:i%2===0, kraft:i%3===0, fermentiert:i%2===1});
   rows.forEach((r,i)=>{ const day=IK.addDays(start,i+(i>=7?1:0));
     (seenOn[i]||[]).forEach(id=>IK.markSeen(S,id,ts(day,"12:00")));
