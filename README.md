@@ -65,6 +65,10 @@ Alternativ eine Subdomain (z. B. `app.innen-kultur.de`) per CNAME auf GitHub Pag
 - `sw.js` – Offline-Betrieb
 - `icons/` – App-Symbole
 
+## Willkommen und App-Tour
+
+Nach dem Onboarding begrüßt die App einmalig mit „Herzlich willkommen“ und dem, was Käufer erwartet. Danach führt eine Tour in 11 Schritten über die echten Screens: Check-in, Starter-Liste, Weiterlernen, Navigation, Kurs, Videos, Handout und Goodie, Freischalt-Hinweise mit Beispiel, Bibliothek, Fortschritt. Am Ende kommt eine Übersicht, was wodurch frei wird. Die Tour lässt sich überspringen und jederzeit unter **Profil → App-Tour** neu starten. Texte und Reihenfolge stehen in `inhalte.js` (`TOUR`, `UNLOCK_OVERVIEW`).
+
 ## Woche 1: so funktioniert es
 
 - **Starter-Liste:** 10 einmalige To-dos auf Heute. 6 haken sich selbst ab (Videos, erster Check-in, Profilfelder, Wochen-Check), 4 hakt man selbst ab. Sie verschwindet nach dem Wochen-Check 1.
