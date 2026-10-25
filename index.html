@@ -606,6 +606,49 @@ html.evening{background:#0F1B28}
   body.evening .side .btn{background:var(--coral)}
 }
 
+/* Getönte Karten (nach dem Video, Hinweise) im Stil der Wissens-Kacheln */
+.tcard{position:relative;overflow:hidden;border-radius:24px;padding:18px 18px 20px;background:var(--s);color:var(--ink);display:flex;flex-direction:column;gap:10px}
+.tcard>*{position:relative}
+.tcard>.bl{position:absolute;right:-40px;bottom:-46px;width:150px;height:150px;opacity:.3;pointer-events:none}
+.tcard .k{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t)}
+.tcard .tt{font-family:var(--f-head);font-weight:800;font-size:21px;letter-spacing:-.025em;line-height:1.2;color:var(--t)}
+.tcard p{margin:0;font-size:15px;line-height:1.45}
+.tcard .www dt{color:var(--t);opacity:.75}
+.tcard .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.tcard .btn.small{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(20,34,49,.08)}
+.tcard .btn.small.soft{background:transparent;box-shadow:inset 0 0 0 1.5px var(--c);color:var(--t)}
+.tcard .trow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:10px;border-top:1px solid rgba(20,34,49,.08)}
+body.evening .tcard .trow{border-top-color:rgba(255,255,255,.08)}
+.tcard .trow:first-of-type{border-top:0;padding-top:2px}
+.tcard .trow>span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.tcard .trow b{font-size:15.5px;line-height:1.3}
+.tcard .trow small{font-size:13px;color:var(--muted)}
+.tcard .trow .btn{flex:none}
+.tcard.notice{border-left:0}
+/* Gesperrt-Blatt */
+.sheet.lock{gap:16px}
+.sheet.lock .lk-ic{width:44px;height:44px;border-radius:14px;background:var(--s);color:var(--t);display:grid;place-items:center}
+.sheet.lock .lk-ic svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.sheet.lock h2{margin:4px 0 0;line-height:1.15}
+.lwhy{margin:0;font-size:15px;line-height:1.5;color:var(--ink)}
+.lhd{font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.lsteps{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column}
+.lsteps li{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+.lsteps li:first-child{border-top:0}
+.lsteps .n{flex:none;width:28px;height:28px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--line);display:grid;place-items:center;font-size:13px;font-weight:700;color:var(--muted)}
+.lsteps li.on .n{background:var(--darm);box-shadow:none;color:#fff}
+.lsteps li>span:nth-child(2){display:flex;flex-direction:column;gap:2px;padding-top:3px}
+.lsteps li b{font-size:15px}
+.lsteps li.on b{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+.lsteps small{font-size:13px;color:var(--muted);line-height:1.35}
+.lnow{background:var(--s);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.lnow p{margin:0;font-size:15px;line-height:1.45}
+.lnow .note{color:var(--t)}
+.lnow .btns{display:flex;flex-direction:column;gap:8px}
+.ldone{display:flex;gap:12px;align-items:center;background:var(--darm-soft);border-radius:20px;padding:14px 16px}
+.ldone svg{flex:none}
+.ldone p{margin:0;font-size:15px;line-height:1.45;color:var(--darm-text);font-weight:600}
+
 /* Kühlschrank-Karten: nur im Druck sichtbar */
 #print{display:none}
 @page{size:105mm 148mm;margin:0}
