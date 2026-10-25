@@ -267,6 +267,38 @@ td:not(:first-child){text-align:right}
   .choice:not([disabled]):hover,.tabsrow button:not([disabled]):not([aria-pressed="true"]):hover{background:var(--soft)}
 }
 
+/* Freischalt-Hinweise: was, wann, wo, wieso */
+.notices{display:flex;flex-direction:column;gap:12px}
+.notice{border-left:5px solid var(--c);gap:8px}
+.notice .nt{font-family:var(--f-head);font-size:17px;line-height:1.25}
+.www{margin:0;display:grid;gap:6px}
+.www div{display:grid;grid-template-columns:56px 1fr;gap:8px;font-size:14px;line-height:1.4}
+.www dt{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding-top:2px}
+.www dd{margin:0}
+/* Starter-Liste */
+.todo-mini{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);padding-top:10px}
+.todo-mini>span{display:flex;flex-direction:column;gap:2px;min-width:0;font-size:14px}
+.todo-mini .btn{flex:none}
+.todo{gap:10px}
+.todo.done{opacity:.72}
+.todo.focus{box-shadow:0 0 0 2px var(--blue)}
+.todo-hd{display:flex;gap:12px;align-items:flex-start}
+.todo-hd>span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.tick{flex:none;width:28px;height:28px;border-radius:50%;border:2px solid var(--recap);background:var(--card);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px}
+button.tick{cursor:pointer;min-width:44px;min-height:44px;width:44px;height:44px;margin:-8px}
+.tick[aria-pressed="true"],.tick.on{background:var(--recap);border-color:var(--recap)}
+.tick.auto{border-style:dashed;border-color:var(--muted)}
+.tick.auto.on{border-style:solid}
+.todo .why{color:var(--ink);margin:0}
+.fin{display:flex;flex-direction:column;gap:6px}
+.fin-row{display:flex;gap:8px}
+.fin-row input{flex:1;min-width:0}
+.fin-row .btn{flex:none;width:auto}
+.why-card b{font-family:var(--f-head);font-size:18px;line-height:1.3}
+.basis button.locked{border-style:dashed;color:var(--muted);background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.basis button.locked small{font-size:11.5px;font-weight:600;color:var(--t)}
+.wk-card.locked{opacity:.8}
+
 /* Kühlschrank-Karten: nur im Druck sichtbar */
 #print{display:none}
 @page{size:105mm 148mm;margin:0}
@@ -291,6 +323,33 @@ td:not(:first-child){text-align:right}
 .fc .wp th{font-size:6.5pt;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:0 1mm 1.5mm}
 .fc .wp td{border-top:.4mm solid var(--line);height:8.5mm;padding:0 1mm;font-size:9pt;text-align:left}
 .fc .wp i{display:block;width:3.2mm;height:3.2mm;border:.4mm solid var(--muted);border-radius:.8mm}
+/* Handout A4, zwei Seiten */
+@page a4{size:A4;margin:0}
+.ho{page:a4;width:210mm;height:297mm;padding:14mm 15mm 10mm;background:#fff;color:var(--ink);font-family:var(--f-body);display:flex;flex-direction:column;gap:5mm;border-top:4mm solid var(--darm);break-after:page;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.ho:last-child{break-after:auto}
+.ho .hd{display:flex;justify-content:space-between;align-items:center;font-family:var(--f-head);font-weight:800}
+.ho .hd>span:last-child{font-size:8pt;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:var(--f-body)}
+.ho h1{font-size:28pt}
+.ho .sub{font-size:11pt;color:var(--muted);margin:-2mm 0 0}
+.ho-r{border-left:2mm solid var(--c);padding:2mm 0 2mm 5mm;display:flex;flex-direction:column;gap:1mm}
+.ho-r b{font-family:var(--f-head);font-size:15pt}
+.ho-r span{font-size:11pt;line-height:1.45}
+.ho-r small{font-size:8.5pt;color:var(--muted)}
+.ho-2{display:grid;grid-template-columns:1fr 1fr;gap:5mm}
+.ho .tip{background:var(--bg);border-radius:4mm;padding:4mm 5mm;font-size:10pt;line-height:1.5}
+.ho .tip.warn{background:var(--beweg-soft)}
+.ho .ln{display:block;border-bottom:.4mm solid var(--line);height:7mm}
+.ho-plate{display:grid;grid-template-columns:44mm 1fr;gap:6mm;align-items:center}
+.ho-plate>div{display:flex;flex-direction:column;gap:1.8mm;font-size:10.5pt}
+.ho-plate b{font-family:var(--f-head);font-size:14pt}
+.ho-plate .lg{display:flex;gap:2.5mm;align-items:center}
+.ho-plate .lg i{width:4mm;height:4mm;border-radius:1mm;background:var(--c);flex:none}
+.ho-plate small{font-size:8.5pt;color:var(--muted);line-height:1.45}
+.ho .ft{margin-top:auto;font-size:8pt;color:var(--muted)}
+.ho .wp{width:100%;border-collapse:collapse}
+.ho .wp th{font-size:8pt;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:0 2mm 2mm}
+.ho .wp td{border-top:.4mm solid var(--line);height:13mm;padding:0 2mm;font-size:11pt}
+.ho .wp i{display:block;width:5mm;height:5mm;border:.5mm solid var(--muted);border-radius:1mm}
 </style>
 </head>
 <body>
@@ -299,6 +358,7 @@ td:not(:first-child){text-align:right}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="logic.js"></script>
 <script src="videos.js"></script>
+<script src="inhalte.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

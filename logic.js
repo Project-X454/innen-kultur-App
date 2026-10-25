@@ -15,10 +15,11 @@ const PILLARS = {
   beweg:  {label:"Bewegung"},
   recap:  {label:"Recap · Healthspan"}
 };
+// Basis-Routinen erscheinen im Check-in erst nach ihrem Video: „Der Tracker ist nie weiter als dein Wissen“.
 const BASIS = [
-  {key:"bunt",        pillar:"darm",   label:"Bunt gegessen"},
-  {key:"morgenlicht", pillar:"schlaf", label:"Morgenlicht"},
-  {key:"bewegt30",    pillar:"beweg",  label:"30 Min bewegt"}
+  {key:"bunt",        pillar:"darm",   label:"Bunt gegessen",  videoId:"1.1"},
+  {key:"morgenlicht", pillar:"schlaf", label:"Morgenlicht",    videoId:"1.2"},
+  {key:"bewegt30",    pillar:"beweg",  label:"30 Min bewegt",  videoId:"1.3"}
 ];
 const SCALES = [
   {key:"erholt",  label:"Erholt"},
@@ -240,6 +241,58 @@ function currentCourseWeek(videos, state, maxWeek){
   const all=courseVideos(videos,maxWeek); return all.length ? all[all.length-1].week : 1;
 }
 
+/* ---------- Basis-Freischaltung, Wochen-Check, Starter-Liste, Materialien ---------- */
+// Eine Basis-Routine ist frei, wenn ihr Video gesehen ist. Wer sie schon einmal abgehakt hat, behält sie (ältere Einträge).
+function basisUnlocked(state,key){
+  const b=BASIS.find(x=>x.key===key); if(!b) return false;
+  return isSeen(state,b.videoId) || (state.checkins||[]).some(c=>c.basis&&c.basis[key]);
+}
+// Wochen-Check offen: nach 7 Tagen, oder ab 5 Tagen, wenn seit Wochenstart 9 Kalendertage vergangen sind (SPEC §5.6).
+const WEEKCHECK_MIN_DAYS = 5, WEEKCHECK_LATE_DAYS = 9;
+function weekCheckOpen(state, today){
+  const w=currentWeek(state); if(!w||w.status==="completed") return false;
+  if(w.status==="awaitingCheck") return true;
+  const n=checkinsOf(state,w.id).length; if(n<WEEKCHECK_MIN_DAYS) return false;
+  return daysBetween(localDay(new Date(w.startedAt)), today||localDay()) >= WEEKCHECK_LATE_DAYS-1;
+}
+const weekCompleted = (state,index) => (state.weeks||[]).some(w=>w.index===index && w.status==="completed");
+const filled = v => v!==undefined && v!==null && String(v).trim()!=="";
+
+// Starter-Liste: automatisch erledigt über auto-Regeln, sonst per Haken (state.todosDone).
+function todoDone(state, t){
+  const a=t.auto;
+  if(a){
+    const ok=(!a.videos||a.videos.every(id=>isSeen(state,id)))
+      && (!a.checkins||(state.checkins||[]).length>=a.checkins)
+      && (!a.field||filled(state[a.field]))
+      && (!a.weekCompleted||weekCompleted(state,a.weekCompleted));
+    return ok;
+  }
+  return !!(state.todosDone||{})[t.id];
+}
+function todoStatus(state, todos){ return todos.map(t=>Object.assign({}, t, {done:todoDone(state,t)})); }
+
+// Materialien (Handout, Mini-Karte, Goodie): frei nach Video, nach allen Kernvideos einer Woche oder nach dem Wochen-Check.
+function materialUnlocked(state, m, videos){
+  const u=m.unlock||{};
+  if(u.video) return isSeen(state,u.video);
+  if(u.kernOfWeek) return weekVideoProgress(videos,state,u.kernOfWeek).handoutFree;
+  if(u.weekCompleted) return weekCompleted(state,u.weekCompleted);
+  return true;
+}
+
+// Alles, was gerade freigeschaltet ist und einen Hinweis bekommt. Die Oberfläche zeigt nur die, die noch nicht gesehen sind.
+function unlockEvents(state, ctx){
+  const ev=[];
+  BASIS.forEach(b=>{ if(isSeen(state,b.videoId)) ev.push({id:"basis-"+b.key, type:"basis", ref:b.key}); });
+  (ctx.materials||[]).forEach(m=>{ if(materialUnlocked(state,m,ctx.videos||[])) ev.push({id:"mat-"+m.id, type:"material", ref:m.id}); });
+  unlockedBausteine(state).forEach(b=>ev.push({id:"bst-"+b.id, type:"baustein", ref:b.id}));
+  const w=currentWeek(state);
+  if(w && weekCheckOpen(state, ctx.today)) ev.push({id:"wc-"+w.id, type:"weekcheck", ref:w.id});
+  return ev;
+}
+const newUnlocks = (state, ctx) => unlockEvents(state,ctx).filter(e=>!(state.noticesSeen||{})[e.id]);
+
 function pickEntry(d){
   const o={basis:Object.assign({bunt:false,morgenlicht:false,bewegt30:false}, d.basis||{}), bausteine:Object.assign({}, d.bausteine||{})};
   ["erholt","bauch","energie","stress","tagGesamt","schlafStunden","pflanzen","bewegungMin"].forEach(k=>{ o[k]=isNum(d[k])?d[k]:undefined; });
@@ -251,6 +304,7 @@ const api = {WEIGHTS, UMSETZUNG, DAYS_PER_WEEK, PILLARS, BASIS, SCALES, GOALS, B
   loopScoreFromParts, loopScore, compareToStart, biggestLever, currentWeek, checkinsOf, checkinFor,
   completeWeek, saveCheckIn, MAX_NEW_PER_WEEK, SEEN_PERCENT, isSeen, markSeen, markUnseen, bausteinById, bausteinForVideo,
   unlockedBausteine, newWeekCandidates, startWeek, activationState, activateNow, pauseBaustein, resumeBaustein, activeBausteine,
-  weekVideoProgress, nextVideo, currentCourseWeek};
+  weekVideoProgress, nextVideo, currentCourseWeek,
+  basisUnlocked, WEEKCHECK_MIN_DAYS, WEEKCHECK_LATE_DAYS, weekCheckOpen, weekCompleted, todoDone, todoStatus, materialUnlocked, unlockEvents, newUnlocks};
 if(typeof module!=="undefined" && module.exports) module.exports = api; else root.IK = api;
 })(typeof globalThis!=="undefined" ? globalThis : this);

@@ -1,0 +1,97 @@
+/* innen kultur · Inhalte für Starter-Liste, Freischaltungen und Materialien
+   Hier stehen nur Texte und Regeln, kein Ablauf. Änderungen an Texten sind hier sicher möglich.
+   Freigegeben im Dokument „Woche 1: Handouts, Goodies, Routinen & To-dos“ (25.10.2026).
+
+   Aufbau eines To-dos:
+     id     feste Kennung, nie ändern (daran hängt der Haken auf dem Gerät)
+     title  was zu tun ist · when  wann (Tracker-Tag, kein Datum) · why  wieso
+     auto   wird automatisch abgehakt: videos (alle gesehen), checkins (Anzahl), field (Profilfeld ausgefüllt), weekCompleted (Woche n abgeschlossen)
+     input  Eingabefeld direkt im To-do (field = Profilfeld)
+     go     wohin der Knopf führt: video, checkin, wissen, weekcheck, bibliothek */
+(function(root){
+"use strict";
+
+const TODOS = [
+  {id:"t1", title:"Kernvideos 1.1 bis 1.3 ansehen", when:"Tag 1", min:"zusammen ca. 36 Min.",
+    why:"Sie erklären die drei Basis-Routinen. Erst danach erscheinen sie in deinem Check-in.",
+    auto:{videos:["1.1","1.2","1.3"]}, go:{kind:"video", ids:["1.1","1.2","1.3"]}},
+  {id:"t2", title:"Video 1.4 ansehen und den ersten Abend-Check-in machen", when:"Tag 1, abends",
+    why:"Im Video siehst du, wie der Check-in in 2 Minuten geht. Dein erster Eintrag startet Woche 1.",
+    auto:{videos:["1.4"], checkins:1}, go:{kind:"video", ids:["1.4"], then:"checkin"}},
+  {id:"t3", title:"Feste Aufstehzeit festlegen und den Wecker stellen", when:"Tag 1",
+    why:"Eine feste Zeit, auch am Wochenende, ist die halbe Morgenlicht-Routine.",
+    auto:{field:"wakeTime"}, input:{field:"wakeTime", type:"time", label:"Meine Aufstehzeit"}},
+  {id:"t4", title:"Deinen Morgenlicht-Ort festlegen", when:"Tag 1 bis 2",
+    why:"Wer vorher weiß, wohin, geht morgens leichter raus.",
+    auto:{field:"lightSpot"}, input:{field:"lightSpot", type:"text", label:"Mein Ort", placeholder:"z. B. Balkon oder Weg zum Bäcker"}},
+  {id:"t5", title:"Video 1.5 „Wann zum Arzt?“ ansehen", when:"Tag 1 bis 3",
+    why:"Damit du weißt, bei welchen Warnzeichen du nicht abwartest.",
+    auto:{videos:["1.5"]}, go:{kind:"video", ids:["1.5"]}},
+  {id:"t6", title:"Beim nächsten Einkauf 3 Pflanzen kaufen, die du sonst nicht kaufst", when:"Tag 2 bis 4",
+    why:"Mehr Vielfalt auf dem Teller ist der einfachste Schritt für deinen Bauch.",
+    go:{kind:"wissen", id:"pflanzen", label:"Ideen auf der Pflanzen-Karte"}},
+  {id:"t7", title:"Zwei Bewegungssnacks fest in den Kalender legen", when:"Tag 2 bis 4",
+    why:"Was im Kalender steht, passiert eher als ein guter Vorsatz.",
+    go:{kind:"video", ids:["1.8"], label:"Ideen in Video 1.8"}},
+  {id:"t8", title:"Optional: Aufsteh-Test als Startwert", when:"Tag 1 bis 3", optional:true,
+    why:"In Woche 4 machst du ihn noch einmal und siehst, was sich getan hat.",
+    how:"Setz dich auf einen stabilen Stuhl ohne Rollen, die Arme vor der Brust gekreuzt. Steh 30 Sekunden lang so oft wie möglich ganz auf und setz dich wieder hin. Zähl die Wiederholungen. Mach den Test nur ohne Beschwerden, sonst lass ihn aus.",
+    auto:{field:"standTest"}, input:{field:"standTest", type:"number", label:"Wiederholungen in 30 Sekunden"}},
+  {id:"t9", title:"Recap 1.11 ansehen und dein Warum notieren", when:"Tag 6 bis 7",
+    why:"Dein Satz steht danach im Fortschritt über deinem Loop-Score.",
+    auto:{videos:["1.11"], field:"why"}, go:{kind:"video", ids:["1.11"]},
+    input:{field:"why", type:"text", label:"Wofür willst du mit 80 noch fit sein?", placeholder:"Ein Satz reicht"}},
+  {id:"t10", title:"Wochen-Check machen", when:"Tag 7",
+    why:"Du siehst deine erste Woche auf einen Blick und schaltest dein Goodie frei.",
+    how:"Er öffnet sich nach 7 eingetragenen Tagen. Läuft die Woche schon länger, reichen 5 Tage.",
+    auto:{weekCompleted:1}, go:{kind:"weekcheck"}}
+];
+
+// Freischaltung der Basis-Routinen: was, wann, wo, wieso.
+const BASIS_NOTICE = {
+  bunt:{title:"„Bunt gegessen“ ist jetzt in deinem Check-in",
+    why:"Du weißt jetzt, warum Vielfalt auf dem Teller für deinen Bauch zählt.",
+    when:"Heute Abend im Check-in abhaken, wenn eine Mahlzeit zur Hälfte aus Pflanzen bestand.",
+    where:"Abend-Check-in · Basis", go:{kind:"wissen", id:"pflanzen", label:"Was zählt als Pflanze?"}},
+  morgenlicht:{title:"„Morgenlicht“ ist jetzt in deinem Check-in",
+    why:"Licht am Morgen und eine feste Aufstehzeit stellen deine innere Uhr.",
+    when:"Ab morgen früh: innerhalb von 60 Minuten nach dem Aufstehen 10 Minuten raus. Abends im Check-in abhaken.",
+    where:"Abend-Check-in · Basis", go:{kind:"todo", id:"t3", label:"Aufstehzeit festlegen"}},
+  bewegt30:{title:"„30 Min bewegt“ ist jetzt in deinem Check-in",
+    why:"Bewegung im Alltag zählt genauso wie Sport.",
+    when:"Heute schon möglich: 30 Minuten zusammen, aufgeteilt zählt auch. Abends im Check-in abhaken.",
+    where:"Abend-Check-in · Basis", go:{kind:"wissen", id:"aktiv", label:"Was zählt alles?"}}
+};
+
+// Handouts, Mini-Karten und Goodies. card = druckbare Karte in der App, recipes = Inhalt des Goodies.
+const MATERIALS = [
+  {id:"teller", kind:"Mini-Karte", week:1, title:"Mini-Karte: Pflanzen-Teller", unlock:{video:"1.6"}, card:"pflanzen", tab:"handouts",
+    why:"Für den Kühlschrank: was als Pflanze zählt und was du diese Woche einkaufst.",
+    when:"Druck sie aus oder speichere sie als PDF, bevor du das nächste Mal einkaufen gehst."},
+  {id:"morgen", kind:"Mini-Karte", week:1, title:"Mini-Karte: Dein Morgen", unlock:{video:"1.9"}, card:"morgen", tab:"handouts",
+    why:"Deine Aufstehzeit, dein Morgenlicht-Ort und 10 Minuten Mobility für 7 Tage zum Abhaken.",
+    when:"Leg sie heute Abend neben das Bett, dann ist sie morgen früh als Erstes da."},
+  {id:"handout1", kind:"Handout", week:1, title:"Handout Woche 1: Deine Basis auf zwei Seiten", unlock:{kernOfWeek:1}, card:"handout1", tab:"handouts",
+    why:"Alle drei Routinen, dein Wochenplan und die Warnzeichen auf zwei Seiten.",
+    when:"Druck es für den Rest der Woche aus. Deine Angaben aus der Starter-Liste stehen schon drin."},
+  {id:"goodie1", kind:"Goodie", week:1, title:"Goodie: Bunte Teller in 15 Minuten", unlock:{weekCompleted:1}, tab:"rezepte",
+    why:"Dein Dankeschön für die erste Woche: 5 schnelle Rezepte nach dem Pflanzen-Teller und eine Einkaufsliste.",
+    when:"Such dir für Woche 2 zwei Rezepte aus. Sie passen schon zu den Ballaststoffen, die jetzt kommen.",
+    recipes:[] /* 5 Rezepte vom Team: {title, minutes, plants, ingredients:[…], steps:[…]} */}
+];
+
+// Mach jetzt: Knopf, der direkt zur passenden Stelle führt (nur wo die App die Aufgabe selbst aufnehmen kann).
+const MACH_JETZT_GO = {
+  "1.2":  {kind:"todo", id:"t3", label:"Aufstehzeit eintragen"},
+  "1.4":  {kind:"profil", label:"Erinnerungszeit prüfen"},
+  "1.6":  {kind:"material", id:"teller", label:"Mini-Karte Pflanzen-Teller"},
+  "1.9":  {kind:"material", id:"morgen", label:"Mini-Karte Dein Morgen"},
+  "1.11": {kind:"todo", id:"t9", label:"Warum notieren"}
+};
+
+// Warnzeichen aus Video 1.5 für Handout Woche 1. Vom Team zu liefern und vor der Veröffentlichung ärztlich zu prüfen.
+const WARNZEICHEN = [];
+
+const api = {TODOS, BASIS_NOTICE, MATERIALS, MACH_JETZT_GO, WARNZEICHEN};
+if(typeof module!=="undefined" && module.exports) module.exports = api; else root.IK_INHALT = api;
+})(typeof globalThis!=="undefined" ? globalThis : this);

@@ -150,3 +150,80 @@ test("Kurs: Handout nach allen Kernvideos, nächstes Video und aktuelle Kurswoch
   s.videoProgress["2.0"] = {percent:80};
   assert.equal(IK.isSeen(s, "2.0"), false);
 });
+
+/* ---------- Woche 1: Basis-Freischaltung, Starter-Liste, Materialien, Hinweise ---------- */
+const IN = require("../inhalte.js");
+const ctx = s => ({videos:VIDEOS, materials:IN.MATERIALS, today:"2026-10-10"});
+
+test("Inhalte: jedes Video, auf das ein To-do, eine Routine oder ein Material zeigt, gibt es", () => {
+  const ids = new Set(VIDEOS.map(v => v.id));
+  IK.BASIS.forEach(b => assert.ok(ids.has(b.videoId), b.videoId));
+  IN.TODOS.forEach(t => [...((t.auto||{}).videos||[]), ...((t.go||{}).ids||[])].forEach(id => assert.ok(ids.has(id), t.id + " " + id)));
+  IN.MATERIALS.forEach(m => { if(m.unlock.video) assert.ok(ids.has(m.unlock.video), m.id); });
+  assert.equal(IN.TODOS.length, 10);
+  assert.equal(new Set(IN.TODOS.map(t => t.id)).size, 10);
+  Object.keys(IN.BASIS_NOTICE).forEach(k => assert.ok(IK.BASIS.find(b => b.key === k), k));
+});
+
+test("Basis-Routine: erst nach ihrem Video im Check-in, ältere Haken bleiben", () => {
+  const s = fresh();
+  assert.equal(IK.basisUnlocked(s, "bunt"), false);
+  IK.markSeen(s, "1.1");
+  assert.equal(IK.basisUnlocked(s, "bunt"), true);
+  assert.equal(IK.basisUnlocked(s, "morgenlicht"), false);
+  IK.saveCheckIn(s, {basis:{morgenlicht:true}}, "2026-10-01", at("2026-10-01"));
+  assert.equal(IK.basisUnlocked(s, "morgenlicht"), true);
+});
+
+test("Starter-Liste: automatische Haken für Videos, Check-in, Profilfelder und Wochen-Check", () => {
+  const s = fresh(), st = () => Object.fromEntries(IK.todoStatus(s, IN.TODOS).map(t => [t.id, t.done]));
+  assert.equal(Object.values(st()).filter(Boolean).length, 0);
+  ["1.1", "1.2"].forEach(id => IK.markSeen(s, id));
+  assert.equal(st().t1, false);
+  IK.markSeen(s, "1.3"); assert.equal(st().t1, true);
+  IK.markSeen(s, "1.4"); assert.equal(st().t2, false);
+  IK.saveCheckIn(s, {}, "2026-10-01", at("2026-10-01")); assert.equal(st().t2, true);
+  s.wakeTime = "06:45"; s.lightSpot = "  "; assert.equal(st().t3, true); assert.equal(st().t4, false);
+  s.why = "Mit meinen Enkeln wandern"; assert.equal(st().t9, false);
+  IK.markSeen(s, "1.11"); assert.equal(st().t9, true);
+  s.todosDone = {t6: "2026-10-02"}; assert.equal(st().t6, true); assert.equal(st().t7, false);
+  for(let d = 2; d <= 7; d++) IK.saveCheckIn(s, {}, `2026-10-0${d}`, at(`2026-10-0${d}`));
+  assert.equal(st().t10, false);
+  IK.completeWeek(s, at("2026-10-07", 22)); assert.equal(st().t10, true);
+});
+
+test("Wochen-Check: offen nach 7 Tagen oder ab 5 Tagen nach 9 Kalendertagen", () => {
+  const s = fresh();
+  ["01", "02", "04", "06", "07"].forEach(d => IK.saveCheckIn(s, {}, `2026-10-${d}`, at(`2026-10-${d}`)));
+  assert.equal(IK.weekCheckOpen(s, "2026-10-07"), false);
+  assert.equal(IK.weekCheckOpen(s, "2026-10-09"), true);
+  const t = fresh();
+  ["01", "02", "03", "04"].forEach(d => IK.saveCheckIn(t, {}, `2026-10-${d}`, at(`2026-10-${d}`)));
+  assert.equal(IK.weekCheckOpen(t, "2026-10-20"), false);
+  ["05", "06", "07"].forEach(d => IK.saveCheckIn(t, {}, `2026-10-${d}`, at(`2026-10-${d}`)));
+  assert.equal(IK.weekCheckOpen(t, "2026-10-07"), true);
+  IK.completeWeek(t); assert.equal(IK.weekCheckOpen(t, "2026-10-07"), false);
+});
+
+test("Materialien: Mini-Karte nach Video, Handout nach allen Kernvideos, Goodie nach Wochen-Check 1", () => {
+  const s = fresh(), m = id => IN.MATERIALS.find(x => x.id === id), free = id => IK.materialUnlocked(s, m(id), VIDEOS);
+  assert.equal(free("teller"), false); IK.markSeen(s, "1.6"); assert.equal(free("teller"), true);
+  const kern = VIDEOS.filter(v => v.week === 1 && v.type === "Kern").map(v => v.id);
+  assert.deepEqual(kern, ["1.1", "1.2", "1.3", "1.4", "1.11"]);
+  kern.slice(0, 4).forEach(id => IK.markSeen(s, id)); assert.equal(free("handout1"), false);
+  IK.markSeen(s, "1.11"); assert.equal(free("handout1"), true);
+  assert.equal(free("goodie1"), false);
+  for(let d = 1; d <= 7; d++) IK.saveCheckIn(s, {}, `2026-10-0${d}`, at(`2026-10-0${d}`));
+  IK.completeWeek(s); assert.equal(free("goodie1"), true);
+});
+
+test("Hinweise: jede Freischaltung einmal, gesehene verschwinden", () => {
+  const s = fresh();
+  assert.deepEqual(IK.newUnlocks(s, ctx(s)), []);
+  IK.markSeen(s, "1.1"); IK.markSeen(s, "1.6");
+  assert.deepEqual(IK.newUnlocks(s, ctx(s)).map(e => e.id), ["basis-bunt", "mat-teller"]);
+  s.noticesSeen = {"basis-bunt": "x"};
+  assert.deepEqual(IK.newUnlocks(s, ctx(s)).map(e => e.id), ["mat-teller"]);
+  IK.markSeen(s, "2.1");
+  assert.ok(IK.newUnlocks(s, ctx(s)).some(e => e.id === "bst-ballaststoff"));
+});
