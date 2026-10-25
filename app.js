@@ -29,12 +29,13 @@ const ICON = {
 const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmt1 = v => v==null ? "–" : (Math.round(v*10)/10).toFixed(1).replace(".",",");
 const fmtSigned = v => v==null ? "–" : (v>0?"+":v<0?"−":"±")+fmt1(Math.abs(v));
-function logo(bg){ return `<svg width="34" height="34" viewBox="0 0 100 100" aria-hidden="true"><path d="M55 4 C82 6 98 27 95 53 C92 79 71 98 45 95 C20 92 2 73 5 46 C8 21 29 2 55 4 Z" fill="#E9765B"/><path d="M50 30 C64 29 72 40 70 52 C68 64 57 71 46 69 C35 67 29 57 31 47 C33 37 39 31 50 30 Z" pathLength="100" stroke-dasharray="80 20" fill="none" stroke="${bg}" stroke-width="7" stroke-linecap="round"/><circle cx="40" cy="32" r="5" fill="${bg}"/></svg>`; }
+function logo(){ return mark(34); }
 
 // Logo „Innere Schleife“ mit Farben aus den Variablen, damit es hell und im Abendmodus stimmt.
-const BLOBPATH="M55 4 C82 6 98 27 95 53 C92 79 71 98 45 95 C20 92 2 73 5 46 C8 21 29 2 55 4 Z";
-function mark(sz,bg){ bg=bg||"var(--bg)";
-  return `<svg width="${sz}" height="${sz}" viewBox="0 0 100 100" aria-hidden="true"><path d="${BLOBPATH}" style="fill:var(--coral)"/><path d="M50 30 C64 29 72 40 70 52 C68 64 57 71 46 69 C35 67 29 57 31 47 C33 37 39 31 50 30 Z" pathLength="100" stroke-dasharray="80 20" fill="none" style="stroke:${bg}" stroke-width="7" stroke-linecap="round"/><circle cx="40" cy="32" r="5" style="fill:${bg}"/></svg>`; }
+// Form 1:1 aus dem App-Icon nachgezeichnet. Schleife und Punkt sind ausgestanzt, der Hintergrund scheint durch.
+const BLOBPATH="M48.8 0.0C47.3 0.2 43.7 0.7 41.1 1.3C38.6 1.9 36.0 2.6 33.4 3.7C30.9 4.7 28.3 6.0 25.7 7.7C23.2 9.4 20.4 11.4 18.1 13.7C15.8 16.0 13.6 18.8 11.9 21.3C10.1 23.9 8.7 26.5 7.5 29.0C6.3 31.6 5.2 34.2 4.5 36.7C3.7 39.3 3.3 41.8 3.0 44.4C2.7 47.0 2.5 49.5 2.5 52.1C2.4 54.7 2.5 57.2 2.9 59.8C3.2 62.4 3.7 64.9 4.5 67.5C5.3 70.1 6.3 72.6 7.7 75.2C9.1 77.8 10.7 80.5 12.8 82.9C14.9 85.3 17.7 87.9 20.2 89.8C22.7 91.7 25.3 93.2 27.9 94.5C30.4 95.8 33.0 96.8 35.6 97.5C38.1 98.3 40.7 98.9 43.3 99.3C45.8 99.6 48.4 100.0 51.0 99.9C53.5 99.9 56.1 99.4 58.7 98.8C61.2 98.3 63.8 97.6 66.3 96.6C68.9 95.6 71.5 94.3 74.0 92.6C76.6 91.0 79.4 88.8 81.7 86.5C84.0 84.3 86.0 81.6 87.7 79.1C89.5 76.6 91.0 74.0 92.2 71.4C93.4 68.8 94.2 66.3 94.9 63.7C95.6 61.1 96.0 58.6 96.5 56.0C96.9 53.4 97.4 50.9 97.5 48.3C97.6 45.7 97.3 43.2 97.0 40.6C96.7 38.0 96.2 35.5 95.5 32.9C94.8 30.3 93.9 27.8 92.6 25.2C91.4 22.6 89.9 20.0 88.0 17.5C86.1 15.0 83.5 12.3 81.1 10.3C78.6 8.3 75.9 6.6 73.4 5.3C70.8 4.0 68.2 3.1 65.7 2.3C63.1 1.6 60.5 1.1 58.0 0.7C55.4 0.4 51.8 0.1 50.3 0.0C48.8 -0.1 50.4 -0.2 48.8 0.0Z";
+const LOGOPATH=BLOBPATH+" M39.1 25.6C38.7 25.7 37.8 25.9 37.2 26.3C36.6 26.7 35.7 27.5 35.3 28.1C34.9 28.7 34.8 29.3 34.7 30.0C34.6 30.6 34.6 31.2 34.7 31.9C34.9 32.5 35.1 33.2 35.5 33.8C35.9 34.3 36.7 34.9 37.3 35.1C38.0 35.4 38.6 35.5 39.2 35.6C39.9 35.6 40.5 35.5 41.1 35.2C41.8 34.9 42.5 34.5 42.9 33.9C43.4 33.4 43.6 32.7 43.8 32.0C44.0 31.4 44.1 30.7 44.0 30.1C43.9 29.5 43.8 28.8 43.4 28.2C43.0 27.6 42.2 26.9 41.6 26.4C41.0 26.0 40.1 25.8 39.7 25.7C39.3 25.5 39.5 25.5 39.1 25.6Z M50.2 25.1C49.5 25.4 47.3 26.0 46.7 26.8C46.2 27.7 46.2 29.5 46.7 30.4C47.3 31.2 49.0 31.7 50.2 31.9C51.4 32.2 52.6 32.0 53.7 32.1C54.9 32.2 56.1 32.3 57.3 32.7C58.5 33.1 59.7 33.7 60.8 34.5C62.0 35.3 63.4 36.4 64.3 37.5C65.2 38.6 65.8 39.9 66.3 41.1C66.8 42.3 67.2 43.4 67.4 44.6C67.7 45.8 67.8 47.0 67.8 48.2C67.9 49.3 67.7 50.5 67.6 51.7C67.4 52.9 67.2 54.1 66.8 55.2C66.5 56.4 66.1 57.6 65.4 58.8C64.7 60.0 63.8 61.2 62.8 62.3C61.8 63.4 60.4 64.5 59.3 65.3C58.1 66.1 56.9 66.6 55.7 67.1C54.5 67.6 53.4 67.9 52.2 68.1C51.0 68.3 49.8 68.2 48.6 68.1C47.5 68.0 46.3 67.9 45.1 67.6C43.9 67.3 42.7 66.8 41.6 66.2C40.4 65.6 39.1 64.8 38.0 63.8C36.9 62.8 35.8 61.4 35.1 60.2C34.3 59.0 34.0 57.9 33.6 56.7C33.2 55.5 32.8 54.3 32.7 53.1C32.5 52.0 32.6 50.8 32.7 49.6C32.8 48.4 33.3 47.2 33.3 46.0C33.3 44.9 33.4 43.2 32.8 42.5C32.1 41.8 30.2 41.2 29.2 41.6C28.3 42.0 27.5 43.8 27.0 44.9C26.6 46.0 26.5 47.3 26.4 48.4C26.3 49.6 26.3 50.8 26.4 52.0C26.4 53.2 26.5 54.3 26.7 55.5C26.9 56.7 27.1 57.9 27.5 59.1C27.8 60.2 28.3 61.4 29.0 62.6C29.6 63.8 30.3 65.0 31.3 66.1C32.2 67.3 33.4 68.5 34.5 69.5C35.7 70.4 36.9 71.3 38.1 71.9C39.3 72.6 40.4 73.1 41.6 73.6C42.8 74.0 44.0 74.2 45.2 74.5C46.3 74.7 47.5 74.8 48.7 74.9C49.9 74.9 51.1 74.9 52.2 74.8C53.4 74.6 54.6 74.3 55.8 74.0C57.0 73.6 58.2 73.2 59.3 72.7C60.5 72.2 61.7 71.6 62.9 70.8C64.1 70.1 65.3 69.0 66.4 68.0C67.5 66.9 68.5 65.7 69.3 64.5C70.2 63.3 70.9 62.1 71.5 61.0C72.1 59.8 72.5 58.6 72.9 57.4C73.3 56.2 73.8 55.1 74.0 53.9C74.2 52.7 74.1 51.5 74.1 50.3C74.1 49.2 74.1 48.0 74.1 46.8C74.1 45.6 74.1 44.4 73.9 43.3C73.7 42.1 73.1 40.9 72.7 39.7C72.2 38.5 71.9 37.4 71.2 36.2C70.5 35.0 69.7 33.8 68.7 32.6C67.7 31.5 66.4 30.3 65.2 29.4C64.0 28.5 62.8 27.9 61.6 27.3C60.5 26.7 59.3 26.2 58.1 25.9C56.9 25.5 55.7 25.4 54.6 25.3C53.4 25.1 51.7 25.1 51.0 25.1C50.3 25.0 50.9 24.8 50.2 25.1Z";
+function mark(sz){ return `<svg width="${sz}" height="${sz}" viewBox="0 0 100 100" aria-hidden="true"><path d="${LOGOPATH}" fill-rule="evenodd" style="fill:var(--coral)"/></svg>`; }
 // Kopfzeile der Hauptscreens: Logo und Wortmarke links, Aktionen rechts.
 const brandBar = extra => `<div class="brandbar"><span class="bmark">${mark(30)}<b>innen kultur</b></span><span class="hd-actions">${extra||""}<button class="iconbtn" data-a="go" data-v="profil" aria-label="Profil und Daten">${ICON.profil}</button></span></div>`;
 
@@ -94,7 +95,7 @@ function sideBar(){
 function tabBar(){
   const t=[["heute","Heute"],["kurs","Kurs"],["checkin","Check-in"],["fortschritt","Fortschritt"],["bibliothek","Bibliothek"]];
   return `<nav class="tabs" aria-label="App-Navigation"><div class="tabs-in">${t.map(([k,l])=>k==="checkin"
-    ? `<button class="ci" data-a="go" data-v="checkin" aria-label="Abend-Check-in"><span><svg class="b" viewBox="0 0 100 100" aria-hidden="true"><path d="${BLOBPATH}"/></svg>${ICON.checkin}</span></button>`
+    ? `<button class="ci" data-a="go" data-v="checkin" aria-label="Abend-Check-in"><span><svg class="b" viewBox="0 0 100 100" aria-hidden="true"><path d="${LOGOPATH}" fill-rule="evenodd"/></svg></span></button>`
     : `<button data-a="go" data-v="${k}" ${(view==="starter"||view==="wochencheck"?"heute":view)===k?'aria-current="page"':""}>${ICON[k]}${l}</button>`).join("")}</div></nav>`;
 }
 function scale(name,label,val,dot,caps){
@@ -482,7 +483,7 @@ function vKurs(){
   const present=Object.keys(PL).filter(p=>vids.some(v=>v.pillar===p));
   if(kursFilter!=="alle"&&!present.includes(kursFilter)) kursFilter="alle";
   const shown=kursFilter==="alle"?vids:vids.filter(v=>v.pillar===kursFilter);
-  const vfil=present.length>1?`<div class="vfil" role="group" aria-label="Nach Thema filtern"><button data-a="kursfilter" data-v="alle" aria-pressed="${kursFilter==="alle"}">Alle</button>${present.map(p=>`<button data-a="kursfilter" data-v="${p}" aria-pressed="${kursFilter===p}" style="${pvars(p)}"><i></i>${PL[p]}</button>`).join("")}</div>`:"";
+  const vfil=present.length>1?`<label class="vsel${kursFilter!=="alle"?" on":""}" style="${kursFilter!=="alle"?pvars(kursFilter):""}"><i aria-hidden="true"></i><select data-kf aria-label="Nach Thema filtern"><option value="alle"${kursFilter==="alle"?" selected":""}>Alle Themen</option>${present.map(p=>`<option value="${p}"${kursFilter===p?" selected":""}>${PL[p]}</option>`).join("")}</select><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></label>`:"";
   const row=v=>{ const seen=IK.isSeen(S,v.id), isNext=nx&&nx.id===v.id, b=IK.bausteinForVideo(v.id)||IK.BASIS.find(x=>x.videoId===v.id);
     const vars = kursFilter!=="alle"&&PL[v.pillar] ? pvars(v.pillar) : "--s:var(--chip);--t:var(--muted)";
     const topic = kursFilter==="alle"&&PL[v.pillar] ? PL[v.pillar]+" · " : "";
@@ -1042,7 +1043,6 @@ document.addEventListener("click", e=>{
   if(a==="bst"){ readNums(); draft.bausteine[v]=draft.bausteine[v]!==true; haptic("tap"); return render(); }
   if(a==="pick-new"){ readNums(); const n=draft.newBausteinIds, i=n.indexOf(v); if(i>=0) n.splice(i,1); else if(n.length<IK.MAX_NEW_PER_WEEK) n.push(v); return render(); }
   if(a==="kursweek"){ kursWeek=+v; return render(); }
-  if(a==="kursfilter"){ kursFilter=v; haptic("tap"); return render(); }
   if(a==="kurspart"){ // springt in die erste Woche des Teils, in der noch ein Video offen ist
     const ws=Object.keys(VID.WEEKS).map(Number).filter(n=>(v==="basis"?n<=4:n>4)&&n<=weeksTotal());
     kursWeek=ws.find(n=>{ const q=IK.weekVideoProgress(VID.VIDEOS,S,n); return q.seen<q.total; }) ?? ws[0] ?? 1; return render(); }
@@ -1090,6 +1090,7 @@ document.addEventListener("click", e=>{
 document.addEventListener("keydown", e=>{ if(tour&&e.key==="Escape"){ endTour(); return go("heute"); } if(sheetOpen&&e.key==="Escape"){ sheetOpen=false; return render(); } if(e.key!=="Enter") return; const t=e.target; if(t&&t.id&&t.id.startsWith("f-")){ e.preventDefault(); saveField(t.id.slice(2)); } });
 document.addEventListener("submit", e=>{ if(e.target.dataset.form==="code"){ e.preventDefault(); unlock(document.getElementById("code").value); } });
 document.addEventListener("change", e=>{
+  if(e.target.matches("[data-kf]")){ kursFilter=e.target.value; haptic("tap"); return render(); }
   if(e.target.id!=="imp") return; const f=e.target.files[0]; if(!f) return; const r=new FileReader();
   r.onload=()=>{ try{ adopt(JSON.parse(r.result)); S.lastBackup=Date.now(); save(); afterRestore("Sicherung geladen. Alle Einträge sind wieder da."); }
     catch(err){ flash=err instanceof SyntaxError?"Diese Datei ist keine innen-kultur-Sicherung.":err.message; render(); } };
