@@ -240,6 +240,9 @@ td:not(:first-child){text-align:right}
   main{max-width:1120px;padding:40px 40px 56px;gap:16px}
   main.full{padding-bottom:56px}
   #app.nav .top .iconbtn[data-v="profil"]{display:none}
+  #app.nav .brandbar .bmark{visibility:hidden}
+  #app.nav .brandbar [data-v="profil"]{display:none}
+  #app.nav .brandbar:not(:has(.bell)){display:none}
   .top{padding:0 0 4px}
   .top small{font-size:14px}
   .top b{font-size:34px}
@@ -378,13 +381,25 @@ input[type=time]{width:100%;min-height:48px;padding:10px 14px;font-size:16px}
 .iconbtn svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 @media (max-width:420px){.top b{font-size:29px}}
 /* Schwebende Tab-Leiste */
-.tabs{left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom,0px));border:0;border-radius:30px;background:var(--tab-bg);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:var(--shadow-lg);padding:6px 6px;max-width:540px;margin:0 auto}
-.tabs button{color:var(--muted)}
-.tabs button[aria-current="page"]{color:var(--ink)}
-.tabs .ci span{background:var(--navy);box-shadow:0 8px 18px -8px rgba(30,58,90,.7)}
-body.evening .tabs .ci span{background:var(--coral);box-shadow:0 8px 18px -8px rgba(233,118,91,.7)}
+/* Tab-Leiste: dunkle Fläche, die sich vom Inhalt abhebt; Check-in in der Mitte in Logo-Form */
+.tabs{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));border:0;border-radius:32px;background:#1E3A5A;box-shadow:0 2px 4px rgba(20,34,49,.12),0 20px 44px -16px rgba(20,34,49,.55);padding:6px 8px;max-width:540px;margin:0 auto;overflow:visible}
+.tabs::before{content:"";position:absolute;left:-12px;right:-12px;bottom:100%;height:32px;background:linear-gradient(to bottom,rgba(244,246,249,0),var(--bg));pointer-events:none}
+body.evening .tabs{background:#22364B;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),0 20px 44px -16px rgba(0,0,0,.7)}
+body.evening .tabs::before{background:linear-gradient(to bottom,rgba(15,27,40,0),var(--bg))}
+.tabs button{color:#B9C8D9;border-radius:22px;margin:0 2px}
+.tabs button[aria-current="page"]{color:#FFFFFF;background:rgba(255,255,255,.12)}
 .tabs svg{stroke-width:1.8}
-.tabs button[aria-current="page"] svg{stroke-width:2.1}
+.tabs button[aria-current="page"] svg{stroke-width:2.2}
+.tabs .ci{background:none!important}
+.tabs .ci span{position:relative;width:62px;height:62px;margin-top:-22px;background:none;box-shadow:none;border-radius:0;display:grid;place-items:center}
+.tabs .ci .b{position:absolute;inset:0;width:62px;height:62px;fill:var(--coral);stroke:#1E3A5A;stroke-width:6;filter:drop-shadow(0 8px 10px rgba(233,118,91,.45));transition:transform .15s}
+body.evening .tabs .ci .b{stroke:#22364B}
+.tabs .ci:active .b{transform:scale(.94)}
+.tabs .ci span>svg:not(.b){position:relative;stroke:#fff;stroke-width:2.6;width:26px;height:26px}
+/* Kopfzeile mit Logo */
+.brandbar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:0 4px;margin-bottom:-4px}
+.bmark{display:flex;align-items:center;gap:9px;font-family:var(--f-head);font-weight:800;font-size:19px;letter-spacing:-.035em;color:var(--ink)}
+.bmark svg{flex:none}
 
 /* Kopf mit Glocke */
 .hd-actions{display:flex;gap:8px}

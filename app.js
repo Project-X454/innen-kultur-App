@@ -31,6 +31,13 @@ const fmt1 = v => v==null ? "–" : (Math.round(v*10)/10).toFixed(1).replace("."
 const fmtSigned = v => v==null ? "–" : (v>0?"+":v<0?"−":"±")+fmt1(Math.abs(v));
 function logo(bg){ return `<svg width="34" height="34" viewBox="0 0 100 100" aria-hidden="true"><path d="M55 4 C82 6 98 27 95 53 C92 79 71 98 45 95 C20 92 2 73 5 46 C8 21 29 2 55 4 Z" fill="#E9765B"/><path d="M50 30 C64 29 72 40 70 52 C68 64 57 71 46 69 C35 67 29 57 31 47 C33 37 39 31 50 30 Z" pathLength="100" stroke-dasharray="80 20" fill="none" stroke="${bg}" stroke-width="7" stroke-linecap="round"/><circle cx="40" cy="32" r="5" fill="${bg}"/></svg>`; }
 
+// Logo „Innere Schleife“ mit Farben aus den Variablen, damit es hell und im Abendmodus stimmt.
+const BLOBPATH="M55 4 C82 6 98 27 95 53 C92 79 71 98 45 95 C20 92 2 73 5 46 C8 21 29 2 55 4 Z";
+function mark(sz,bg){ bg=bg||"var(--bg)";
+  return `<svg width="${sz}" height="${sz}" viewBox="0 0 100 100" aria-hidden="true"><path d="${BLOBPATH}" style="fill:var(--coral)"/><path d="M50 30 C64 29 72 40 70 52 C68 64 57 71 46 69 C35 67 29 57 31 47 C33 37 39 31 50 30 Z" pathLength="100" stroke-dasharray="80 20" fill="none" style="stroke:${bg}" stroke-width="7" stroke-linecap="round"/><circle cx="40" cy="32" r="5" style="fill:${bg}"/></svg>`; }
+// Kopfzeile der Hauptscreens: Logo und Wortmarke links, Aktionen rechts.
+const brandBar = extra => `<div class="brandbar"><span class="bmark">${mark(30)}<b>innen kultur</b></span><span class="hd-actions">${extra||""}<button class="iconbtn" data-a="go" data-v="profil" aria-label="Profil und Daten">${ICON.profil}</button></span></div>`;
+
 /* ---------- Speicher (nur auf diesem Gerät) ---------- */
 function blank(){ return {v:2, code:"", product:null, demo:false, goals:[], reminderTime:"21:00",
   onboardingCompletedAt:null, consentHealthDataAt:null, baselines:[], weeks:[], checkins:[], videoProgress:{},
@@ -87,7 +94,7 @@ function sideBar(){
 function tabBar(){
   const t=[["heute","Heute"],["kurs","Kurs"],["checkin","Check-in"],["fortschritt","Fortschritt"],["bibliothek","Bibliothek"]];
   return `<nav class="tabs" aria-label="App-Navigation"><div class="tabs-in">${t.map(([k,l])=>k==="checkin"
-    ? `<button class="ci" data-a="go" data-v="checkin" aria-label="Abend-Check-in"><span>${ICON.checkin}</span></button>`
+    ? `<button class="ci" data-a="go" data-v="checkin" aria-label="Abend-Check-in"><span><svg class="b" viewBox="0 0 100 100" aria-hidden="true"><path d="${BLOBPATH}"/></svg>${ICON.checkin}</span></button>`
     : `<button data-a="go" data-v="${k}" ${(view==="starter"||view==="wochencheck"?"heute":view)===k?'aria-current="page"':""}>${ICON[k]}${l}</button>`).join("")}</div></nav>`;
 }
 function scale(name,label,val,dot,caps){
@@ -295,8 +302,8 @@ function weekCard(i,cw,vp){
 function vHeute(){
   const i=weekInfo(), t=weeksTotal(), cw=IK.currentCourseWeek(VID.VIDEOS,S,t), vp=IK.weekVideoProgress(VID.VIDEOS,S,cw), nx=IK.nextVideo(VID.VIDEOS,S,t);
   const f=focusOf(i,nx), n=openNotices().length, day=new Date().toLocaleDateString("de-DE",{weekday:"long"});
-  return `<div class="top"><div class="t"><small>${day} · ${esc(i.label)}</small><b>${greet()}</b></div>
-    <div class="hd-actions"><button class="iconbtn bell" data-a="sheet" aria-label="${n?`${n} neue Freischaltungen`:"Neu für dich"}">${ICON.bell}${n?`<span class="badge">${n}</span>`:""}</button><button class="iconbtn" data-a="go" data-v="profil" aria-label="Profil und Daten">${ICON.profil}</button></div></div>
+  return `${brandBar(`<button class="iconbtn bell" data-a="sheet" aria-label="${n?`${n} neue Freischaltungen`:"Neu für dich"}">${ICON.bell}${n?`<span class="badge">${n}</span>`:""}</button>`)}
+  <div class="top"><div class="t"><small>${day} · ${esc(i.label)}</small><b>${greet()}</b></div></div>
   ${flash?`<div class="card soft"><p class="okmsg">${flash}</p></div>`:""}
   ${lay(`${focusCard(f)}${routinesCard()}${f.id!=="video"&&nx?learnCard(nx):""}${starterRow()}`, weekCard(i,cw,vp))}
   <p class="note" style="text-align:center">${S.product==="komplett"?"Komplett":"Basis"} · ${t} Wochen${S.demo?" · Demo":""}</p>`;
@@ -319,7 +326,7 @@ function sheetHTML(){
   return `<div class="sheet-bg" data-a="sheet-close"><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t" data-a="noop"><span class="grab" aria-hidden="true"></span>
     <div class="sh"><h2 id="sh-t">Neu für dich</h2><button class="iconbtn" data-a="sheet-close" aria-label="Schließen" style="background:var(--chip);box-shadow:none">${ICON.close}</button></div>
     ${list.length ? `<div>${list.map(item).join("")}</div><button class="btn ghost" data-a="notice-all">Alle als gelesen markieren</button>`
-      : `<p class="note" style="font-size:15px;line-height:1.5">Alles gesehen. Neues erscheint hier, sobald du etwas freischaltest, zum Beispiel mit deinem nächsten Video.</p>`}</section></div>`;
+      : `<div style="display:flex;justify-content:center;padding:8px 0">${mark(56,"var(--card)")}</div><p class="note" style="font-size:15px;line-height:1.5;text-align:center">Alles gesehen. Neues erscheint hier, sobald du etwas freischaltest, zum Beispiel mit deinem nächsten Video.</p>`}</section></div>`;
 }
 const pillarOf = v => v.pillar==="intro" ? "recap" : v.pillar;
 const pillarLabel = v => v.pillar==="intro" ? "Intro" : IK.PILLARS[v.pillar].label;
@@ -403,7 +410,7 @@ function vGeschafft(){
   if(nx) rows.push(["Nächstes Video",`<b>${nx.id} ${esc(nx.title.split(":")[0])}</b>`]);
   return `<div class="done"><svg class="big" viewBox="0 0 132 132" role="img" aria-label="Tag ${L.day} gespeichert"><circle cx="66" cy="66" r="58" fill="none" stroke="var(--line)" stroke-width="8"/>
     <circle class="arc" cx="66" cy="66" r="58" fill="none" stroke="var(--coral)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${C*days/7} ${C}" style="--len:${C*days/7}" transform="rotate(-90 66 66)"/>
-    <g class="mk"><circle cx="66" cy="66" r="42" fill="var(--coral)"/><path d="M48 67 61 79 85 53" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></g></svg>
+    <g class="mk"><path d="${BLOBPATH}" transform="translate(23 23) scale(.86)" style="fill:var(--coral)"/><path d="M50 67 62 78 84 55" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></g></svg>
     <h1>Tag ${L.day} ${L.updated?"aktualisiert":"geschafft"}</h1><p class="lead">${msg}</p>
     <div class="wk7" role="img" aria-label="${days} von 7 Tagen eingetragen">${Array.from({length:7},(_,k)=>`<i class="${k<days?"on":""}"></i>`).join("")}</div>
     ${rows.length?`<div class="list">${rows.map(([a,b])=>`<div><span>${a}</span>${b}</div>`).join("")}</div>`:""}
@@ -437,7 +444,7 @@ function vFortschritt(){
   const weeks=S.weeks.map(w=>{ const c=IK.checkinsOf(S,w.id), act=IK.activeBausteine(w); return {w, c, ls:IK.loopScore(c,act), st:IK.weekStats(c,act)}; });
   const cur=weeks[weeks.length-1];
   const why=S.why?`<div class="card soft why-card"><span class="eyebrow" style="color:var(--recap-text)">Dein Warum</span><b>${esc(S.why)}</b></div>`:"";
-  const head=`<div class="top"><div class="t"><small>Wie rund dein Loop läuft</small><b>Fortschritt</b></div></div>`;
+  const head=`${brandBar()}<div class="top"><div class="t"><small>Wie rund dein Loop läuft</small><b>Fortschritt</b></div></div>`;
   if(!cur||cur.ls.score==null) return head+why+lay(`<div class="card"><h2>Noch kein Loop-Score</h2><p class="note">Er erscheint nach deinem ersten Check-in mit den vier Skalen und wird mit jedem Tag genauer. So sieht er nach einer Woche aus:</p><button class="btn small" data-a="go" data-v="checkin">Zum Check-in</button></div>`,
     `<div class="card example"><span class="eyebrow" style="color:var(--recap-text)">Beispiel nach einer Woche</span>${loopExample(true)}</div>`);
   const s=cur.ls, running=cur.w.status==="running", prev=weeks.length>1?weeks[weeks.length-2].ls.score:null, trend=prev!=null?s.score-prev:null, C=2*Math.PI*56;
@@ -479,7 +486,7 @@ function vKurs(){
   const hAttr = hoFree ? `data-a="mat" data-v="${ho.id}" data-go-lib="1"` : gAttr({kind:"video", ids:kern});
   const hcard=`<button class="hcard kurs-extra" ${hAttr}><span class="hic">${ICON.doc}</span><span><span class="row"><b style="font-size:14px">Handout Woche ${kursWeek}</b><span class="note">${p.handoutFree?(ho?"frei · öffnen":"frei, folgt als Datei"):`${p.kernSeen} von ${p.kernTotal} Kernvideos`}</span></span>
     <span class="bar" style="--c:var(--recap)"><i style="width:${p.kernTotal?Math.round(p.kernSeen/p.kernTotal*100):0}%"></i></span><span class="note">Goodie · mit dem Wochen-Check</span></span></button>`;
-  return `<div class="top"><div class="t"><small>Wissen · alle Videos frei</small><b>Kurs</b></div>${kseg}</div>
+  return `${brandBar()}<div class="top"><div class="t"><small>Wissen · alle Videos frei</small><b>Kurs</b></div>${kseg}</div>
   <div class="wchips" role="group" aria-label="Kurswochen">${partWeeks.map(chip).join("")}</div>
   <div style="display:flex;flex-direction:column;gap:2px;padding:0 4px"><b style="font-family:var(--f-head);font-size:22px;font-weight:800;letter-spacing:-.02em">${esc(VID.WEEKS[kursWeek].title)}</b><span class="note">Woche ${kursWeek} · ${p.seen} von ${p.total} Videos · alles frei, in deinem Tempo</span></div>
   ${hcard}
@@ -852,7 +859,7 @@ function vBibliothek(){
   const body = libTab==="wissen"
     ? `<div class="covers">${Object.keys(EX).map(k=>{ const e=EX[k]; return cover(`data-a="wissen" data-v="${k}"`, `Wissen · ${({darm:"Darm",schlaf:"Schlaf",beweg:"Bewegung",recap:"Recap"})[e.p]}`, WISSEN_COVER[k]||e.short, e.title, e.check, e.p, false); }).join("")}</div>`
     : materialList(libTab) + `<div class="card soft"><h2>${libTab==="handouts"?"Weitere Handouts":libTab==="rezepte"?"Weitere Rezepte":"Pläne folgen"}</h2><p class="note">${libTab==="handouts"?"Das Handout einer Woche wird frei, sobald du alle Kernvideos der Woche gesehen hast. Ab Woche 2 folgen sie mit den nächsten Updates.":"Rezepte und Pläne schalten sich als Goodies mit deinen Wochen-Checks frei."}</p></div>`;
-  return `<div class="top"><div class="t"><small>Zum Nachlesen</small><b>Bibliothek</b></div></div>
+  return `${brandBar()}<div class="top"><div class="t"><small>Zum Nachlesen</small><b>Bibliothek</b></div></div>
   <div class="segc" role="group" aria-label="Bereich">${T.map(([k,l])=>`<button data-a="libtab" data-v="${k}" aria-pressed="${libTab===k}">${l}</button>`).join("")}</div>${body}`;
 }
 function vWissen(){
