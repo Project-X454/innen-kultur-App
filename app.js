@@ -47,8 +47,8 @@ const latestBaseline = () => S.baselines.length ? S.baselines[S.baselines.length
 const weeksTotal = () => S.product==="komplett" ? 8 : 4;
 
 /* ---------- Zustand der Oberfläche ---------- */
-let view="heute", videoId=null, kursWeek=null, ob="welcome", obD=null, draft=null, flash="", libTab="wissen", wissen=null, confirmWipe=false, transfer=null, rebase=false, pending=null, lastView=null, mat=null, focusTodo=null, freshIds=[];
-function go(v){ if(v==="kurs"&&view!=="video") kursWeek=null; view=v; flash=v==="heute"?flash:""; confirmWipe=false; transfer=null; wissen=null; rebase=false; mat=null; focusTodo=null; freshIds=[];
+let view="heute", videoId=null, kursWeek=null, ob="welcome", obD=null, draft=null, flash="", libTab="wissen", wissen=null, confirmWipe=false, transfer=null, rebase=false, pending=null, lastView=null, mat=null, focusTodo=null, freshIds=[], freshTodos=[];
+function go(v){ if(v==="kurs"&&view!=="video") kursWeek=null; view=v; flash=v==="heute"?flash:""; confirmWipe=false; transfer=null; wissen=null; rebase=false; mat=null; focusTodo=null; freshIds=[]; freshTodos=[];
   if(v==="checkin") draft=null; render(); window.scrollTo(0,0); }
 
 function render(){
@@ -364,6 +364,8 @@ function vVideo(){
   `${seen?"":`<div class="card"><button class="btn" data-a="seen" data-v="${v.id}">Als gesehen markieren</button><p class="note">Mit dem Player zählt ein Video später automatisch ab 90 Prozent als gesehen.</p></div>`}
   ${seen&&v.machJetzt?`<div class="card" style="background:var(--navy);color:#fff"><span class="eyebrow" style="color:#C9D6E6">Mach jetzt · 30 Sekunden</span><span>${esc(v.machJetzt)}</span>${IN.MACH_JETZT_GO[v.id]?`<button class="btn white small" ${gAttr(IN.MACH_JETZT_GO[v.id])} style="align-self:flex-start">${esc(IN.MACH_JETZT_GO[v.id].label)}</button>`:""}</div>`:""}
   ${freshIds.length?openNotices(e=>freshIds.includes(e.id)).map(noticeCard).join(""):""}
+  ${freshTodos.length?`<div class="card notice" style="--c:var(--recap)"><span class="eyebrow" style="color:var(--recap-text)">Neu in deiner Starter-Liste</span>
+    ${freshTodos.map(todoById).map(t=>`<div class="todo-mini"><span><b>${esc(t.title)}</b><span class="note">${esc(t.when)}</span></span><button class="btn small ghost" ${gAttr({kind:"todo", id:t.id})}>${t.input?"Eintragen":"Ansehen"}</button></div>`).join("")}</div>`:""}
   ${bCard}
   ${next?`<button class="btn ghost" data-a="video" data-v="${next.id}" style="justify-content:space-between"><span>Nächstes: ${esc(next.title)}</span><span aria-hidden="true">›</span></button>`:""}
   ${seen?`<button class="btn link small" data-a="unseen" data-v="${v.id}" style="align-self:center">Doch nicht gesehen</button>`:""}`,"side-r");
@@ -440,10 +442,10 @@ function todoGoBtn(t, onList){
 }
 function starterCard(){
   if(!starterActive()) return "";
-  const st=IK.todoStatus(S,IN.TODOS), done=st.filter(t=>t.done).length, open=st.filter(t=>!t.done).slice(0,2);
+  const st=IK.todoStatus(S,IN.TODOS), done=st.filter(t=>t.done).length, open=st.filter(t=>!t.done&&t.unlocked).concat(st.filter(t=>!t.done&&!t.unlocked)).slice(0,2);
   return `<div class="card starter-card"><div class="row"><b>Deine Starter-Liste</b><b class="num" style="font-size:14px">${done} von ${st.length}</b></div>
     <div class="bar" style="--c:var(--recap)"><i style="width:${Math.round(done/st.length*100)}%"></i></div>
-    ${open.map(t=>`<div class="todo-mini"><span><b>${esc(t.title)}</b><span class="note">${esc(t.when)}</span></span>${todoGoBtn(t)}</div>`).join("")}
+    ${open.map(t=>`<div class="todo-mini${t.unlocked?"":" locked"}"><span><b>${esc(t.title)}</b><span class="note">${t.unlocked?esc(t.when):`frei mit Video ${t.after}`}</span></span>${t.unlocked?todoGoBtn(t):`<button class="btn small ghost" data-a="video" data-v="${t.after}">Video ${t.after}</button>`}</div>`).join("")}
     <button class="btn link small" data-a="go" data-v="starter" style="align-self:flex-start;min-height:0;padding:0">Alle To-dos ansehen</button></div>`;
 }
 function fieldInput(inp){
@@ -455,15 +457,17 @@ function fieldInput(inp){
 function vStarter(){
   const st=IK.todoStatus(S,IN.TODOS), done=st.filter(t=>t.done).length;
   const item=t=>{ const manual=!t.auto;
+    if(!t.unlocked) return `<div class="card todo locked" id="todo-${t.id}"><div class="todo-hd"><span class="tick lock" aria-hidden="true"></span><span><b>${esc(t.title)}</b><span class="note">Wird frei mit Video ${t.after} · ${esc(t.when)}</span></span></div>
+      <div class="btns"><button class="btn small ghost" data-a="video" data-v="${t.after}">Video ${t.after} öffnen</button></div></div>`;
     const mark = manual ? `<button class="tick" data-a="todo-tick" data-v="${t.id}" aria-pressed="${t.done}" aria-label="${esc(t.title)} ${t.done?"erledigt":"abhaken"}">${t.done?CHECK:""}</button>`
       : `<span class="tick auto${t.done?" on":""}" aria-hidden="true">${t.done?CHECK:""}</span>`;
     return `<div class="card todo${t.done?" done":""}${focusTodo===t.id?" focus":""}" id="todo-${t.id}">
       <div class="todo-hd">${mark}<span><b>${esc(t.title)}</b><span class="note">${esc(t.when)}${t.min?" · "+esc(t.min):""}${manual?" · selbst abhaken":t.done?" · erledigt":" · hakt sich selbst ab"}</span></span></div>
       ${t.done?"":`<p class="note why"><b>Wieso:</b> ${esc(t.why)}</p>${t.how?`<p class="note why">${esc(t.how)}</p>`:""}`}
-      ${t.input&&(!t.done||t.input.field!=="why")?fieldInput(t.input):""}
+      ${t.inputOpen&&(!t.done||t.input.field!=="why")?fieldInput(t.input):t.input&&!t.inputOpen&&!t.done?`<p class="note">Das Eingabefeld erscheint nach Video ${t.afterInput}.</p>`:""}
       ${t.done?"":`<div class="btns">${todoGoBtn(t,true)}</div>`}</div>`; };
   return `<div class="top"><div class="t"><small>Woche 1 · ${done} von ${st.length} erledigt</small><b>Deine Starter-Liste</b></div><button class="iconbtn" data-a="go" data-v="heute" aria-label="Schließen">${ICON.close}</button></div>
-  <p class="note" style="padding:0 4px">Einmalige Aufgaben für deinen Start. „Tag“ meint deinen Tracker-Tag. Die Liste verschwindet nach deinem ersten Wochen-Check.</p>
+  <p class="note" style="padding:0 4px">Einmalige Aufgaben für deinen Start. Gesperrte To-dos werden mit ihrem Video frei. „Tag“ meint deinen Tracker-Tag. Die Liste verschwindet nach deinem ersten Wochen-Check.</p>
   <div class="masonry">${st.map(item).join("")}</div>`;
 }
 
@@ -536,9 +540,13 @@ function saveField(k){
   flash=`${f.label} gespeichert.`; render();
 }
 function basisFieldsCard(){
+  const st=IK.todoStatus(S,IN.TODOS), byField=k=>st.find(t=>t.input&&t.input.field===k);
   return `<div class="card"><h2>Deine Basis</h2><p class="note">Aus deiner Starter-Liste. Sie stehen auch auf deinem Handout und deiner Morgen-Karte.</p>
-    ${Object.keys(FIELDS).map(k=>fieldInput({field:k, type:FIELDS[k].type, label:FIELDS[k].label})).join("")}</div>`;
+    ${Object.keys(FIELDS).map(k=>{ const t=byField(k), open=!t||t.inputOpen, vid=t&&(t.unlocked?t.afterInput:t.after);
+      return open||filledField(k) ? fieldInput({field:k, type:FIELDS[k].type, label:FIELDS[k].label})
+        : `<div class="kv" style="align-items:center"><span class="note" style="font-weight:600">${esc(FIELDS[k].label)}</span><button class="btn link small" data-a="video" data-v="${vid}" style="min-height:0;padding:0">frei mit Video ${vid}</button></div>`; }).join("")}</div>`;
 }
+const filledField = k => S[k]!=null && String(S[k]).trim()!=="";
 
 /* ---------- Druckvorlagen: Morgen-Karte (A6) und Handout Woche 1 (A4, 2 Seiten) ---------- */
 function morgenCard(){
@@ -577,7 +585,7 @@ let tour=null;
 function startTour(){ tour={i:0}; showTourStep(); }
 function endTour(){
   tour=null; S.tourDoneAt=S.tourDoneAt||new Date().toISOString(); save();
-  const o=document.getElementById("tour"); if(o) o.remove();
+  const o=document.getElementById("tour"); if(o) o.remove(); tourEl=null;
   document.body.classList.remove("touring");
 }
 function showTourStep(){
@@ -610,7 +618,7 @@ function drawTour(){
   if(!tour) return;
   const st=IN.TOUR[tour.i], last=tour.i===IN.TOUR.length-1, first=tour.i===0, el=tourTarget(st);
   let o=document.getElementById("tour"); if(!o){ o=document.createElement("div"); o.id="tour"; document.body.appendChild(o); }
-  const r=el?{}:null;
+  const r=el?{}:null; tourEl=null;
   const extra = first ? tourIntro() : st.kind==="notice" ? tourSampleNotice() : st.kind==="logic" ? tourLogic() : "";
   const nx=IK.nextVideo(VID.VIDEOS,S,weeksTotal());
   const btns = first
@@ -624,22 +632,41 @@ function drawTour(){
       <h2 id="tour-t">${esc(st.title)}</h2><p id="tour-d">${esc(st.text)}</p>${extra}
       <div class="tour-btns">${btns}</div>
       ${first||last?"":`<div class="tour-dots" aria-hidden="true">${IN.TOUR.slice(1).map((_,i)=>`<i class="${i+1===tour.i?"on":""}"></i>`).join("")}</div>`}</div>`;
-  const c=o.querySelector(".tour-card");
-  if(el){ // Element und Karte passen untereinander: zu hohe Elemente werden oben angeschnitten hervorgehoben
-    const vw=innerWidth, vh=innerHeight, ch=c.offsetHeight, cw=c.offsetWidth, gap=14, pad=6;
-    const room=vh-ch-gap-2*pad-16;
-    const fixed=getComputedStyle(el.closest("nav,aside")||el).position==="fixed";
-    if(!fixed){ const b0=el.getBoundingClientRect(); window.scrollBy(0, b0.top-(pad+12)); } // Element nach oben, Karte darunter
-    const b=el.getBoundingClientRect();
-    const h=Math.min(b.height, fixed?b.height:Math.max(60, room));
-    const hole=o.querySelector(".tour-hole"); hole.style.cssText=`top:${b.top-pad}px;left:${b.left-pad}px;width:${b.width+2*pad}px;height:${h+2*pad}px`;
-    const hb=b.top+h+pad;
-    let top = hb+gap+ch<=vh-8 ? hb+gap : b.top-pad-gap-ch>=8 ? b.top-pad-gap-ch : Math.max(8, vh-ch-8);
-    let left = Math.min(Math.max(8, b.left+b.width/2-cw/2), vw-cw-8);
-    c.style.top=top+"px"; c.style.left=left+"px"; }
+  tourEl=el;
+  if(el && !isFixed(el)){ const pad=6, b0=el.getBoundingClientRect(); window.scrollBy(0, b0.top-(pad+12)); } // Element nach oben, Karte darunter
+  tourY=window.scrollY; placeTour();
+  [80,300,700].forEach(ms=>setTimeout(placeTour,ms)); // Schrift und Bilder können das Layout noch verschieben
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(placeTour);
   const f=o.querySelector('[data-a="tour-next"],[data-a="tour-finish"]'); if(f) f.focus({preventScroll:true});
 }
-window.addEventListener("resize",()=>{ if(tour) drawTour(); });
+let tourEl=null, tourY=0;
+const isFixed = el => { for(let n=el;n&&n!==document.body;n=n.parentElement){ if(getComputedStyle(n).position==="fixed") return true; } return false; };
+// Hervorhebung und Karte immer aus der aktuellen Position des Elements berechnen.
+function placeTour(){
+  const o=document.getElementById("tour"); if(!tour||!o) return;
+  const c=o.querySelector(".tour-card"), hole=o.querySelector(".tour-hole");
+  if(!tourEl||!hole||!document.body.contains(tourEl)){ if(hole){ hole.style.display="none"; } c.classList.add("center"); c.style.top=c.style.left=""; return; }
+  const vw=document.documentElement.clientWidth, vh=(window.visualViewport?visualViewport.height:innerHeight), ch=c.offsetHeight, cw=c.offsetWidth, gap=12, pad=6;
+  const b=tourEl.getBoundingClientRect(), fixed=isFixed(tourEl);
+  const rad=parseFloat(getComputedStyle(tourEl).borderTopLeftRadius)||0;
+  const top0=b.top-pad, left0=b.left-pad, w=b.width+2*pad;
+  let h=b.height, top, left;
+  const cx=Math.min(Math.max(8, b.left+b.width/2-cw/2), vw-cw-8), cyClamp=y=>Math.min(Math.max(8,y), vh-ch-8);
+  if(top0+h+2*pad+gap+ch<=vh-8){ top=top0+h+2*pad+gap; left=cx; }                 // darunter
+  else if(top0-gap-ch>=8){ top=top0-gap-ch; left=cx; }                                  // darüber
+  else if(b.right+pad+gap+cw<=vw-8){ left=b.right+pad+gap; top=cyClamp(b.top); }       // rechts daneben
+  else if(b.left-pad-gap-cw>=8){ left=b.left-pad-gap-cw; top=cyClamp(b.top); }         // links daneben
+  else { // nur den oberen Teil hervorheben, Karte darunter
+    h=Math.max(40, vh-8-ch-gap-2*pad-top0); top=Math.min(top0+h+2*pad+gap, vh-ch-8); left=cx; }
+  hole.style.cssText=`display:block;top:${top0}px;left:${left0}px;width:${w}px;height:${h+2*pad}px;border-radius:${Math.min(rad+pad,40)}px`;
+  c.classList.remove("center"); c.style.top=top+"px"; c.style.left=left+"px";
+}
+window.addEventListener("resize",()=>{ if(tour) placeTour(); });
+window.addEventListener("scroll",()=>{ if(!tour) return; if(Math.abs(window.scrollY-tourY)>1) window.scrollTo(0,tourY); placeTour(); },{passive:true});
+if(window.visualViewport) visualViewport.addEventListener("resize",()=>{ if(tour) placeTour(); });
+// Während der Tour scrollt die Seite nicht mit dem Finger, nur die Tour-Karte selbst darf scrollen.
+document.addEventListener("touchmove",e=>{ if(tour && !e.target.closest(".tour-card")) e.preventDefault(); },{passive:false});
+document.addEventListener("wheel",e=>{ if(tour && !e.target.closest(".tour-card")) e.preventDefault(); },{passive:false});
 
 /* ---------- Bibliothek (Screens 11 und 14) ---------- */
 const EX={
@@ -827,8 +854,9 @@ document.addEventListener("click", e=>{
   if(a==="kurspart"){ // springt in die erste Woche des Teils, in der noch ein Video offen ist
     const ws=Object.keys(VID.WEEKS).map(Number).filter(n=>(v==="basis"?n<=4:n>4)&&n<=weeksTotal());
     kursWeek=ws.find(n=>{ const q=IK.weekVideoProgress(VID.VIDEOS,S,n); return q.seen<q.total; }) ?? ws[0] ?? 1; return render(); }
-  if(a==="video"){ videoId=v; view="video"; flash=""; freshIds=[]; render(); return window.scrollTo(0,0); }
-  if(a==="seen"){ const before=new Set(IK.newUnlocks(S,uctx()).map(x=>x.id)); IK.markSeen(S,v);
+  if(a==="video"){ videoId=v; view="video"; flash=""; freshIds=[]; freshTodos=[]; render(); return window.scrollTo(0,0); }
+  if(a==="seen"){ const before=new Set(IK.newUnlocks(S,uctx()).map(x=>x.id)), tBefore=new Set(IK.todoStatus(S,IN.TODOS).filter(t=>t.unlocked&&(!t.input||t.inputOpen)).map(t=>t.id)); IK.markSeen(S,v);
+    freshTodos=starterActive()?IK.todoStatus(S,IN.TODOS).filter(t=>!t.done&&t.unlocked&&(!t.input||t.inputOpen)&&!tBefore.has(t.id)).map(t=>t.id):[];
     const fresh=IK.newUnlocks(S,uctx()).filter(x=>!before.has(x.id));
     fresh.filter(x=>x.type==="baustein").forEach(x=>markNotice(x.id)); // erklärt die Baustein-Karte darunter
     freshIds=fresh.filter(x=>x.type!=="baustein").map(x=>x.id); save();

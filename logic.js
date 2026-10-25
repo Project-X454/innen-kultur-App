@@ -270,7 +270,10 @@ function todoDone(state, t){
   }
   return !!(state.todosDone||{})[t.id];
 }
-function todoStatus(state, todos){ return todos.map(t=>Object.assign({}, t, {done:todoDone(state,t)})); }
+// Gesperrt = sein Video ist noch nicht gesehen. Dann zeigt die App nur den Titel und das Video, das es freischaltet.
+const todoUnlocked = (state, t) => !t.after || isSeen(state, t.after);
+const todoInputOpen = (state, t) => !!t.input && todoUnlocked(state, t) && (!t.afterInput || isSeen(state, t.afterInput));
+function todoStatus(state, todos){ return todos.map(t=>Object.assign({}, t, {done:todoDone(state,t), unlocked:todoUnlocked(state,t), inputOpen:todoInputOpen(state,t)})); }
 
 // Materialien (Handout, Mini-Karte, Goodie): frei nach Video, nach allen Kernvideos einer Woche oder nach dem Wochen-Check.
 function materialUnlocked(state, m, videos){
@@ -305,6 +308,6 @@ const api = {WEIGHTS, UMSETZUNG, DAYS_PER_WEEK, PILLARS, BASIS, SCALES, GOALS, B
   completeWeek, saveCheckIn, MAX_NEW_PER_WEEK, SEEN_PERCENT, isSeen, markSeen, markUnseen, bausteinById, bausteinForVideo,
   unlockedBausteine, newWeekCandidates, startWeek, activationState, activateNow, pauseBaustein, resumeBaustein, activeBausteine,
   weekVideoProgress, nextVideo, currentCourseWeek,
-  basisUnlocked, WEEKCHECK_MIN_DAYS, WEEKCHECK_LATE_DAYS, weekCheckOpen, weekCompleted, todoDone, todoStatus, materialUnlocked, unlockEvents, newUnlocks};
+  basisUnlocked, WEEKCHECK_MIN_DAYS, WEEKCHECK_LATE_DAYS, weekCheckOpen, weekCompleted, todoDone, todoStatus, todoUnlocked, todoInputOpen, materialUnlocked, unlockEvents, newUnlocks};
 if(typeof module!=="undefined" && module.exports) module.exports = api; else root.IK = api;
 })(typeof globalThis!=="undefined" ? globalThis : this);
