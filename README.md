@@ -100,3 +100,4 @@ Nach dem Onboarding begrüßt die App einmalig mit „Herzlich willkommen“ und
 ## Menü und Logo
 - Die Leiste unten ist dunkles Navy und hebt sich vom Inhalt ab. Der Check-in in der Mitte hat die Form des Logos.
 - Das Logo steht in der Kopfzeile von Heute, Kurs, Fortschritt und Bibliothek, im „Geschafft“-Moment nach dem Check-in und im leeren Neu-Blatt.
+- Kursliste: Themenfilter „Alle · Darm · Schlaf · Bewegung · Recap“. „Alle“ zeigt die empfohlene Reihenfolge neutral grau, das Thema steht in der Unterzeile. Ein gewähltes Thema färbt Nummern-Kacheln und Haken in seiner Farbe. Der Filter bleibt beim Wochenwechsel erhalten.
