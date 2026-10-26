@@ -842,11 +842,16 @@ body.evening .libhero .iconbtn{background:rgba(255,255,255,.1);color:#EEF3F8}
 .cistat .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .cistat .tx b{font-size:15.5px}
 .cistat .tag{flex:none;font-family:var(--f-mono);font-weight:500;font-size:12px;letter-spacing:.04em;text-transform:uppercase;padding:6px 9px;border-radius:999px;background:var(--s);color:var(--t)}
-.cistat.is-ok{background:#F6EFDF;color:#6B4A10;box-shadow:none;--c:#A87A2C;--t:#6B4A10}  /* beige wie die Erinnerungs-Karte, auch abends */
-.cistat.is-ok .ic{background:var(--c);color:#fff}
-.cistat.is-ok .ic svg{stroke-width:2.6}
-.cistat.is-ok .tx,.cistat.is-ok .note{color:var(--t)}
-.cistat.is-ok .tag{background:var(--c);color:#fff}
+/* erledigt: beige wie die Kacheln, Haken im sanften Kreis, rechts unten das Logo im Anschnitt (auch abends hell) */
+.cistat.is-ok{position:relative;overflow:hidden;background:#F6EFDF;color:#6B4A10;box-shadow:none;min-height:72px;gap:14px}
+.cistat.is-ok>*{position:relative}
+.cistat.is-ok .lg{position:absolute;right:-30px;bottom:-46px;width:104px;height:104px}
+.cistat.is-ok b{padding-right:56px}
+.cistat.is-ok .lg path{fill:#A87A2C;fill-opacity:.45}
+.cistat.is-ok .lg path.in{fill:#FFFFFF;fill-opacity:.95}
+.cistat.is-ok .ok{flex:none;width:36px;height:36px;border-radius:18px;background:#D9C39A;color:#FFFFFF;display:grid;place-items:center}
+.cistat.is-ok .ok svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round}
+.cistat.is-ok b{font-family:var(--f-head);font-weight:700;font-size:19px;letter-spacing:-.022em;color:#6B4A10}
 .csec{color:var(--muted);padding:6px 4px 0}
 .wtiles{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 @media (min-width:600px){.wtiles{grid-template-columns:repeat(4,minmax(0,1fr))!important}}

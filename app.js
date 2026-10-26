@@ -379,8 +379,8 @@ function routinesCard(){
 // Heute: ist der Check-in schon erledigt?
 function ciStatus(i){
   const c=i.todayCi, rt=S.reminderTime;
-  if(c){ const t=new Date(c.updatedAt||c.createdAt); const hm=isNaN(t)?"":t.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
-    return `<button class="cistat is-ok" data-a="go" data-v="checkin"><span class="ic">${ICON.checkin}</span><span class="tx"><b>Check-in heute · erledigt</b><span class="note">Tag ${c.dayIndex} gespeichert${hm?` um ${hm}`:""} · bis morgen Abend änderbar</span></span><span class="tag">erledigt</span></button>`; }
+  if(c){
+    return `<button class="cistat is-ok" data-a="go" data-v="checkin" aria-label="Check-in Tag ${c.dayIndex} erledigt, ansehen"><svg class="lg" viewBox="0 0 100 100" aria-hidden="true"><path d="${BLOBPATH}"/><path class="in" d="${INNERPATH}"/></svg><span class="ok" aria-hidden="true">${ICON.checkin}</span><b>Check-in Tag ${c.dayIndex} erledigt</b></button>`; }
   const h=new Date().getHours();
   return `<button class="cistat" data-a="go" data-v="checkin" style="${pvars("recap")}"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span><span class="tx"><b>Check-in heute · offen</b><span class="note">${h>=18||h<4?"Jetzt eintragen · dauert 1 Minute":`Am besten ab 18 Uhr${rt?` · Erinnerung um ${esc(rt)}`:""}`}</span></span><span class="tag">offen</span></button>`;
 }
