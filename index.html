@@ -49,7 +49,9 @@ body.evening{color-scheme:dark;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
-html,body{margin:0;background:var(--bg);overflow-x:hidden}
+html,body{margin:0;background:var(--bg)}
+body{overflow-x:hidden}
+@supports (overflow-x:clip){body{overflow-x:clip}}
 body{color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
 button,input,textarea,select{font:inherit;color:inherit}
 button{cursor:pointer;touch-action:manipulation}
@@ -739,7 +741,8 @@ body.evening .tdrow .st.nx{background:var(--btn-bg);color:var(--btn-ink)}
 .acc{font-family:var(--f-accent);font-style:italic;font-weight:400;letter-spacing:0}
 h1,h2,.top b,.tq,.tt,.cover .cv .s,.lk-cover .s,.focus .ft,.done h1{letter-spacing:-.022em;font-weight:700}
 /* Größere Schrift (Profil): die ganze Oberfläche wächst mit und bricht sauber um */
-html.big #app{zoom:1.15}
+html.big main,html.big .side,html.big .sheet{zoom:1.15}
+html.big .tabs button{font-size:13px}
 html.big .cover .cv .s{font-size:19px}
 /* Einrichten: Home-Bildschirm und Erinnerung (während der Tour ausgeblendet) */
 body.touring .tcard.setup{display:none}
@@ -856,6 +859,9 @@ body.evening .libhero .iconbtn{background:rgba(255,255,255,.1);color:#EEF3F8}
 .wtiles{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 @media (min-width:600px){.wtiles{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
 .libempty{padding:8px 4px}
+/* Menü unten: eigene Ebene, damit es beim Scrollen fest unten bleibt; bei offener Tastatur ausgeblendet */
+.tabs{-webkit-transform:translateZ(0);transform:translateZ(0);will-change:transform}
+body.kb .tabs{display:none}
 /* Gesperrt-Blatt */
 .sheet.lock{gap:16px}
 .lk-pill{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 12px;border-radius:999px;background:var(--btn2-bg);color:var(--muted);font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}

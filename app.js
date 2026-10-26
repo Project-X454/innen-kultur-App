@@ -1380,6 +1380,11 @@ document.addEventListener("click", e=>{
   if(a==="wipe-yes"){ S=blank(); save(); confirmWipe=false; view="heute"; ob="welcome"; obD=null; flash=""; render(); return window.scrollTo(0,0); }
 });
 document.addEventListener("keydown", e=>{ if(tour&&e.key==="Escape"){ endTour(); return go("heute"); } if((sheetOpen||lockFor||installSheet||reminderSheet)&&e.key==="Escape"){ sheetOpen=false; lockFor=null; installSheet=false; reminderSheet=false; return render(); } if(e.key!=="Enter") return; const t=e.target; if(t&&t.id&&t.id.startsWith("f-")){ e.preventDefault(); if(view==="todo") todoSave(focusTodo); else saveField(t.id.slice(2)); } });
+// iPhone: Bei offener Tastatur verschiebt Safari fixierte Elemente. Das Menü verschwindet so lange, danach wird die Lage neu berechnet.
+const isField = el => el && (el.tagName==="INPUT"&&!["button","checkbox","radio","file"].includes(el.type) || el.tagName==="TEXTAREA" || el.tagName==="SELECT");
+document.addEventListener("focusin", e=>{ if(isField(e.target)) document.body.classList.add("kb"); });
+document.addEventListener("focusout", e=>{ if(isField(e.target)) setTimeout(()=>{ if(!isField(document.activeElement)){ document.body.classList.remove("kb"); window.scrollTo(window.scrollX, window.scrollY); } }, 80); });
+if(window.visualViewport) visualViewport.addEventListener("resize", ()=>{ if(!isField(document.activeElement)) document.body.classList.remove("kb"); });
 document.addEventListener("submit", e=>{ if(e.target.dataset.form==="code"){ e.preventDefault(); unlock(document.getElementById("code").value); } });
 document.addEventListener("change", e=>{
   if(e.target.matches("[data-kf]")){ kursFilter=e.target.value; haptic("tap"); return render(); }
