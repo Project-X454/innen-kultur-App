@@ -19,7 +19,9 @@ const PILLARS = {
 const BASIS = [
   {key:"bunt",        pillar:"darm",   label:"Bunt gegessen",  videoId:"1.1"},
   {key:"morgenlicht", pillar:"schlaf", label:"Morgenlicht",    videoId:"1.2"},
-  {key:"bewegt30",    pillar:"beweg",  label:"30 Min bewegt",  videoId:"1.3"}
+  {key:"bewegt30",    pillar:"beweg",  label:"30 Min bewegt",  videoId:"1.3"},
+  // Der Check-in liegt vor dem Schlafengehen: die Abendroutine zählt deshalb für den Vorabend.
+  {key:"abend",       pillar:"schlaf", label:"Abendroutine",   videoId:"1.2", yesterday:true}
 ];
 const SCALES = [
   {key:"erholt",  label:"Erholt"},
@@ -44,7 +46,7 @@ const BASELINE = [
 // Bausteine im Basiskurs (§5.2). Sie schalten sich über das Video mit der passenden videoId frei.
 const BAUSTEINE = [
   {id:"ballaststoff", pillar:"darm",   label:"Ballaststoff-Booster",  courseWeek:2, videoId:"2.1",  kind:"daily"},
-  {id:"bildschirm",   pillar:"schlaf", label:"Bildschirm-Stopp",      courseWeek:2, videoId:"2.2",  kind:"daily"},
+  {id:"bildschirm",   pillar:"schlaf", label:"60 Min. bildschirmfrei", courseWeek:2, videoId:"2.2",  kind:"daily"},
   {id:"kraft",        pillar:"beweg",  label:"Krafteinheit",          courseWeek:2, videoId:"2.3",  kind:"weeklyCount", weeklyTarget:2},
   {id:"fermentiert",  pillar:"darm",   label:"Fermentiertes",         courseWeek:3, videoId:"3.1",  kind:"daily"},
   {id:"letzte_mz",    pillar:"schlaf", label:"Letzte Mahlzeit 3 Std. vor dem Schlafen", courseWeek:3, videoId:"3.2", kind:"daily"},
@@ -96,7 +98,7 @@ function befindenOf(avg){
 // Teilwerte in Prozent (0–100), ungerundet. bausteinePct = null bedeutet: keine aktiven Bausteine.
 function loopScoreFromParts(p){
   const befinden = befindenOf(p);
-  const basisPct = isNum(p.basis) ? p.basis/3*100 : (isNum(p.basisPct)?p.basisPct:null);
+  const basisPct = isNum(p.basis) ? p.basis/(p.basisMax||BASIS.length)*100 : (isNum(p.basisPct)?p.basisPct:null);
   let umsetzung = null;
   if(basisPct!==null) umsetzung = isNum(p.bausteinePct) ? UMSETZUNG.basis*basisPct + UMSETZUNG.bausteine*p.bausteinePct : basisPct;
   const dranbleiben = Math.min(1,(p.days||0)/DAYS_PER_WEEK)*100;
@@ -310,7 +312,7 @@ function unlockEvents(state, ctx){
 const newUnlocks = (state, ctx) => unlockEvents(state,ctx).filter(e=>!(state.noticesSeen||{})[e.id]);
 
 function pickEntry(d){
-  const o={basis:Object.assign({bunt:false,morgenlicht:false,bewegt30:false}, d.basis||{}), bausteine:Object.assign({}, d.bausteine||{})};
+  const o={basis:Object.assign({bunt:false,morgenlicht:false,bewegt30:false,abend:false}, d.basis||{}), bausteine:Object.assign({}, d.bausteine||{})};
   ["erholt","bauch","energie","stress","tagGesamt","schlafStunden","pflanzen","bewegungMin"].forEach(k=>{ o[k]=isNum(d[k])?d[k]:undefined; });
   return o;
 }

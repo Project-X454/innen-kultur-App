@@ -61,7 +61,11 @@ const BASIS_NOTICE = {
   bewegt30:{title:"„30 Min bewegt“ ist jetzt in deinem Check-in",
     why:"Bewegung im Alltag zählt genauso wie Sport.",
     when:"Heute schon möglich: 30 Minuten zusammen, aufgeteilt zählt auch. Abends im Check-in abhaken.",
-    where:"Abend-Check-in · Basis", go:{kind:"wissen", id:"aktiv", label:"Was zählt alles?"}}
+    where:"Abend-Check-in · Basis", go:{kind:"wissen", id:"aktiv", label:"Was zählt alles?"}},
+  abend:{title:"„Abendroutine“ ist jetzt in deinem Check-in",
+    why:"Ein ruhiger Abend und eine feste Zubettgehzeit sind die andere Hälfte deiner inneren Uhr.",
+    when:"Ab heute Abend: zur festen Zeit ins Bett, die letzten 30 Minuten ohne Handy. Im Check-in am nächsten Abend unter „Gestern Abend“ abhaken.",
+    where:"Abend-Check-in · Basis", go:{kind:"wissen", id:"abend", label:"So klappt die Abendroutine"}}
 };
 
 // Handouts, Mini-Karten und Goodies. card = druckbare Karte in der App, recipes = Inhalt des Goodies.
@@ -73,7 +77,7 @@ const MATERIALS = [
     why:"Deine Aufstehzeit, dein Morgenlicht-Ort und 10 Minuten Mobility für 7 Tage zum Abhaken.",
     when:"Leg sie heute Abend neben das Bett, dann ist sie morgen früh als Erstes da."},
   {id:"handout1", kind:"Handout", week:1, title:"Handout Woche 1: Deine Basis auf zwei Seiten", short:"Deine Basis", sub:"Woche 1 auf zwei Seiten", pillar:"recap", unlock:{kernOfWeek:1}, card:"handout1", tab:"handouts",
-    why:"Alle drei Routinen, dein Wochenplan und die Warnzeichen auf zwei Seiten.",
+    why:"Alle vier Routinen, dein Wochenplan und die Warnzeichen auf zwei Seiten.",
     when:"Druck es für den Rest der Woche aus. Deine Angaben aus den To-dos stehen schon drin."},
   {id:"goodie1", kind:"Goodie", week:1, title:"Goodie: Bunte Teller in 15 Minuten", short:"Bunte Teller", sub:"5 Rezepte in 15 Minuten", pillar:"beweg", unlock:{weekCompleted:1}, tab:"rezepte",
     why:"Dein Dankeschön für die erste Woche: 5 schnelle Rezepte nach dem Pflanzen-Teller und eine Einkaufsliste.",
