@@ -374,7 +374,7 @@ function routinesCard(){
   <div class="rts">${IK.BASIS.map(b=>{
     if(!IK.basisUnlocked(S,b.key)) return `<button class="rt locked" data-a="video" data-v="${b.videoId}" style="${pvars(b.pillar)}"><span class="ic">${ICON[BICON[b.key]]}</span><span class="rtx"><b>${b.label}</b><small>nach Video ${b.videoId}</small></span></button>`;
     const on=basisState(b.key);
-    return `<button class="rt${on?" on":""}" data-a="tick" data-v="${b.key}" aria-pressed="${on}" aria-label="${b.label}${b.yesterday?" gestern Abend":""}, ${on?"erledigt":"offen"}" style="${pvars(b.pillar)}">${on?`<svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg><span class="ok" aria-hidden="true">${CHECK}</span>`:""}<span class="ic">${ICON[BICON[b.key]]}</span><span class="rtx"><b>${b.label}</b><small>${on?"erledigt · ":""}${RSUB[b.key]}</small></span></button>`; }).join("")}</div></section>`;
+    return `<button class="rt${on?" on":""}" data-a="tick" data-v="${b.key}" aria-pressed="${on}" aria-label="${b.label}${b.yesterday?" gestern Abend":""}, ${on?"erledigt":"offen"}" style="${pvars(b.pillar)}">${on?`<svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg><span class="ok" aria-hidden="true">${CHECK}</span>`:""}<span class="ic">${ICON[BICON[b.key]]}</span><span class="rtx"><b>${b.label}</b></span></button>`; }).join("")}</div></section>`;
 }
 // Heute: ist der Check-in schon erledigt?
 function ciStatus(i){
@@ -396,10 +396,10 @@ function starterRow(){
     const cur=st.find(t=>t.status==="today")||st.find(t=>t.status==="open"), vidLock=st.find(t=>t.status==="locked"&&t.dayOk), nxt=st.find(t=>t.status==="locked"&&!t.dayOk);
     const p=cur?cur.pillar:vidLock?vidLock.pillar:"darm", ic=cur||vidLock?ICON[p]:ICON.checkin;
     const title = cur ? `${cur.status==="today"?"Heute":"Noch offen"}: ${esc(cur.title)}` : vidLock ? `Heute: ${esc(vidLock.title)}` : d===st.length ? "Alle To-dos dieser Woche geschafft" : "Dein To-do für heute ist erledigt";
-    const sub = cur ? `${AREA[cur.pillar]} · ${esc(cur.min)}` : vidLock ? `Frei mit Video ${vidLock.after}` : nxt ? `Morgen: ${esc(nxt.short)}` : "Dein Rückblick kommt nach dem 7. Check-in.";
+    const sub = cur ? "" : vidLock ? `Frei mit Video ${vidLock.after}` : nxt ? `Morgen: ${esc(nxt.short)}` : "";
     const attr = cur ? gAttr({kind:"todo", id:cur.id}) : `data-a="go" data-v="starter"`;
     const dots=st.map((t,k)=>`<i class="${t.done?"on":""}" style="${pvars(t.pillar)};animation-delay:${k*70}ms"></i>`).join("");
-    return `<button class="srow starter-card tday" ${attr} style="${pvars(p)}"><span class="tic">${ic}</span><span><b>${title}</b><span class="note">${sub}</span>
+    return `<button class="srow starter-card tday" ${attr} style="${pvars(p)}"><span class="tic">${ic}</span><span><b>${title}</b>${sub?`<span class="note">${sub}</span>`:""}
       <span class="tprog"><span class="tdots" aria-hidden="true">${dots}</span><span class="tcount">${d} von ${st.length} diese Woche geschafft</span></span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>`;
   }
   const cw=IK.currentWeek(S); if(!cw) return "";
@@ -415,7 +415,7 @@ function weekCard(i,cw,vp){
   const upRow=b=>`<span><span class="dot" style="--c:${PC[b.pillar]}"></span>${esc(b.label)}</span><span class="note" style="font-size:13px">${IK.isSeen(S,b.videoId)?"ab nächster Woche":"nach Video "+b.videoId}</span>`;
   const big=(l,a,b,c)=>`<div style="display:flex;flex-direction:column;gap:6px"><span class="note">${l}</span><b class="num" style="font-family:var(--f-head);font-size:22px;font-weight:800">${a} <small style="font-family:var(--f-body);font-size:14px;font-weight:500;color:var(--muted)">von ${b}</small></b><div class="bar" style="--c:${c}"><i style="width:${b?Math.round(a/b*100):0}%"></i></div></div>`;
   return `<div class="card wk-full"><b style="font-size:17px">Diese Woche${w?` · Woche ${w.index}`:""}</b><div class="g2">${big(`Wissen · Kurswoche ${cw}`,vp.seen,vp.total,"var(--blue)")}${big("Umsetzung · Tage",i.days,7,"var(--darm)")}</div>
-    ${act.length||upcoming.length?`<div class="exp">${act.map(bRow).join("")}${upcoming.map(upRow).join("")}</div>`:`<p class="note">Ab Kurswoche 2 kommen Bausteine dazu, jeweils nach dem Video, das sie erklärt.</p>`}</div>`;
+    ${act.length||upcoming.length?`<div class="exp">${act.map(bRow).join("")}${upcoming.map(upRow).join("")}</div>`:""}</div>`;
 }
 function weekMini(i,cw,vp){
   return `<button class="srow wk-mini" data-a="go" data-v="fortschritt"><span><b>Diese Woche${i.w?` · Woche ${i.w.index}`:""}</b><span class="note">${vp.seen} von ${vp.total} Videos · ${i.days} von 7 Tagen eingetragen</span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>`;
@@ -492,9 +492,8 @@ function vCheckin(){
     <div class="ctiles">${IK.BASIS.filter(b=>!b.yesterday).map(basisTile).join("")}</div>
     <span class="eyebrow csec">Gestern Abend</span>
     <div class="ctiles">${IK.BASIS.filter(b=>b.yesterday).map(basisTile).join("")}</div>
-    <p class="cnote" style="margin-top:-4px">Den Abend trägst du am nächsten Tag ein, weil der Check-in vor dem Schlafengehen liegt.</p>
     ${chooser}
-    ${ids.length?`<div class="ctiles">${ids.map(bstTile).join("")}</div>`:t.choose?"":`<p class="cnote">Ab Woche 2 kommen hier deine Bausteine dazu, immer nach dem Video, das sie erklärt.</p>`}
+    ${ids.length?`<div class="ctiles">${ids.map(bstTile).join("")}</div>`:""}
     <div class="cfoot"><button class="btn" data-a="ci-next">Weiter${un.length?` <span>· ${n} von ${un.length}</span>`:""}</button></div>`;
   }
   const caps={erholt:["kaum","sehr"],bauch:["unruhig","sehr gut"],energie:["müde","voller Energie"],stress:["entspannt","sehr gestresst"]};
@@ -642,10 +641,10 @@ function vKurs(){
   const kern=VID.VIDEOS.filter(v=>v.week===kursWeek&&v.type==="Kern").map(v=>v.id);
   const hAttr = hoFree ? `data-a="mat" data-v="${ho.id}" data-go-lib="1"` : p.handoutFree ? `data-a="noop"` : `data-a="lock" data-v="ho:${kursWeek}"`;
   const hcard=`<button class="hcard kurs-extra" ${hAttr}><span class="hic">${ICON.doc}</span><span><span class="row"><b style="font-size:15px">Handout Woche ${kursWeek}</b><span class="note">${p.handoutFree?(ho?"frei · öffnen":"frei, folgt als Datei"):`${p.kernSeen} von ${p.kernTotal} Kernvideos`}</span></span>
-    <span class="bar" style="--c:var(--recap)"><i style="width:${p.kernTotal?Math.round(p.kernSeen/p.kernTotal*100):0}%"></i></span><span class="note">${p.handoutFree?(ho?"Zum Nachlesen in der Bibliothek":"Erscheint mit dem nächsten Update"):"Wird frei, sobald du alle Kernvideos gesehen hast"}</span></span></button>`;
-  return `${brandBar()}<div class="top"><div class="t"><small>Alle Videos frei</small><b>Kurs</b></div>${kseg}</div>
+    <span class="bar" style="--c:var(--recap)"><i style="width:${p.kernTotal?Math.round(p.kernSeen/p.kernTotal*100):0}%"></i></span></span></span></button>`;
+  return `${brandBar()}<div class="top"><div class="t"><b>Kurs</b></div>${kseg}</div>
   <div class="wchips" role="group" aria-label="Kurswochen">${partWeeks.map(chip).join("")}</div>
-  <div style="display:flex;flex-direction:column;gap:2px;padding:0 4px"><b style="font-family:var(--f-head);font-size:22px;font-weight:800;letter-spacing:-.02em">${esc(VID.WEEKS[kursWeek].title)}</b><span class="note">Woche ${kursWeek} · ${p.seen} von ${p.total} Videos · alles frei, in deinem Tempo</span></div>
+  <div style="display:flex;flex-direction:column;gap:2px;padding:0 4px"><b style="font-family:var(--f-head);font-size:22px;font-weight:800;letter-spacing:-.02em">${esc(VID.WEEKS[kursWeek].title)}</b><span class="note">${p.seen} von ${p.total} Videos gesehen</span></div>
   ${hcard}
   ${vfil}<div class="vlist${kursFilter!=="alle"?" vlist-f":""}">${shown.map(row).join("")}</div>`;
 }
@@ -814,10 +813,10 @@ function vTodos(){
   const row=t=>{ const sub = t.done ? (todoResult(t)||"Erledigt") : t.status==="today" ? `Heute · ${esc(t.min)}` : t.status==="open" ? `Nachholen · ${esc(t.min)}` : !t.dayOk ? `Ab Tag ${t.day}` : `Frei mit Video ${t.after}`;
     const mk = t.done ? `<span class="st on">${CHECK}</span>` : t.status==="locked" ? `<span class="st lk">${LOCK}</span>` : `<span class="st nx">▶</span>`;
     const attr = t.status==="locked" ? `data-a="lock" data-v="todo:${t.id}"` : gAttr({kind:"todo", id:t.id});
-    return `<button class="tdrow${t.status==="locked"?" locked":""}${t.done?" is-done":""}" ${attr} style="${pvars(t.pillar)}"><span class="dn"><small>Tag</small><b>${t.day}</b></span><span class="tx"><b>${esc(t.title)}</b><span class="note">${AREA[t.pillar]} · ${sub}</span></span>${mk}<span class="sr">${t.done?"erledigt":t.status==="locked"?"gesperrt":"offen"}</span></button>`; };
+    return `<button class="tdrow${t.status==="locked"?" locked":""}${t.done?" is-done":""}" ${attr} style="${pvars(t.pillar)}"><span class="dn"><small>Tag</small><b>${t.day}</b></span><span class="tx"><b>${esc(t.title)}</b><span class="note">${sub}</span></span>${mk}<span class="sr">${t.done?"erledigt":t.status==="locked"?"gesperrt":"offen"}</span></button>`; };
   const hero = !starterActive() ? `<div class="card soft"><b>Woche 1 ist abgeschlossen</b><p class="note" style="color:var(--ink)">Alles, was du geschafft hast, findest du im Fortschritt.</p><button class="btn small" data-a="erfolge" data-v="1">Deine Erfolge ansehen</button></div>`
-    : cur ? tcard(cur.pillar, `<span class="k">${cur.status==="today"?"Heute":"Noch offen"} · Tag ${cur.day} · ${AREA[cur.pillar]} · ${esc(cur.min)}</span><b class="tt">${esc(cur.title)}</b><p>${esc(cur.why)}</p><div class="btns"><button class="btn small" ${gAttr({kind:"todo", id:cur.id})}>${cur.input?"Jetzt eintragen":"Ansehen"}</button></div>`)
-    : vidLock ? tcard(vidLock.pillar, `<span class="k">Heute · Tag ${vidLock.day} · ${AREA[vidLock.pillar]}</span><b class="tt">${esc(vidLock.title)}</b><p>Das To-do wird frei, sobald du Video ${vidLock.after} gesehen hast. Es erklärt, worum es geht.</p><div class="btns"><button class="btn small" data-a="video" data-v="${vidLock.after}">Video ${vidLock.after} ansehen</button></div>`)
+    : cur ? tcard(cur.pillar, `<span class="k">${cur.status==="today"?"Heute":"Noch offen"} · Tag ${cur.day}</span><b class="tt">${esc(cur.title)}</b><div class="btns"><button class="btn small" ${gAttr({kind:"todo", id:cur.id})}>${cur.input?"Jetzt eintragen":"Ansehen"}</button></div>`)
+    : vidLock ? tcard(vidLock.pillar, `<span class="k">Heute · Tag ${vidLock.day}</span><b class="tt">${esc(vidLock.title)}</b><p>Das To-do wird frei, sobald du Video ${vidLock.after} gesehen hast. Es erklärt, worum es geht.</p><div class="btns"><button class="btn small" data-a="video" data-v="${vidLock.after}">Video ${vidLock.after} ansehen</button></div>`)
     : `<div class="ldone">${mark(36)}<p>${d===st.length?"Alle 7 To-dos geschafft. Dein Rückblick kommt nach dem 7. Check-in.":"Für heute ist alles erledigt. Morgen wartet das nächste To-do."}</p></div>`;
   return `<div class="tdwrap"><div class="top"><div class="t"><small>Woche 1 · ${d} von ${st.length} erledigt</small><b>Deine To-dos</b></div><button class="iconbtn" data-a="back" data-v="heute" aria-label="Schließen">${ICON.close}</button></div>
   <div class="tseg" role="img" aria-label="${d} von ${st.length} erledigt">${st.map(t=>`<i class="${t.done?"on":t.status==="today"?"now":""}" style="${pvars(t.pillar)}"></i>`).join("")}</div>
@@ -839,7 +838,7 @@ function vTodo(){
     ? `<button class="btn" data-a="back" data-v="heute">Fertig</button>${inp?`<button class="btn ghost" data-a="todo-save" data-v="${t.id}">Änderung speichern</button>`:`<button class="btn ghost" data-a="todo-tick" data-v="${t.id}">Doch nicht erledigt</button>`}`
     : `<button class="btn" data-a="${inp?"todo-save":"todo-tick"}" data-v="${t.id}">${inp?"Speichern und abhaken":"Erledigt"}</button>`;
   return `<div class="tfocus"><div class="tf-top"><button class="iconbtn" data-a="back" data-v="heute" aria-label="Zurück">${ICON.back}</button><span class="lk-pill">Tag ${t.day} von 7</span></div>
-    <div class="lk-cover" style="${pvars(t.pillar)}"><svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg><span class="k">To-do · ${AREA[t.pillar]} · ${esc(t.min)}</span><b class="s">${esc(t.short)}</b></div>
+    <div class="lk-cover" style="${pvars(t.pillar)}"><svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg><span class="k">To-do · Tag ${t.day}</span><b class="s">${esc(t.short)}</b></div>
     <h1 class="tq">${esc(t.q)}</h1><p class="lwhy">${esc(t.why)}</p>${t.how?`<p class="note">${esc(t.how)}</p>`:""}
     ${flash?`<p class="err" role="alert">${flash}</p>`:""}
     ${t.done?`<div class="ldone">${mark(36)}<p>${inp?"Eingetragen.":"Abgehakt."} ${nextMsg}</p></div>`:""}
@@ -920,7 +919,7 @@ const BLOB=`<path d="${BLOBPATH}" style="fill:var(--c)"/>`;
 // Getönte Karte wie die Wissens-Kacheln der Bibliothek: Themenfarbe hell, Logo-Form in der Ecke.
 const tcard=(p,inner,cls)=>`<div class="tcard${cls?" "+cls:""}" style="${pvars(p)}"><svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg>${inner}</div>`;
 const WISSEN_COVER = {pflanzen:"Pflanzen-Teller", ferment:"Fermen\u00ADtiertes", licht:"Morgenlicht", abend:"Abend\u00ADroutine", aktiv:"30 Minuten"};
-const cover=(attrs,k,s,title,how,p,locked)=>`<button class="cover${locked?" locked":""}" ${attrs} style="${pvars(p)}"><span class="cv"><svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg><span class="k">${esc(k)}</span><b class="s">${esc(s)}</b>${locked?`<span class="lk" aria-hidden="true">${LOCK}</span>`:""}</span><span><b>${esc(title)}</b><small>${esc(how)}${locked?" · gesperrt":""}</small></span></button>`;
+const cover=(attrs,k,s,title,how,p,locked)=>`<button class="cover${locked?" locked":""}" ${attrs} style="${pvars(p)}"><span class="cv"><svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg><span class="k">${esc(k)}</span><b class="s">${esc(s)}</b>${locked?`<span class="lk" aria-hidden="true">${LOCK}</span>`:""}</span><span><b>${esc(title)}</b></span></button>`;
 function materialList(tab){
   const list=IN.MATERIALS.filter(m=>m.tab===tab && m.week<=weeksTotal());
   if(!list.length) return "";
@@ -937,7 +936,7 @@ function libHead(closeAct, kicker, short, title, lead, p){
 }
 // Inhaltskarten unter dem farbigen Kopf: weiß, Etikett in Themenfarbe, Akzent in Koralle
 const infoCard=(p,kicker,inner,cls)=>`<div class="card linfo${cls?" "+cls:""}" style="${pvars(p)}"><span class="eyebrow" style="color:var(--t)">${kicker}</span>${inner}</div>`;
-const printTile=(p,title,sub,label,card)=>`<div class="card lprint" style="${pvars(p)}"><span class="lpic">${ICON.doc}</span><span class="lptx"><b>${esc(title)}</b><span class="note">${sub}</span></span><button class="btn small" data-a="print" data-v="${card}">${esc(label)}</button></div>`;
+const printTile=(p,title,sub,label,card)=>`<div class="card lprint" style="${pvars(p)}"><span class="lpic">${ICON.doc}</span><span class="lptx"><b>${esc(title)}</b></span><button class="btn small" data-a="print" data-v="${card}">${esc(label)}</button></div>`;
 function vMaterial(){
   const m=matById(mat); if(!m||!IK.materialUnlocked(S,m,VID.VIDEOS)){ mat=null; return vBibliothek(); }
   markNotice("mat-"+m.id);
@@ -1123,7 +1122,7 @@ const EX={
   abend:{p:"schlaf",title:"Pünktlich ins Bett, ruhig davor",short:"Abendroutine",check:"Im Check-in am nächsten Abend unter „Gestern Abend“, frei nach Video 1.2.",
     rule:"Du gehst zu deiner <b>festen Zeit</b> ins Bett (± 30 Minuten), und die <b>letzten 30 Minuten</b> davor sind ohne Handy und mit gedimmtem Licht.",
     groupsLabel:"So klappt es",mini:[["Zubett-Wecker","30 Minuten vor deiner Zeit"],["Handy laden","außerhalb vom Schlafzimmer"],["Licht dimmen","nur noch warme Lampen"],["Glas Wasser","schon ans Bett gestellt"],["Lesen","Papier statt Bildschirm"],["Gleiche Zeit","auch am Wochenende, ± 30 Min."]],
-    tip:"<b>Ab Woche 2:</b> Mit Video 2.2 kannst du den Baustein „60 Min. bildschirmfrei“ dazunehmen, die vertiefte Variante.",card:"abend"},
+    card:"abend"},
   aktiv:{p:"beweg",title:"Was zählt als 30 Minuten bewegt?",short:"30 Min bewegt",check:"Im Check-in ab Tag 1 als „30 Min bewegt“.",
     rule:"Mindestens <b>30 Minuten</b> Bewegung am Tag, bei der du etwas schneller atmest. Aufgeteilt zählt auch, z. B. 3 × 10 Minuten.",
     groupsLabel:"Das zählt alles",mini:[["Spazieren","zügig, auch der Weg zur Arbeit"],["Fahrrad","Pendeln, Tour, Ergometer"],["Cardio","Laufen, Schwimmen, Rudern"],["Kraft","Studio, Eigengewicht, Kurse"],["Mobility","Yoga, Pilates, Dehnen"],["Alltag","Garten, Treppen, mit Kindern toben"]],card:"aktiv"}
@@ -1134,15 +1133,15 @@ function vBibliothek(){
   const T=[["wissen","Wissen"],["rezepte","Rezepte"],["plaene","Pläne"],["handouts","Handouts"]];
   const body = libTab==="wissen"
     ? `<div class="covers">${Object.keys(EX).map(k=>{ const e=EX[k]; return cover(`data-a="wissen" data-v="${k}"`, `Wissen · ${({darm:"Darm",schlaf:"Schlaf",beweg:"Bewegung",recap:"Recap"})[e.p]}`, WISSEN_COVER[k]||e.short, e.title, e.check, e.p, false); }).join("")}</div>`
-    : materialList(libTab) + `<div class="libnote">${mark(36)}<span><b>${libTab==="handouts"?"Weitere Handouts":libTab==="rezepte"?"Weitere Rezepte":"Pläne folgen"}</b><span class="note">${libTab==="handouts"?"Das Handout einer Woche wird frei, sobald du alle Kernvideos der Woche gesehen hast. Ab Woche 2 folgen sie mit den nächsten Updates.":"Rezepte und Pläne schalten sich als Goodies mit deinen Wochen-Checks frei."}</span></span></div>`;
-  return `${brandBar()}<div class="top"><div class="t"><small>Zum Nachlesen</small><b>Bibliothek</b></div></div>
+    : materialList(libTab) || `<p class="note libempty">${libTab==="plaene"?"Pläne folgen.":"Folgt."}</p>`;
+  return `${brandBar()}<div class="top"><div class="t"><b>Bibliothek</b></div></div>
   <div class="segc" role="group" aria-label="Bereich">${T.map(([k,l])=>`<button data-a="libtab" data-v="${k}" aria-pressed="${libTab===k}">${l}</button>`).join("")}</div>${body}`;
 }
 function vWissen(){
   const e=EX[wissen], p=e.p, cardName=e.card==="aktiv"?"Aktivitäts-Karte":e.card==="morgen"?"Morgen-Karte":e.card==="abend"?"Abend-Karte":"Kühlschrank-Karte";
   return libHead("wissen-close", `Wissen · ${AREA[p]}`, WISSEN_COVER[wissen]||e.short, e.title, "", p)
     + `<div class="libbody">`
-    + infoCard(p,"So zählt es",`<p class="lrule">${e.rule}</p><p class="lcheck"><span class="ok" aria-hidden="true">${CHECK}</span>${e.check}</p>`)
+    + infoCard(p,"So zählt es",`<p class="lrule">${e.rule}</p>`)
     + infoCard(p,esc(e.groupsLabel),`<div class="mini">${e.mini.map(([a,b])=>`<div><b>${esc(a)}</b><span>${esc(b)}</span></div>`).join("")}</div>
       ${e.examples?`<div class="libex"><span class="lhd">Beispiel-Teller</span><p>${e.examples}</p></div>`:""}${e.tip?`<p class="ltip">${e.tip}</p>`:""}`,"libmini")
     + printTile(p, `${cardName} (A6)`, "Zum Ausdrucken oder im Druck-Dialog „Als PDF sichern“ wählen.", "Karte als PDF speichern", e.card) + `</div></div>`;

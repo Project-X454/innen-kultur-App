@@ -1,6 +1,6 @@
 // Offline-Betrieb: App-Dateien werden auf dem Gerät zwischengespeichert.
 // Nutzerdaten liegen im Browser-Speicher (localStorage) und werden nie an den Server geschickt.
-const VERSION = "ik-v31";
+const VERSION = "ik-v32";
 const CORE = ["./", "index.html", "app.js", "logic.js", "videos.js", "inhalte.js", "manifest.webmanifest", "fonts/inter.woff", "fonts/instrument-serif-italic.woff", "fonts/geist-mono.woff",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png", "icons/favicon.png",
   "reminders/abend-20.ics", "reminders/abend-21.ics", "reminders/abend-22.ics"];
