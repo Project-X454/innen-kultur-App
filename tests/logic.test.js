@@ -12,7 +12,7 @@ test("Loop-Score: Beispiel aus SPEC §5.7 (Woche 3)", () => {
 });
 
 test("Loop-Score: ohne Bausteine zählt nur der Basis-Score als Umsetzung", () => {
-  const r = IK.loopScoreFromParts({erholt:3, energie:3, bauch:3, stress:3, basis:1.5, days:7});
+  const r = IK.loopScoreFromParts({erholt:3, energie:3, bauch:3, stress:3, basis:2, days:7});
   assert.equal(r.umsetzung, 50);
   assert.equal(r.befinden, 50);
   assert.equal(r.score, Math.round(0.5*50 + 0.35*50 + 0.15*100));
@@ -28,8 +28,8 @@ test("Loop-Score aus Check-ins mit daily- und weeklyCount-Bausteinen", () => {
   assert.equal(st.avg.basis, 2);
   assert.deepEqual(st.bausteine.map(x => x.rate), [0.5, 0.5]);
   const r = IK.loopScore(days, b);
-  // Umsetzung = 0,6 × 66,7 + 0,4 × 50 = 60
-  assert.equal(r.umsetzung, 60);
+  // Umsetzung = 0,6 × 50 (2 von 4 Basis-Routinen) + 0,4 × 50 = 50
+  assert.equal(r.umsetzung, 50);
   assert.equal(r.dranbleiben, 29);
 });
 

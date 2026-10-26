@@ -429,16 +429,22 @@ body.evening .focus .blob{opacity:.1}
 /* Routinen-Kacheln */
 .rt-hd{display:flex;justify-content:space-between;align-items:baseline;padding:0 4px}
 .rt-hd b{font-size:17px}
-.rts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.rt{min-height:100px;border:0;border-radius:22px;background:var(--card);box-shadow:var(--shadow);padding:14px 12px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:8px;text-align:left;color:var(--ink);transition:transform .12s,background-color .2s}
+.rts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.rt{position:relative;overflow:hidden;min-height:108px;border:0;border-radius:22px;background:var(--card);box-shadow:var(--shadow);padding:12px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:8px;text-align:left;color:var(--ink);font:inherit;transition:background-color .2s}
 .rt:active{transform:scale(.97)}
-.rt .ic{width:34px;height:34px;border-radius:12px;background:var(--s);color:var(--t);display:grid;place-items:center}
-.rt .ic svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-.rt b{font-size:15px;font-weight:600;line-height:1.25}
+.rt>*{position:relative}
+.rt .ic{width:36px;height:36px;border-radius:12px;background:var(--s);color:var(--t);display:grid;place-items:center}
+.rt .ic svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.rt .rtx{display:flex;flex-direction:column;gap:1px}
+.rt b{font-size:16px;font-weight:700;line-height:1.2}
 .rt small{font-size:13px;color:var(--muted);font-weight:500}
-.rt[aria-pressed="true"]{background:var(--c);color:#fff}
-.rt[aria-pressed="true"] .ic{background:rgba(255,255,255,.22);color:#fff}
-.rt[aria-pressed="true"] .ic svg{stroke-width:2.6}
+/* abgehakt: wie die Bibliotheks-Kacheln, Symbol bleibt, kleiner Haken oben rechts */
+.rt.on{background:var(--s);color:var(--t);box-shadow:none}
+.rt.on>.bl{position:absolute;right:-24px;bottom:-30px;width:90px;height:90px;opacity:.35}
+.rt.on .ic{background:rgba(255,255,255,.75)}
+body.evening .rt.on .ic{background:rgba(255,255,255,.12)}
+.rt.on small{color:var(--t);opacity:.85}
+.rt .ok{position:absolute;top:10px;right:10px;width:24px;height:24px;border-radius:12px;background:var(--c);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:800}
 .rt.locked{background:none;box-shadow:inset 0 0 0 1.5px var(--line);color:var(--muted)}
 .rt.locked .ic{background:var(--chip);color:var(--muted)}
 
@@ -491,10 +497,11 @@ body.evening .focus .blob{opacity:.1}
 .ctile .tx b{font-size:17px}
 .ctile .tx small{font-size:14.5px;color:var(--muted)}
 .ctile .mk{flex:none;width:30px;height:30px;border-radius:15px;border:2px solid var(--line);display:grid;place-items:center;font-weight:800;font-size:16px}
-.ctile[aria-pressed="true"]{background:var(--c);color:#fff}
-.ctile[aria-pressed="true"] .ic{background:rgba(255,255,255,.2);color:#fff}
-.ctile[aria-pressed="true"] .tx small{color:rgba(255,255,255,.85)}
-.ctile[aria-pressed="true"] .mk{background:#fff;border-color:#fff;color:var(--c)}
+.ctile[aria-pressed="true"]{background:var(--s);color:var(--t);box-shadow:none}
+.ctile[aria-pressed="true"] .ic{background:rgba(255,255,255,.75);color:var(--t)}
+body.evening .ctile[aria-pressed="true"] .ic{background:rgba(255,255,255,.12)}
+.ctile[aria-pressed="true"] .tx small{color:var(--t);opacity:.85}
+.ctile[aria-pressed="true"] .mk{background:var(--c);border-color:var(--c);color:#fff}
 .ctile.locked{background:none;box-shadow:inset 0 0 0 1.5px var(--line)}
 .ctile.locked .ic{background:var(--chip);color:var(--muted)}
 .ctile .new{margin-left:0}
@@ -826,6 +833,23 @@ body.evening .libhero .iconbtn{background:rgba(255,255,255,.1);color:#EEF3F8}
 .lptx{flex:1;min-width:180px;display:flex;flex-direction:column;gap:2px}
 .lptx b{font-size:16px}
 .lprint .btn{flex:none}
+/* Heute: Status des Check-ins */
+.top.withstat{flex-wrap:wrap;row-gap:12px}
+.cistat{flex-basis:100%;display:flex;align-items:center;gap:12px;border:0;border-radius:20px;background:var(--card);box-shadow:var(--shadow);padding:12px 14px;text-align:left;color:var(--ink);font:inherit}
+@media (min-width:960px){.cistat{flex-basis:380px;flex-grow:0}}
+.cistat .ic{flex:none;width:40px;height:40px;border-radius:14px;background:var(--s);color:var(--t);display:grid;place-items:center}
+.cistat .ic svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.cistat .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.cistat .tx b{font-size:15.5px}
+.cistat .tag{flex:none;font-family:var(--f-mono);font-weight:500;font-size:12px;letter-spacing:.04em;text-transform:uppercase;padding:6px 9px;border-radius:999px;background:var(--s);color:var(--t)}
+.cistat.is-ok{background:var(--s);box-shadow:none}
+.cistat.is-ok .ic{background:var(--c);color:#fff}
+.cistat.is-ok .ic svg{stroke-width:2.6}
+.cistat.is-ok .tx,.cistat.is-ok .note{color:var(--t)}
+.cistat.is-ok .tag{background:var(--c);color:#fff}
+.csec{color:var(--muted);padding:6px 4px 0}
+.wtiles{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+@media (min-width:600px){.wtiles{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
 /* Gesperrt-Blatt */
 .sheet.lock{gap:16px}
 .lk-pill{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 12px;border-radius:999px;background:var(--btn2-bg);color:var(--muted);font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
