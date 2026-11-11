@@ -139,3 +139,13 @@ node tools/pdf-export.js
 ```
 
 Nach jeder Änderung an einer Druckvorlage (`cardHTML`, `morgenCard`, `handout1` in `app.js`) neu erzeugen und die Cache-Version in `sw.js` erhöhen. Neue Vorlagen in `FILES` (tools/pdf-export.js), `PDF_FILE` (app.js) und `CORE` (sw.js) eintragen.
+
+## Dranbleiben: 5 von 7, Nachtragen, Pause, Joker
+
+- **Regel:** Eine Tracker-Woche ist ein Fenster von 7 Kalendertagen ab dem ersten Check-in. Mit mindestens 5 eingetragenen Tagen gibt es Wochen-Check und Goodie (`MIN_DAYS`).
+- **Nachtragen:** Gestern lässt sich bis Mitternacht nachtragen. Auf Heute erscheint dann „Gestern fehlt noch“, der Check-in läuft mit `ciDay`.
+- **Lücke:** Sind 5 von 7 auch mit Nachtragen nicht mehr erreichbar (3 Tage endgültig verpasst), wird die Woche `missed` und die Videos ab der nächsten Kurswoche pausieren (`checkGap`, `videoPaused`). Bereits gesehene und frühere Videos bleiben offen. Hinweis einmal als Dialog, danach als Karte auf Heute und im Kurs.
+- **Wieder frei:** nach 3 Check-ins in Folge (`PAUSE_STREAK`, gestern nachtragen zählt mit). Die Woche startet mit dem ersten neuen Check-in neu, gleiche Nummer; frühere Einträge bleiben gespeichert (`archived`), zählen aber nicht für die Woche.
+- **Joker:** 2 Stück (`JOKERS`), heben die Pause sofort auf. Goodie und Wochen-Check der Lückenwoche bleiben zu.
+- **Nur schauen:** Sind beide Joker verbraucht und es entsteht wieder eine Lücke, kommt einmalig „Lieber schauen als eintragen?“. Mit Zustimmung sind alle Videos dauerhaft frei (`watchOnly`); Goodies, Wochen-Check und Loop-Score bleiben an die Check-ins gebunden. Diese Möglichkeit wird vorher nirgends angekündigt.
+- **Onboarding:** neuer Schritt 4 „Dein Loop lebt vom Mitmachen“ mit Regel, Nachtragen und Jokern.

@@ -107,7 +107,7 @@ const TOUR = [
   {kind:"checkin", title:"Check-in von überall",
     text:"Der Check-in ist das Logo unten in der Mitte, auf jedem Screen, am Computer oben links. Daneben erreichst du Heute, Kurs, Fortschritt und Bibliothek."},
   {kind:"kurs", title:"Videos schalten deinen Tracker frei",
-    text:"Alle Videos sind sofort frei. Eine Routine erscheint im Check-in, sobald du ihr Video gesehen hast."},
+    text:"Alle Videos sind frei, solange du an 5 von 7 Tagen eincheckst. Eine Routine erscheint im Check-in, sobald du ihr Video gesehen hast."},
   {kind:"glocke", title:"Wenn etwas frei wird, sagen wir es dir",
     text:"Neues sammelt sich hinter der Glocke oben rechts. Jeder Eintrag sagt wieso und wo, ein Knopf führt dich hin."},
   {kind:"todos", title:"Jeden Tag ein kleines To-do",
