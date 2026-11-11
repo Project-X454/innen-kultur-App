@@ -1005,105 +1005,96 @@ function handout1(){
     <span class="ft">innen-kultur.de · Seite 2 von 2 · Ersetzt keine ärztliche Beratung.</span></div>`;
 }
 
-/* ---------- Willkommen und App-Tour (nach dem Onboarding, jederzeit unter Profil) ---------- */
+/* ---------- Willkommen und App-Tour (nach dem Onboarding, jederzeit unter Profil) ----------
+   Die Tour bleibt auf Heute. Jede Erklärung ist eine Infokarte von unten mit einem festen Ausschnitt des Bereichs. */
 let tour=null;
-function startTour(){ tour={i:0}; showTourStep(); }
+function startTour(){ tour={i:0}; view="heute"; mat=null; wissen=null; kursWeek=null; flash=""; freshIds=[]; render(); window.scrollTo(0,0); document.body.classList.add("touring"); drawTour(); }
 function endTour(){
   tour=null; S.tourDoneAt=S.tourDoneAt||new Date().toISOString(); save();
-  const o=document.getElementById("tour"); if(o) o.remove(); tourEl=null;
+  const o=document.getElementById("tour"); if(o) o.remove();
   document.body.classList.remove("touring");
 }
-function showTourStep(){
-  const st=IN.TOUR[tour.i];
-  view=st.view; mat=null; wissen=null; kursWeek=null; flash=""; freshIds=[]; render(); window.scrollTo(0,0);
-  document.body.classList.add("touring");
-  requestAnimationFrame(drawTour);
-}
-function tourTarget(st){
-  if(!st.target) return null;
-  for(const sel of st.target.split(",")){ const el=[...document.querySelectorAll(sel.trim())].find(e=>e.getClientRects().length); if(el) return el; }
-  return null;
-}
-function tourIntro(){
-  const prod = S.product==="komplett" ? "Dein Komplettkurs: 8 Wochen, dazu 3 Monate Club." : "Dein Basiskurs: 4 Wochen. Woche 5 bis 8 kannst du später dazunehmen.";
-  return `<ul class="tour-list"><li><b>Wissen</b><span>Kurze Videos, alle sofort frei, Woche für Woche sinnvoll sortiert.</span></li>
-    <li><b>Umsetzung</b><span>Jeden Abend 1 Minute Check-in. Dazu kleine Routinen, die mit jeder Woche wachsen.</span></li>
-    <li><b>Fortschritt</b><span>Dein Loop-Score und der Vergleich mit deinem Startpunkt.</span></li></ul>
-    <p class="note">${prod}</p>`;
-}
-function tourSampleNotice(){
-  return tcard("darm",`<span class="k">Beispiel · Neu im Check-in</span><b class="tt">„Bunt gegessen“ ist jetzt in deinem Check-in</b>
-    <dl class="www"><div><dt>Wieso</dt><dd>Du weißt jetzt, warum Vielfalt auf dem Teller zählt.</dd></div><div><dt>Wann</dt><dd>Heute Abend im Check-in abhaken.</dd></div><div><dt>Wo</dt><dd>Abend-Check-in · Basis</dd></div></dl>
-    <div class="btns"><span class="btn small">Was zählt als Pflanze?</span><span class="btn small ghost">Verstanden</span></div>`,"notice demo").replace('<div class="tcard','<div aria-label="Beispiel einer Hinweis-Karte" class="tcard');
-}
-// Saubere Vorschau statt Hervorhebung, wo das echte Element je nach Stand anders aussieht.
+const tpv = p => `--c:${PC[p]};--s:${PS[p]};--t:${PT[p]}`;
+const tpLbl = t => `<span class="tp-l">${t}</span>`;
+const tpIc = (svg,cls="") => `<span class="tp-ic${cls?" "+cls:""}" aria-hidden="true">${svg}</span>`;
+const TP_LOCK='<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+const TP_DOWN='<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>';
+const TP_PLAY='<svg viewBox="0 0 24 24"><path d="M8 5 19 12 8 19Z"/></svg>';
 function tourPreview(k){
-  if(k==="learn"){ const v=VID.VIDEOS.find(x=>x.id==="1.1"), b=IK.BASIS.find(x=>x.key==="bunt");
-    return `<div class="tour-prev"><div class="learn" style="pointer-events:none"><span class="thumb" style="--s:${PS.darm};--c:${PC.darm}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5 19 12 8 19Z"/></svg></span>
-      <span class="tx"><span class="eyebrow" style="color:${PT.darm}">Weiterlernen · Ernährung & Darm</span><b>1.1 ${esc(v.title)}</b><span class="note">${v.durationMin} Min. · schaltet „${esc(b.label)}“ frei</span></span></div>
-      <div class="card" style="background:var(--navy);color:#fff;gap:4px"><span class="eyebrow" style="color:#C9D6E6">Mach jetzt · 30 Sekunden</span><span style="font-size:15px">${esc(v.machJetzt||"")}</span></div></div>`; }
-  if(k==="material"){ const row=(kind,title,how,on)=>`<div class="tour-mat${on?" on":""}"><span class="eyebrow" style="color:var(--recap-text)">${kind}</span><b>${title}</b><span class="note">${how}</span></div>`;
-    return `<div class="tour-prev">${row("Mini-Karte · Woche 1","Pflanzen-Teller","frei direkt nach Video 1.6",true)}${row("Handout · Woche 1","Deine Basis auf zwei Seiten","frei nach allen 5 Kernvideos der Woche",false)}${row("Goodie · Woche 1","Bunte Teller in 15 Minuten","frei mit deinem Wochen-Check",false)}
-      <p class="note">Alles liegt danach in der Bibliothek. Gesperrtes zeigt, wodurch es frei wird.</p></div>`; }
-  if(k==="loop") return `<div class="tour-prev"><span class="eyebrow" style="color:var(--recap-text)">Beispiel</span>${loopExample(false)}</div>`;
+  if(k==="intro"){
+    return `<div class="tp-brand">${logoSVG(52)}<span><b>innen kultur</b><small>Ernährung &amp; Darm · Schlaf · Bewegung</small></span></div>
+      <div class="tp-3">${[["Wissen","Kurze Videos, alle frei","schlaf"],["Machen","Ein To-do pro Tag","darm"],["Sehen","Check-in &amp; Loop-Score","recap"]].map(([a,b,p])=>`<div class="tp-c" style="${tpv(p)}"><span class="tp-l" style="color:var(--t)">${a}</span><b>${b}</b></div>`).join("")}</div>`;
+  }
+  if(k==="fokus"){
+    return `${tpLbl("Heute · oben")}<div class="tp-focus"><svg class="bl" viewBox="0 0 100 100" aria-hidden="true"><path d="${BLOBPATH}"/></svg><span class="tp-l">Jetzt dran · Morgen</span><b>10 Minuten Morgenlicht</b><span class="tx">Raus vor die Tür, bevor du aufs Handy schaust.</span><span class="bt">Erledigt</span></div>
+      <div class="tp-row">${[["Morgens","Morgenlicht"],["Tagsüber","Nächstes Video"],["Ab 18 Uhr","Check-in"]].map(([a,b])=>`<span class="tp-chip"><b>${a}</b>${b}</span>`).join("")}</div>`;
+  }
+  if(k==="routinen"){
+    const t=(p,l,ic,on)=>`<div class="tp-rt${on?" on":""}" style="${tpv(p)}">${on?`<svg class="bl" viewBox="0 0 100 100" aria-hidden="true"><path d="${BLOBPATH}"/></svg>`:""}${tpIc(ICON[ic])}<b>${l}</b>${on?`<span class="ok" aria-hidden="true">${ICON.checkin}</span>`:""}</div>`;
+    return `${tpLbl("Heute · Deine Routinen")}<div class="tp-2">${t("schlaf","Morgenlicht","sun",true)}${t("darm","Bunt gegessen","darm",true)}${t("beweg","30 Min. bewegt","beweg",false)}${t("schlaf","Abendroutine","moon",false)}</div>
+      <span class="tp-hint" style="${tpv("darm")}">${tpIc(ICON.checkin,"sm")}Abends im Check-in schon ausgewählt</span>`;
+  }
+  if(k==="checkin"){
+    const tab=(n,ic,on)=>`<span class="tp-tab${on?" on":""}">${tpIc(ICON[ic])}${n}</span>`;
+    return `${tpLbl("Unten auf jedem Screen")}<div class="tp-tabs">${tab("Heute","heute",true)}${tab("Kurs","kurs")}<span class="tp-ci">${logoSVG(56)}</span>${tab("Fortschritt","fortschritt")}${tab("Bibliothek","bibliothek")}</div>
+      <span class="tp-pill">Logo antippen = Check-in</span>`;
+  }
+  if(k==="kurs"){
+    const row=(nr,p,t,st)=>`<div class="tp-v" style="${tpv(p)}"><span class="nr">${nr}</span><span class="tt"><b>${t}</b><small>12 Min.</small></span>${st==="done"?`<span class="tp-st is-done">${ICON.checkin}</span>`:st==="next"?`<span class="tp-st is-next">${TP_PLAY}</span>`:`<span class="tp-st is-open"></span>`}</div>`;
+    return `<div class="tp-hd">${tpLbl("Kurs · Woche 1")}<span class="tp-sel">Alle Themen ${tpIc(TP_DOWN,"sm")}</span></div>
+      ${row("1.1","darm","Was in deinem Bauch passiert","done")}${row("1.2","schlaf","Innere Uhr &amp; Licht","next")}${row("1.3","beweg","Bewegung ist mehr als Sport","open")}`;
+  }
+  if(k==="glocke"){
+    return `<div class="tp-bellrow"><span class="tp-bell">${tpIc(ICON.bell)}<i></i></span></div>
+      <div class="tp-note" style="${tpv("darm")}"><span class="tp-l" style="color:var(--t)">Neu frei · Mini-Karte</span><b>Pflanzen-Teller</b><small>Wieso: Video 1.6 gesehen · Wo: Bibliothek</small><span class="bt">Ansehen</span></div>`;
+  }
+  if(k==="todos"){
+    const r=(d,p,t,st)=>`<div class="tp-td" style="${tpv(p)}"><span class="tp-l" style="color:var(--t)">Tag ${d}</span><b>${t}</b>${st==="done"?`<span class="tp-st is-done">${ICON.checkin}</span>`:st==="today"?`<span class="today">Heute</span>`:`<span class="lk">${TP_LOCK}</span>`}</div>`;
+    return `<div class="tp-hd">${tpLbl("Heute · To-dos")}<span class="tp-cnt">2 von 7 diese Woche</span></div>
+      ${r(1,"darm","Pflanzen zählen","done")}${r(2,"schlaf","Aufstehzeit festlegen","done")}${r(3,"beweg","2 Minuten gehen","today")}${r(4,"darm","Ein Glas Kefir","lock")}`;
+  }
+  if(k==="loop"){
+    const R=46, C=2*Math.PI*R;
+    return `${tpLbl("Fortschritt · Beispiel")}<div class="tp-loop"><span class="ring"><svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="${R}" class="tr"/><circle cx="60" cy="60" r="${R}" class="fg" stroke-dasharray="${(C*.72).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 60 60)"/></svg><span><b>72</b><small>von 100</small></span></span>
+      <span class="lg"><b class="acc">läuft rund</b>${[["Erholung","schlaf"],["Bauchgefühl","darm"],["Routinen","beweg"]].map(([n,p])=>`<span><i style="background:${PC[p]}"></i>${n}</span>`).join("")}</span></div>`;
+  }
+  if(k==="ende"){
+    const rows=[["Routine im Check-in","nach ihrem Video","darm"],["Handout der Woche","nach allen Kernvideos","recap"],["Wochen-Check","nach 7 Check-ins","schlaf"],["Goodie","mit deinem Wochen-Check","beweg"]];
+    return `${tpLbl("So wird was frei")}${rows.map(([a,b,p])=>`<div class="tp-un" style="${tpv(p)}">${tpIc(TP_LOCK)}<span><b>${a}</b><small>frei ${b}</small></span></div>`).join("")}`;
+  }
   return "";
-}
-function tourLogic(){
-  return `<ul class="tour-logic">${IN.UNLOCK_OVERVIEW.map(([a,b,c])=>`<li><b>${esc(a)}</b><span>frei ${esc(b)}</span><small>${esc(c)}</small></li>`).join("")}</ul>`;
 }
 function drawTour(){
   if(!tour) return;
-  const st=IN.TOUR[tour.i], last=tour.i===IN.TOUR.length-1, first=tour.i===0, el=tourTarget(st);
-  let o=document.getElementById("tour"); if(!o){ o=document.createElement("div"); o.id="tour"; document.body.appendChild(o); }
-  const r=el?{}:null; tourEl=null;
-  const extra = first ? tourIntro() : st.kind==="notice" ? tourSampleNotice() : st.kind==="logic" ? tourLogic() : st.kind==="preview" ? tourPreview(st.preview) : "";
+  const st=IN.TOUR[tour.i], n=IN.TOUR.length, last=tour.i===n-1, first=tour.i===0;
+  let o=document.getElementById("tour"); const again=!!o; if(!o){ o=document.createElement("div"); o.id="tour"; document.body.appendChild(o); }
   const nx=IK.nextVideo(VID.VIDEOS,S,weeksTotal());
   const btns = first
     ? `<button class="btn" data-a="tour-next">Tour starten · 2 Min.</button><button class="btn link small" data-a="tour-end">Später ansehen</button>`
     : last
-    ? `${nx?`<button class="btn" data-a="tour-finish" data-v="${nx.id}">Los geht's mit Video ${nx.id}</button>`:""}<button class="btn ghost" data-a="tour-finish">Zu Heute</button>`
-    : `<div class="tour-row"><button class="btn ghost small" data-a="tour-back">Zurück</button><button class="btn small" data-a="tour-next">Weiter</button></div><button class="btn link small" data-a="tour-end">Tour beenden</button>`;
-  o.innerHTML=`${r?`<div class="tour-hole"></div>`:`<div class="tour-dim"></div>`}
-    <div class="tour-card${r?"":" center"}${extra?" wide":""}" role="dialog" aria-modal="true" aria-labelledby="tour-t" aria-describedby="tour-d">
-      <span class="eyebrow">${first?"Willkommen":`Tour · ${tour.i} von ${IN.TOUR.length-1}`}</span>
-      <h2 id="tour-t">${esc(st.title)}</h2><p id="tour-d">${esc(st.text)}</p>${extra}
-      <div class="tour-btns">${btns}</div>
-      ${first||last?"":`<div class="tour-dots" aria-hidden="true">${IN.TOUR.slice(1).map((_,i)=>`<i class="${i+1===tour.i?"on":""}"></i>`).join("")}</div>`}</div>`;
-  tourEl=el;
-  if(el && !isFixed(el)){ const pad=6, b0=el.getBoundingClientRect(); window.scrollBy(0, b0.top-(pad+12)); } // Element nach oben, Karte darunter
-  tourY=window.scrollY; placeTour();
-  [80,300,700].forEach(ms=>setTimeout(placeTour,ms)); // Schrift und Bilder können das Layout noch verschieben
-  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(placeTour);
+    ? `${nx?`<button class="btn" data-a="tour-finish" data-v="${nx.id}">Los geht's mit Video ${nx.id}</button>`:""}<button class="btn link small" data-a="tour-finish">Zu Heute</button>`
+    : `<div class="tour-row"><button class="btn ghost" data-a="tour-back">Zurück</button><button class="btn" data-a="tour-next">Weiter</button></div>`;
+  const dots = first ? "" : `<div class="tour-dots" aria-hidden="true">${IN.TOUR.slice(1).map((_,i)=>`<i class="${i+1===tour.i?"on":""}"></i>`).join("")}</div>`;
+  o.innerHTML=`<div class="tour-dim" data-a="tour-end"></div>
+    <div class="sheet tour-sheet${again?" still":""}" role="dialog" aria-modal="true" aria-labelledby="tour-t" aria-describedby="tour-d">
+      <span class="grab" aria-hidden="true"></span>
+      <div class="sh"><span class="eyebrow">${first?"Willkommen":`Kurze Tour · ${tour.i} von ${n-1}`}</span><button class="x" data-a="tour-end" aria-label="Tour schließen">${ICON.close}</button></div>
+      <div class="tour-prev">${tourPreview(st.kind)}</div>
+      <div class="tour-tx"><h2 id="tour-t">${esc(st.title)}</h2><p id="tour-d">${esc(st.text)}</p></div>
+      ${dots}<div class="tour-btns">${btns}</div></div>`;
   const f=o.querySelector('[data-a="tour-next"],[data-a="tour-finish"]'); if(f) f.focus({preventScroll:true});
 }
-let tourEl=null, tourY=0;
-const isFixed = el => { for(let n=el;n&&n!==document.body;n=n.parentElement){ if(getComputedStyle(n).position==="fixed") return true; } return false; };
-// Hervorhebung und Karte immer aus der aktuellen Position des Elements berechnen.
-function placeTour(){
-  const o=document.getElementById("tour"); if(!tour||!o) return;
-  const c=o.querySelector(".tour-card"), hole=o.querySelector(".tour-hole");
-  if(!tourEl||!hole||!document.body.contains(tourEl)){ if(hole){ hole.style.display="none"; } c.classList.add("center"); c.style.top=c.style.left=""; return; }
-  const vw=document.documentElement.clientWidth, vh=(window.visualViewport?visualViewport.height:innerHeight), ch=c.offsetHeight, cw=c.offsetWidth, gap=12, pad=6;
-  const b=tourEl.getBoundingClientRect(), fixed=isFixed(tourEl);
-  const rad=parseFloat(getComputedStyle(tourEl).borderTopLeftRadius)||0;
-  const top0=b.top-pad, left0=b.left-pad, w=b.width+2*pad;
-  let h=b.height, top, left;
-  const cx=Math.min(Math.max(8, b.left+b.width/2-cw/2), vw-cw-8), cyClamp=y=>Math.min(Math.max(8,y), vh-ch-8);
-  if(top0+h+2*pad+gap+ch<=vh-8){ top=top0+h+2*pad+gap; left=cx; }                 // darunter
-  else if(top0-gap-ch>=8){ top=top0-gap-ch; left=cx; }                                  // darüber
-  else if(b.right+pad+gap+cw<=vw-8){ left=b.right+pad+gap; top=cyClamp(b.top); }       // rechts daneben
-  else if(b.left-pad-gap-cw>=8){ left=b.left-pad-gap-cw; top=cyClamp(b.top); }         // links daneben
-  else { // nur den oberen Teil hervorheben, Karte darunter
-    h=Math.max(40, vh-8-ch-gap-2*pad-top0); top=Math.min(top0+h+2*pad+gap, vh-ch-8); left=cx; }
-  hole.style.cssText=`display:block;top:${top0}px;left:${left0}px;width:${w}px;height:${h+2*pad}px;border-radius:${Math.min(rad+pad,40)}px`;
-  c.classList.remove("center"); c.style.top=top+"px"; c.style.left=left+"px";
-}
-window.addEventListener("resize",()=>{ if(tour) placeTour(); });
-window.addEventListener("scroll",()=>{ if(!tour) return; if(Math.abs(window.scrollY-tourY)>1) window.scrollTo(0,tourY); placeTour(); },{passive:true});
-if(window.visualViewport) visualViewport.addEventListener("resize",()=>{ if(tour) placeTour(); });
-// Während der Tour scrollt die Seite nicht mit dem Finger, nur die Tour-Karte selbst darf scrollen.
-document.addEventListener("touchmove",e=>{ if(tour && !e.target.closest(".tour-card")) e.preventDefault(); },{passive:false});
-document.addEventListener("wheel",e=>{ if(tour && !e.target.closest(".tour-card")) e.preventDefault(); },{passive:false});
+// Wischen: links/rechts blättert, nach unten schließt.
+let tourTouch=null;
+document.addEventListener("touchstart",e=>{ if(tour&&e.target.closest(".tour-sheet")){ const t=e.touches[0]; tourTouch={x:t.clientX,y:t.clientY}; } },{passive:true});
+document.addEventListener("touchend",e=>{
+  if(!tour||!tourTouch) return; const t=e.changedTouches[0], dx=t.clientX-tourTouch.x, dy=t.clientY-tourTouch.y; tourTouch=null;
+  if(Math.abs(dx)>60 && Math.abs(dx)>Math.abs(dy)*1.5){ tour.i = dx<0 ? Math.min(tour.i+1,IN.TOUR.length-1) : Math.max(tour.i-1,0); return drawTour(); }
+  if(dy>90 && Math.abs(dy)>Math.abs(dx)*1.5){ endTour(); go("heute"); }
+},{passive:true});
+// Während der Tour scrollt die Seite nicht mit, nur die Karte selbst darf scrollen.
+document.addEventListener("touchmove",e=>{ if(tour && !e.target.closest(".tour-sheet")) e.preventDefault(); },{passive:false});
+document.addEventListener("wheel",e=>{ if(tour && !e.target.closest(".tour-sheet")) e.preventDefault(); },{passive:false});
 
 /* ---------- Bibliothek (Screens 11 und 14) ---------- */
 const EX={
@@ -1282,8 +1273,8 @@ function loadDemo(){
 document.addEventListener("click", e=>{
   const el=e.target.closest("[data-a]"); if(!el||el.disabled) return;
   const a=el.dataset.a, v=el.dataset.v;
-  if(a==="tour-next"){ tour.i=Math.min(tour.i+1,IN.TOUR.length-1); return showTourStep(); }
-  if(a==="tour-back"){ tour.i=Math.max(tour.i-1,0); return showTourStep(); }
+  if(a==="tour-next"){ tour.i=Math.min(tour.i+1,IN.TOUR.length-1); return drawTour(); }
+  if(a==="tour-back"){ tour.i=Math.max(tour.i-1,0); return drawTour(); }
   if(a==="tour-end"){ endTour(); return go("heute"); }
   if(a==="tour-finish"){ endTour(); if(v){ view="heute"; navStack=[]; pushNav(); videoId=v; view="video"; flash=""; render(); return window.scrollTo(0,0); } return go("heute"); }
   if(a==="tour-start"){ return startTour(); }
