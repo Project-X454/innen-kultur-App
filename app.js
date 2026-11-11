@@ -400,7 +400,7 @@ function abendHardCount(d){ d=IK.cleanAbend(d); return d ? IK.ABEND.hard.filter(
 function startCard(){
   const n=IK.startProgress(S);
   const row=id=>{ const v=VID.VIDEOS.find(x=>x.id===id), seen=IK.isSeen(S,id), p=pillarOf(v);
-    return `<button class="srow" data-a="video" data-v="${id}" style="${pvars(p)}"><span class="nr">${id}</span><b>${esc(v.title.split(":")[0])}</b><span class="tp-st ${seen?"is-done":"is-next"}" aria-hidden="true">${seen?CHECK:'<svg viewBox="0 0 24 24"><path d="M8 5 19 12 8 19Z"/></svg>'}</span><span class="sr">${seen?"gesehen":"ansehen"}</span></button>`; };
+    return `<button class="svrow" data-a="video" data-v="${id}" style="${pvars(p)}"><span class="nr">${id}</span><b>${esc(v.title.split(":")[0])}</b><span class="tp-st ${seen?"is-done":"is-next"}" aria-hidden="true">${seen?CHECK:'<svg viewBox="0 0 24 24"><path d="M8 5 19 12 8 19Z"/></svg>'}</span><span class="sr">${seen?"gesehen":"ansehen"}</span></button>`; };
   return `<section class="rcard scard" aria-label="Deine Wertung startet"><div class="rt-hd"><span class="eyebrow" style="color:var(--schlaf-text)">Deine Wertung startet</span><span class="pn">${streakBars(n).replace(/pbars/,"pbars sb")}${n} von ${IK.START_VIDEOS.length}</span></div>
     <b class="st-t">Nach diesen ${IK.START_VIDEOS.length} Videos zählen deine Check-ins.</b>
     <p class="note">Eintragen kannst du schon jetzt. Loop-Score, Woche 1 und deine Routinen starten, sobald du weißt, worum es geht.</p>
@@ -480,34 +480,32 @@ function learnCard(nx){
 }
 // Heute: das To-do des Tages und wie viele kleine Schritte diese Woche geschafft sind
 function starterRow(){
-  if(starterActive()){
-    const st=weekTodos(1), d=st.filter(t=>t.done).length;
-    const cur=st.find(t=>t.status==="today")||st.find(t=>t.status==="open"), vidLock=st.find(t=>t.status==="locked"&&t.dayOk), nxt=st.find(t=>t.status==="locked"&&!t.dayOk);
-    const p=cur?cur.pillar:vidLock?vidLock.pillar:"darm", ic=cur||vidLock?ICON[p]:ICON.checkin;
-    const title = cur ? `${cur.status==="today"?"Heute":"Noch offen"}: ${esc(cur.title)}` : vidLock ? `Heute: ${esc(vidLock.title)}` : d===st.length ? "Alle To-dos dieser Woche geschafft" : "Dein To-do für heute ist erledigt";
-    const sub = cur ? "" : vidLock ? `Frei mit Video ${vidLock.after}` : nxt ? `Morgen: ${esc(nxt.short)}` : "";
-    const attr = cur ? gAttr({kind:"todo", id:cur.id}) : `data-a="go" data-v="starter"`;
-    const dots=st.map((t,k)=>`<i class="${t.done?"on":""}" style="${pvars(t.pillar)};animation-delay:${k*70}ms"></i>`).join("");
-    return `<button class="srow starter-card tday" ${attr} style="${pvars(p)}"><span class="tic">${ic}</span><span><b>${title}</b>${sub?`<span class="note">${sub}</span>`:""}
-      <span class="tprog"><span class="tdots" aria-hidden="true">${dots}</span><span class="tcount">${d} von ${st.length} diese Woche geschafft</span></span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>`;
-  }
+  if(starterActive()) return todoCard();
   const cw=IK.currentWeek(S); if(!cw) return "";
   const W=weekWins(cw.index===undefined?1:cw.index), rd=Object.values(W.days).reduce((a,b)=>a+b,0); if(!W.total) return "";
   return `<button class="srow starter-card tday" data-a="erfolge" data-v="${W.index}" style="${pvars("recap")}"><span class="tic">${ICON.fortschritt}</span><span><b>Deine Erfolge · Woche ${W.index}</b><span class="note">${rd} Routinen abgehakt an ${W.N} Tag${W.N===1?"":"en"}${W.steps?` · ${W.steps} To-dos`:""}</span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>`;
 }
-function weekCard(i,cw,vp){
-  const w=i.w, cis=i.cis||[], act=IK.activeBausteine(w);
-  const upcoming=IK.BAUSTEINE.filter(b=>b.courseWeek<=cw&&!act.includes(b)&&!(S.pausedBausteinIds||[]).includes(b.id));
-  const marks=on=>`<span class="marks" aria-label="${cis.filter(on).length} von ${cis.length} Tagen">${Array.from({length:7},(_,d)=>`<i class="${cis[d]&&on(cis[d])?"on":""}"></i>`).join("")}</span>`;
-  const bRow=b=>`<span><span class="dot" style="--c:${PC[b.pillar]}"></span>${esc(b.label)}</span>`+(b.kind==="weeklyCount"
-    ? `<b class="num" style="font-size:14px">${weeklyCountOf(cis,b.id)} von ${b.weeklyTarget}</b>` : `<span style="--c:${PC[b.pillar]}">${marks(c=>c.bausteine&&c.bausteine[b.id]===true)}</span>`);
-  const upRow=b=>`<span><span class="dot" style="--c:${PC[b.pillar]}"></span>${esc(b.label)}</span><span class="note" style="font-size:13px">${IK.isSeen(S,b.videoId)?"ab nächster Woche":"nach Video "+b.videoId}</span>`;
-  const big=(l,a,b,c)=>`<div style="display:flex;flex-direction:column;gap:6px"><span class="note">${l}</span><b class="num" style="font-family:var(--f-head);font-size:22px;font-weight:800">${a} <small style="font-family:var(--f-body);font-size:14px;font-weight:500;color:var(--muted)">von ${b}</small></b><div class="bar" style="--c:${c}"><i style="width:${b?Math.round(a/b*100):0}%"></i></div></div>`;
-  return `<div class="card wk-full"><b style="font-size:17px">Diese Woche${w?` · Woche ${w.index}`:""}</b><div class="g2">${big(`Wissen · Kurswoche ${cw}`,vp.seen,vp.total,"var(--blue)")}${big("Umsetzung · Tage",i.days,7,"var(--darm)")}</div>
-    ${act.length||upcoming.length?`<div class="exp">${act.map(bRow).join("")}${upcoming.map(upRow).join("")}</div>`:""}</div>`;
-}
-function weekMini(i,cw,vp){
-  return `<button class="srow wk-mini" data-a="go" data-v="fortschritt"><span><b>Diese Woche${i.w?` · Woche ${i.w.index}`:""}</b><span class="note">${vp.seen} von ${vp.total} Videos · ${i.days} von 7 Tagen eingetragen</span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>`;
+// Heute: To-dos im Stil der Routinen – was offen ist, was per Video frei wird, was erledigt ist, was morgen kommt
+function todoCard(){
+  const st=weekTodos(1), d=st.filter(t=>t.done).length;
+  const isToday=t=>t.day===t.trackerDay;
+  const vid=st.filter(t=>t.status==="locked"&&t.dayOk), open=st.filter(t=>t.status==="today"||t.status==="open");
+  const done=st.filter(t=>t.done), next=st.find(t=>t.status==="locked"&&!t.dayOk);
+  const kick=(t,x)=>`${isToday(t)?"Heute · ":""}Tag ${t.day}${x?` · ${x}`:""}`;
+  const dur=id=>{ const v=VID.VIDEOS.find(x=>x.id===id); return v&&v.durationMin?` · ${v.durationMin} Min.`:""; };
+  const row=(t,cls,attr,k,sub,right,lab)=>`<button class="rrow trow${cls}" ${attr} aria-label="${esc(t.title)}, ${lab}" style="${pvars(t.pillar)}"><span class="ic">${ICON[t.pillar]||ICON.checkin}</span><span class="rtx"><span class="tk">${k}</span><b>${esc(t.short||t.title)}</b><small>${sub}</small></span>${right}</button>`;
+  const vRow=t=>row(t,"",`data-a="video" data-v="${t.after}"`,kick(t),`Frei mit Video ${t.after}${dur(t.after)}`,`<span class="tvid" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5 19 12 8 19Z"/></svg>Video</span>`,`frei mit Video ${t.after}`);
+  const oRow=t=>row(t,"",gAttr({kind:"todo", id:t.id}),kick(t,isToday(t)?"":"noch offen"),`${esc(t.min)} · ${t.input?"antippen und eintragen":"antippen"}`,`<span class="rchk" aria-hidden="true">${RCHK}</span>`,"offen");
+  const dRow=t=>row(t," on",gAttr({kind:"todo", id:t.id}),kick(t,"erledigt"),todoResult(t)||"Erledigt",`<span class="rchk" aria-hidden="true">${RCHK}</span>`,"erledigt");
+  const nRow=t=>row(t," locked",`data-a="lock" data-v="todo:${t.id}"`,`Morgen · Tag ${t.day}`,"Frei ab morgen",`<span class="rchk lk" aria-hidden="true">${LOCK}</span>`,"ab morgen");
+  const byToday=(x,y)=>(isToday(y)?1:0)-(isToday(x)?1:0)||y.day-x.day;
+  const rows=[...vid.filter(isToday).map(vRow),...open.sort(byToday).map(oRow),...vid.filter(t=>!isToday(t)).sort(byToday).map(vRow),...done.sort((x,y)=>y.day-x.day).map(dRow),...(next?[nRow(next)]:[])];
+  const nOpen=open.length+vid.length, nVid=vid.length;
+  const hint = d===st.length ? `${d} von ${st.length} · alle geschafft` : nOpen ? `${d} von ${st.length} · ${nOpen} offen${nVid?`, ${nVid===nOpen?(nOpen===1?"per":"alle per"):`${nVid} davon per`} Video`:""}` : `${d} von ${st.length} · für heute alles erledigt`;
+  const bars=st.map(t=>`<i style="${t.done?`background:${PC[t.pillar]}`:""}"></i>`).join("");
+  return `<section class="rcard tcard-td" aria-label="Deine To-dos"><div class="rt-hd"><b>Deine To-dos</b><button class="rinfo" data-a="go" data-v="starter">Woche${CHEV}</button></div>
+  <p class="rhint"><span class="rbars" aria-hidden="true">${bars}</span>${hint}</p>
+  <div class="rlist">${rows.join("")}</div></section>`;
 }
 function vHeute(){
   const i=weekInfo(), t=weeksTotal(), cw=IK.currentCourseWeek(VID.VIDEOS,S,t), vp=IK.weekVideoProgress(VID.VIDEOS,S,cw), nx=IK.nextVideo(VID.VIDEOS,S,t);
@@ -517,7 +515,7 @@ function vHeute(){
   ${flash&&!reminderSheet?`<div class="card soft"><p class="okmsg">${flash}</p></div>`:""}
   ${setupCard()}
   ${pauseCard()||ydCard()}
-  ${lay(`${focusCard(f)}${routinesCard()}${f.id!=="video"&&nx?learnCard(nx):""}${starterRow()}${weekMini(i,cw,vp)}`, weekCard(i,cw,vp))}
+  ${lay(`${focusCard(f)}${routinesCard()}`, `${starterRow()}${f.id!=="video"&&nx?learnCard(nx):""}`)}
   <p class="note" style="text-align:center">${S.product==="komplett"?"Komplett":"Basis"} · ${t} Wochen${S.demo?" · Demo":""}</p>`;
 }
 

@@ -801,8 +801,6 @@ body.evening .tdrow .st.nx{background:var(--btn-bg);color:var(--btn-ink)}
 .tcard .kic svg{width:18px;height:18px}
 /* Audit-Korrekturen */
 .cmiss{margin:0 0 8px;font-size:14.5px;line-height:1.4;color:var(--muted);text-align:center}
-.wk-mini{display:none}
-@media (max-width:959px){.wk-full{display:none}.wk-mini{display:flex}}
 .cover.locked .cv .k{padding-right:36px}
 .cover .cv .k{line-height:1.35}
 .tdwrap .lay{gap:14px}
@@ -1042,6 +1040,11 @@ body.kb .tabs{display:none}
 .rrow.on .rtx b,.rrow.on .rtx small{color:var(--t)}
 .rrow.on .rchk,[aria-pressed="true"]>.rchk{background:var(--c);color:#fff}
 .rrow.on .rchk svg,[aria-pressed="true"]>.rchk svg{opacity:1}
+.trow .tk{font-family:var(--f-mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--t);line-height:1.3}
+.trow{min-height:62px}
+.tvid{flex:none;display:flex;align-items:center;gap:6px;height:30px;padding:0 11px 0 9px;border-radius:15px;background:var(--blue);color:#fff;font-size:12.5px;font-weight:700}
+.tvid svg{width:12px;height:12px;fill:#fff}
+.trow.locked{opacity:.6}
 .rrow.locked{opacity:.75}
 .rrow .chev{display:flex;color:var(--muted);margin-left:-4px}.rrow .chev svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .rring{position:relative;flex:none;display:grid;place-items:center}
@@ -1221,13 +1224,13 @@ body.kb .tabs{display:none}
 .pbars.sb i{background:var(--line)}.pbars.sb i.on{background:var(--darm)}
 .scard .st-t{font-family:var(--f-head);font-size:19px;line-height:1.25;letter-spacing:-.022em}.scard .note{margin:0;font-size:13.5px;line-height:1.45}
 .slist{display:flex;flex-direction:column}
-.srow{display:flex;align-items:center;gap:10px;border:0;background:none;padding:8px 0;border-top:1px solid var(--line);font:inherit;color:var(--ink);text-align:left;cursor:pointer}
-.srow:first-child{border-top:0}
-.srow .nr{flex:none;width:42px;height:34px;border-radius:10px;background:var(--s);color:var(--t);display:grid;place-items:center;font-weight:700;font-size:13px}
-.srow b{flex:1;font-size:14.5px}
-.srow .tp-st{width:26px;height:26px;border-radius:13px;flex:none;display:grid;place-items:center}
-.srow .tp-st.is-done{background:var(--c)}.srow .tp-st.is-next{background:var(--blue)}
-.srow .tp-st svg{width:12px;height:12px}.srow .tp-st.is-done svg{fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.srow .tp-st.is-next svg{fill:#fff}
+.svrow{display:flex;align-items:center;gap:10px;border:0;background:none;padding:8px 0;border-top:1px solid var(--line);font:inherit;color:var(--ink);text-align:left;cursor:pointer}
+.svrow:first-child{border-top:0}
+.svrow .nr{flex:none;width:42px;height:34px;border-radius:10px;background:var(--s);color:var(--t);display:grid;place-items:center;font-weight:700;font-size:13px}
+.svrow b{flex:1;font-size:14.5px}
+.svrow .tp-st{width:26px;height:26px;border-radius:13px;flex:none;display:grid;place-items:center}
+.svrow .tp-st.is-done{background:var(--c)}.svrow .tp-st.is-next{background:var(--blue)}
+.svrow .tp-st svg{width:12px;height:12px}.svrow .tp-st.is-done svg{fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.svrow .tp-st.is-next svg{fill:#fff}
 .lbv .n.sm{font-size:15px}
 .wstart{align-items:center;text-align:center;gap:14px}
 .wstart h2{margin:-6px 0 0;font-size:28px;line-height:1.1}.wstart>p{margin:0;font-size:15px;line-height:1.5;color:var(--muted)}
