@@ -25,6 +25,7 @@ const ICON = {
   moon:'<svg viewBox="0 0 24 24"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5Z"/><path d="M16 4.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z"/></svg>',
   sun:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></svg>',
   doc:'<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>',
+  dl:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
   bell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>'
 };
 const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -1088,7 +1089,12 @@ function libHead(closeAct, kicker, short, title, lead, p){
 }
 // Inhaltskarten unter dem farbigen Kopf: weiß, Etikett in Themenfarbe, Akzent in Koralle
 const infoCard=(p,kicker,inner,cls)=>`<div class="card linfo${cls?" "+cls:""}" style="${pvars(p)}"><span class="eyebrow" style="color:var(--t)">${kicker}</span>${inner}</div>`;
-const printTile=(p,title,sub,label,card)=>`<div class="card lprint" style="${pvars(p)}"><span class="lpic">${ICON.doc}</span><span class="lptx"><b>${esc(title)}</b></span><button class="btn small" data-a="print" data-v="${card}">${esc(label)}</button></div>`;
+const PDF_FILE = {handout1:"innen-kultur-handout-woche-1.pdf", pflanzen:"innen-kultur-pflanzen-teller.pdf", morgen:"innen-kultur-morgen-karte.pdf", abend:"innen-kultur-abend-karte.pdf", aktiv:"innen-kultur-aktivitaets-karte.pdf", ferment:"innen-kultur-fermentiert-karte.pdf"};
+const PERSONAL = {handout1:1, morgen:1, abend:1}; // Vorlagen mit eigenen Angaben aus der App
+// Sofort-Download der fertigen PDF (Ordner pdf/), Drucken mit eigenen Angaben als zweite Möglichkeit
+const printTile=(p,title,sub,label,card)=>{ const f=PDF_FILE[card];
+  return `<div class="card lprint" style="${pvars(p)}"><span class="lpic">${ICON.doc}</span><span class="lptx"><b>${esc(title)}</b>${f?`<small>PDF · lädt sofort</small>`:""}</span>
+    <span class="lpbtns">${f?`<a class="btn small" href="pdf/${f}" download="${f}" data-a="pdf-dl">${ICON.dl}PDF laden</a>`:""}<button class="btn small ${f?"ghost":""}" data-a="print" data-v="${card}">${f?(PERSONAL[card]?"Mit deinen Angaben drucken":"Drucken"):esc(label)}</button></span></div>`; };
 function vMaterial(){
   const m=matById(mat); if(!m||!IK.materialUnlocked(S,m,VID.VIDEOS)){ mat=null; return vBibliothek(); }
   markNotice("mat-"+m.id);
@@ -1138,7 +1144,7 @@ function handout1(){
   const R=[["var(--darm)","Bunt gegessen","Mindestens 1 Mahlzeit am Tag zur Hälfte aus Pflanzen. Ein Viertel Eiweiß, ein Viertel Vollkorn oder Hülsenfrüchte.","Video 1.1 und 1.6"],
     ["var(--schlaf)","Morgenlicht + feste Aufstehzeit","Innerhalb von 60 Minuten nach dem Aufstehen 10 Minuten bei Tageslicht draußen. Aufstehen zur festen Zeit ± 30 Minuten, auch am Wochenende.","Video 1.2 und 1.7"],
     ["var(--beweg)","30 Min bewegt","Zusammen 30 Minuten, bei denen du etwas schneller atmest. Aufgeteilt zählt, z. B. 3 × 10 Minuten.","Video 1.3, 1.8 und 1.9"],
-    ["var(--schlaf)","Abendroutine","Zur festen Zeit ins Bett ± 30 Minuten, die letzten 30 Minuten ohne Handy und mit gedimmtem Licht. Im Check-in am nächsten Abend.","Video 1.2, vertieft in 2.2"]];
+    ["var(--schlaf)","Abendroutine","Drei Grundpfeiler: 30 Minuten vorher einleiten, die letzte Stunde ohne Bildschirm, zur festen Zeit ins Bett ± 30 Minuten. Dazu Extras wie Wasser oder Lesen. Im Check-in am nächsten Abend.","Video 1.2, vertieft in 2.2"]];
   const days=["Mo","Di","Mi","Do","Fr","Sa","So"], W=IN.WARNZEICHEN;
   return `<div class="ho">${hd}<h1>Deine <em>Basis</em> auf zwei Seiten</h1><p class="sub">Vier Routinen, jeden Abend im Check-in abhaken. Klein anfangen zählt.</p>
     ${R.map(([c,t,r,v])=>`<div class="ho-r" style="--c:${c}"><b>${t}</b><span>${r}</span><small>${v}</small></div>`).join("")}
@@ -1293,10 +1299,10 @@ function cardHTML(k){
   const hd=t=>`<div class="hd"><span style="display:flex;align-items:center;gap:2mm;font-family:var(--f-head);font-size:11pt;letter-spacing:0;text-transform:none;color:var(--ink)">${logo("#FFFFFF").replace('width="34" height="34"','width="18" height="18"')}innen kultur</span><span>${t}</span></div>`;
   if(k==="abend"){ const days=["Mo","Di","Mi","Do","Fr","Sa","So"];
     return `<div class="fc" style="--c:var(--schlaf)">${hd("Abend-Karte")}
-    <div><h1>Mein <em>Abend</em></h1><p class="sub">Zur festen Zeit ins Bett, die letzten 30 Minuten ruhig: Licht gedimmt, Handy weg.</p></div>
-    <div class="tip"><span><b>Meine Zubettgehzeit:</b> ______ Uhr &nbsp;·&nbsp; <b>Handy liegt:</b> ________________</span></div>
-    <table class="wp"><thead><tr><th></th><th>Im Bett um</th><th>30 Min. ruhig</th><th>✓</th></tr></thead><tbody>${days.map(d=>`<tr><td><b>${d}</b></td><td></td><td><i></i></td><td><i></i></td></tr>`).join("")}</tbody></table>
-    <span class="ft">innen-kultur.de · Schlaf</span></div>`; }
+    <div><h1>Mein <em>Abend</em></h1><p class="sub">Drei Grundpfeiler je 25 %, Extras zusammen 25 %: eingeleitet, Bildschirm aus, pünktlich ins Bett.</p></div>
+    <div class="tip"><span><b>Meine Bettgehzeit:</b> ${S.bedTime?esc(S.bedTime):"______"} Uhr &nbsp;·&nbsp; <b>Extras:</b> Wasser, Lesen, Tee, Dehnen</span></div>
+    <table class="wp"><thead><tr><th></th><th>Eingeleitet</th><th>Bildschirm aus</th><th>Im Bett</th><th>Extras</th></tr></thead><tbody>${days.map(d=>`<tr><td><b>${d}</b></td><td><i></i></td><td><i></i></td><td><i></i></td><td></td></tr>`).join("")}</tbody></table>
+    <span class="ft">innen-kultur.de · Schlaf · Video 1.2</span></div>`; }
   if(k==="aktiv"){ const days=["Mo","Di","Mi","Do","Fr","Sa","So"];
     return `<div class="fc" style="--c:var(--beweg)">${hd("Aktivitäts-Karte")}
     <div><h1>Meine <em>Bewegungswoche</em></h1><p class="sub">Plane 30 Minuten am Tag. Aufgeteilt zählt auch. Hak ab, was geklappt hat.</p></div>
@@ -1317,7 +1323,9 @@ function cardHTML(k){
     <div class="rows" style="gap:1.5mm"><span class="k">Meine Favoriten · einkaufen</span><span class="ln" style="height:5mm"></span><span class="ln" style="height:5mm"></span><span class="ln" style="height:5mm"></span></div>
     <span class="ft">innen-kultur.de · Ernährung &amp; Darm</span></div>`;
 }
-function printCard(k){ const el=document.getElementById("print"); el.innerHTML=k==="morgen"?morgenCard():k==="handout1"?handout1():cardHTML(k); el.className=k==="handout1"?"a4":""; setTimeout(()=>window.print(),150); }
+const printHTML = k => k==="morgen"?morgenCard():k==="handout1"?handout1():cardHTML(k);
+window.ikPrintHTML = printHTML; // für tools/pdf-export.js
+function printCard(k){ const el=document.getElementById("print"); el.innerHTML=printHTML(k); el.className=k==="handout1"?"a4":""; setTimeout(()=>window.print(),150); }
 
 /* ---------- Profil: Startpunkt, Erinnerung, Daten ---------- */
 let xferOpen=false;
@@ -1514,6 +1522,7 @@ document.addEventListener("click", e=>{
   if(a==="libtab"){ libTab=v; return render(); }
   if(a==="wissen"){ pushNav(); wissen=v; render(); return window.scrollTo(0,0); }
   if(a==="wissen-close"){ if(navStack.length) return back(); wissen=null; render(); return window.scrollTo(0,0); }
+  if(a==="pdf-dl"){ haptic("tap"); return; }
   if(a==="print") return printCard(v);
   if(a==="rebase"){ obD={goals:S.goals, reminderTime:S.reminderTime, consent:true, baseline:{}}; rebase=true; render(); return window.scrollTo(0,0); }
   if(a==="rebase-cancel"){ rebase=false; obD=null; return render(); }

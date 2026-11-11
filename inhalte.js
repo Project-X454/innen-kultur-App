@@ -72,7 +72,7 @@ const BASIS_NOTICE = {
 const MATERIALS = [
   {id:"teller", kind:"Mini-Karte", week:1, title:"Mini-Karte: Pflanzen-Teller", short:"Pflanzen-Teller", sub:"Was als Pflanze zählt", pillar:"darm", unlock:{video:"1.6"}, card:"pflanzen", tab:"handouts",
     why:"Für den Kühlschrank: was als Pflanze zählt und was du diese Woche einkaufst.",
-    when:"Druck sie aus oder speichere sie als PDF, bevor du das nächste Mal einkaufen gehst."},
+    when:"Lade sie als PDF aufs Handy oder druck sie aus, bevor du das nächste Mal einkaufen gehst."},
   {id:"morgen", kind:"Mini-Karte", week:1, title:"Mini-Karte: Dein Morgen", short:"Dein Morgen", sub:"Aufstehen, Licht, Mobility", pillar:"schlaf", unlock:{video:"1.9"}, card:"morgen", tab:"handouts",
     why:"Deine Aufstehzeit, dein Morgenlicht-Ort und 10 Minuten Mobility für 7 Tage zum Abhaken.",
     when:"Leg sie heute Abend neben das Bett, dann ist sie morgen früh als Erstes da."},
