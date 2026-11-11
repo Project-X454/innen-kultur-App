@@ -246,3 +246,19 @@ test("Loop-Score-Beispiel in Tour und Fortschritt rechnet mit der echten Formel"
   assert.deepEqual([r.score, r.befinden, r.umsetzung, r.dranbleiben], [69, 62, 71, 86]);
   assert.equal(IN.LOOP_EXAMPLE.values.days, 6); // Text: „im Beispiel an 6“
 });
+
+test("Abendroutine: Grundpfeiler je 25 %, Extras zusammen 25 % ab 2", () => {
+  assert.equal(IK.abendValue(null), 0);
+  assert.equal(IK.abendValue({hard:{einleiten:true,bett:true}, extras:["wasser","lesen"]}), 0.75);
+  assert.equal(IK.abendValue({hard:{einleiten:true,bildschirm:true,bett:true}, extras:["wasser"]}), 0.88);
+  assert.equal(IK.abendValue({hard:{einleiten:true,bildschirm:true,bett:true}, extras:["wasser","tee","lesen","x"]}), 1);
+  assert.deepEqual(IK.cleanAbend({hard:{einleiten:1}, extras:["tee","tee","unbekannt"]}).extras, ["tee"]);
+});
+
+test("Abendroutine zählt anteilig in die Basis und als erledigt ab 75 %", () => {
+  const ci={basis:{bunt:true,morgenlicht:false,bewegt30:true,abend:0.5}};
+  assert.equal(IK.basisScore(ci), 2.5);
+  assert.equal(IK.routineDone(ci,"abend"), false);
+  assert.equal(IK.routineDone({basis:{abend:0.75}},"abend"), true);
+  assert.equal(IK.routineDone({basis:{abend:true}},"abend"), true); // ältere Einträge
+});
