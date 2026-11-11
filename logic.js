@@ -167,7 +167,7 @@ function biggestLever(b){
 
 /* ---------- Tracker-Wochen (§2, §5.3) ---------- */
 function currentWeek(state){ const w=state.weeks; return w.length ? w[w.length-1] : null; }
-function checkinsOf(state, weekId){ return state.checkins.filter(c=>c.trackerWeekId===weekId).sort((a,b)=>a.dayIndex-b.dayIndex); }
+function checkinsOf(state, weekId){ return state.checkins.filter(c=>c.trackerWeekId===weekId && !c.archived).sort((a,b)=>a.dayIndex-b.dayIndex); }
 function checkinFor(state, day){ return state.checkins.find(c=>c.forDate===day) || null; }
 
 function completeWeek(state, now){
@@ -188,6 +188,7 @@ function saveCheckIn(state, data, today, now){
   }
   let w = currentWeek(state);
   if(w && w.status==="awaitingCheck") completeWeek(state, now);
+  if(w && w.status==="missed") restartWeek(state, w, now);
   if(!w || w.status==="completed") w = startWeek(state, now, data.newBausteinIds);
   const ci = Object.assign({id:"c"+day, trackerWeekId:w.id, dayIndex:checkinsOf(state,w.id).length+1,
     forDate:day, createdAt:now, isBackfill:day!==today, isQuick:false}, pickEntry(data));
@@ -195,6 +196,52 @@ function saveCheckIn(state, data, today, now){
   if(ci.dayIndex>=DAYS_PER_WEEK) w.status="awaitingCheck";
   return ci;
 }
+
+/* ---------- Dranbleiben: 5 von 7 Tagen, Lücke, Pause, Joker ---------- */
+const MIN_DAYS = 5, PAUSE_STREAK = 3, JOKERS = 2;
+// Eine Woche mit Lücke startet mit dem nächsten Check-in neu. Die bisherigen Einträge bleiben gespeichert (archived),
+// zählen aber nicht mehr für diese Woche. Die Nummer der Woche bleibt, damit Goodie und Wochen-Check nachgeholt werden.
+function restartWeek(state, w, now){
+  state.checkins.forEach(c=>{ if(c.trackerWeekId===w.id && !c.archived) c.archived=true; });
+  w.status="running"; w.startedAt=now; w.restarts=(w.restarts||0)+1; return w;
+}
+// Kalenderfenster der laufenden Woche: 7 Tage ab dem ersten Check-in. Tage vor gestern sind endgültig verpasst.
+function weekWindow(state, today){
+  const w=currentWeek(state); if(!w||w.status!=="running") return null;
+  const cis=checkinsOf(state,w.id); if(!cis.length) return null;
+  const start=cis.map(c=>c.forDate).sort()[0], days=[];
+  for(let i=0;i<DAYS_PER_WEEK;i++){
+    const d=addDays(start,i), has=cis.some(c=>c.forDate===d), age=daysBetween(d,today);
+    days.push({day:d, state: has?"ok" : age>=2?"miss" : age===1?"late" : age===0?"today" : "open"});
+  }
+  const missed=days.filter(x=>x.state==="miss").length;
+  return {week:w, start, days, done:cis.length, missed, possible:DAYS_PER_WEEK-missed, gap:DAYS_PER_WEEK-missed<MIN_DAYS};
+}
+// Erkennt die Lücke und pausiert die Videos ab der nächsten Woche. Wer „nur schauen“ gewählt hat, bekommt keine Pause.
+function checkGap(state, today){
+  if(state.watchOnly||state.pause) return false;
+  const ww=weekWindow(state, today); if(!ww||!ww.gap) return false;
+  ww.week.status="missed";
+  state.pause={since:today, week:ww.week.index, seen:false, days:ww.days.map(x=>x.day)};
+  return true;
+}
+// Check-ins in Folge, die nach Beginn der Pause zählen (gestern nachtragen zählt mit).
+function pauseStreak(state, today){
+  if(!state.pause) return 0;
+  const from=addDays(state.pause.since,-1);
+  let d = checkinFor(state,today) ? today : addDays(today,-1), n=0;
+  while(d>=from && checkinFor(state,d)){ n++; d=addDays(d,-1); }
+  return n;
+}
+function resolvePause(state, today){
+  if(state.pause && pauseStreak(state,today)>=PAUSE_STREAK){ state.pause=null; return true; }
+  return false;
+}
+const jokersLeft = state => Math.max(0, JOKERS-(state.jokersUsed||0));
+function useJoker(state){ if(!state.pause||!jokersLeft(state)) return false; state.jokersUsed=(state.jokersUsed||0)+1; state.pause=null; return true; }
+function allowWatchOnly(state){ state.watchOnly=true; state.pause=null; }
+// Pausiert sind nur noch nicht gesehene Videos ab der Woche nach der Lücke.
+const videoPaused = (state, v) => !!state.pause && !state.watchOnly && v.week>state.pause.week && !isSeen(state, v.id);
 
 /* ---------- Videos und Bausteine (§5.2, §5.9, §5.10) ---------- */
 const MAX_NEW_PER_WEEK = 3;
@@ -275,12 +322,13 @@ function basisUnlocked(state,key){
   return isSeen(state,b.videoId) || (state.checkins||[]).some(c=>routineVal(c,key)>0);
 }
 // Wochen-Check offen: nach 7 Tagen, oder ab 5 Tagen, wenn seit Wochenstart 9 Kalendertage vergangen sind (SPEC §5.6).
-const WEEKCHECK_MIN_DAYS = 5, WEEKCHECK_LATE_DAYS = 9;
+const WEEKCHECK_MIN_DAYS = 5, WEEKCHECK_LATE_DAYS = 8;
 function weekCheckOpen(state, today){
   const w=currentWeek(state); if(!w||w.status==="completed") return false;
   if(w.status==="awaitingCheck") return true;
-  const n=checkinsOf(state,w.id).length; if(n<WEEKCHECK_MIN_DAYS) return false;
-  return daysBetween(localDay(new Date(w.startedAt)), today||localDay()) >= WEEKCHECK_LATE_DAYS-1;
+  const cis=checkinsOf(state,w.id); if(cis.length<WEEKCHECK_MIN_DAYS) return false;
+  const start=cis.map(c=>c.forDate).sort()[0];
+  return daysBetween(start, today||localDay()) >= WEEKCHECK_LATE_DAYS-1;
 }
 const weekCompleted = (state,index) => (state.weeks||[]).some(w=>w.index===index && w.status==="completed");
 const filled = v => v!==undefined && v!==null && String(v).trim()!=="";
@@ -345,7 +393,7 @@ function pickEntry(d){
 }
 
 const api = {WEIGHTS, UMSETZUNG, DAYS_PER_WEEK, PILLARS, BASIS, SCALES, GOALS, BASELINE, BAUSTEINE,
-  isNum, mean, norm, localDay, addDays, daysBetween, canEdit, basisScore, routineVal, routineDone, ABEND, abendValue, cleanAbend, weekStats, befindenOf,
+  isNum, mean, norm, localDay, addDays, daysBetween, canEdit, basisScore, MIN_DAYS, PAUSE_STREAK, JOKERS, restartWeek, weekWindow, checkGap, pauseStreak, resolvePause, jokersLeft, useJoker, allowWatchOnly, videoPaused, routineVal, routineDone, ABEND, abendValue, cleanAbend, weekStats, befindenOf,
   loopScoreFromParts, loopScore, compareToStart, biggestLever, currentWeek, checkinsOf, checkinFor,
   completeWeek, saveCheckIn, MAX_NEW_PER_WEEK, SEEN_PERCENT, isSeen, markSeen, markUnseen, bausteinById, bausteinForVideo,
   unlockedBausteine, newWeekCandidates, startWeek, activationState, activateNow, pauseBaustein, resumeBaustein, activeBausteine,

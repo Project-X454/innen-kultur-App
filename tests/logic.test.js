@@ -262,3 +262,48 @@ test("Abendroutine zählt anteilig in die Basis und als erledigt ab 75 %", () =>
   assert.equal(IK.routineDone({basis:{abend:0.75}},"abend"), true);
   assert.equal(IK.routineDone({basis:{abend:true}},"abend"), true); // ältere Einträge
 });
+
+test("Lücke: ab 3 endgültig verpassten Tagen im 7-Tage-Fenster pausieren die Videos der nächsten Woche", () => {
+  const s = fresh();
+  ["01", "02"].forEach(d => IK.saveCheckIn(s, {}, `2026-10-${d}`, at(`2026-10-${d}`)));
+  // 03, 04 verpasst, 05 = gestern noch nachtragbar → noch keine Lücke
+  assert.equal(IK.checkGap(s, "2026-10-06"), false);
+  assert.equal(IK.weekWindow(s, "2026-10-06").possible, 5);
+  // am 07. ist auch der 05. endgültig verpasst
+  assert.equal(IK.checkGap(s, "2026-10-07"), true);
+  assert.equal(s.pause.week, 1);
+  assert.equal(IK.currentWeek(s).status, "missed");
+  assert.equal(IK.videoPaused(s, {id:"2.1", week:2}), true);
+  assert.equal(IK.videoPaused(s, {id:"1.5", week:1}), false);
+  assert.equal(IK.checkGap(s, "2026-10-08"), false); // nur einmal
+});
+
+test("Pause: wieder frei nach 3 Check-ins in Folge, gestern nachtragen zählt mit, Woche startet neu", () => {
+  const s = fresh();
+  ["01", "02"].forEach(d => IK.saveCheckIn(s, {}, `2026-10-${d}`, at(`2026-10-${d}`)));
+  IK.checkGap(s, "2026-10-07");
+  IK.saveCheckIn(s, {forDate:"2026-10-06"}, "2026-10-07", at("2026-10-07")); // gestern nachgetragen
+  const w = IK.currentWeek(s);
+  assert.equal(w.status, "running"); assert.equal(w.index, 1); assert.equal(w.restarts, 1);
+  assert.equal(IK.checkinsOf(s, w.id).length, 1); // alte Einträge archiviert
+  assert.equal(s.checkins.length, 3);
+  assert.equal(IK.pauseStreak(s, "2026-10-07"), 1);
+  IK.saveCheckIn(s, {}, "2026-10-07", at("2026-10-07"));
+  assert.equal(IK.resolvePause(s, "2026-10-07"), false);
+  IK.saveCheckIn(s, {}, "2026-10-08", at("2026-10-08"));
+  assert.equal(IK.resolvePause(s, "2026-10-08"), true);
+  assert.equal(s.pause, null);
+});
+
+test("Joker: 2 Stück heben die Pause auf, danach nur schauen mit Zustimmung", () => {
+  const s = fresh();
+  ["01", "02"].forEach(d => IK.saveCheckIn(s, {}, `2026-10-${d}`, at(`2026-10-${d}`)));
+  IK.checkGap(s, "2026-10-07");
+  assert.equal(IK.jokersLeft(s), 2);
+  assert.equal(IK.useJoker(s), true); assert.equal(s.pause, null); assert.equal(IK.jokersLeft(s), 1);
+  s.jokersUsed = 2; s.pause = {since:"2026-10-20", week:1};
+  assert.equal(IK.useJoker(s), false);
+  IK.allowWatchOnly(s);
+  assert.equal(IK.videoPaused(s, {id:"3.1", week:3}), false);
+  assert.equal(IK.checkGap(s, "2026-12-01"), false);
+});
