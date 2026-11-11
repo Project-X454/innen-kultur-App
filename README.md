@@ -129,3 +129,13 @@ Nach dem Onboarding begrüßt die App einmalig mit „Herzlich willkommen“. Da
 - Rückblick (Fortschritt → Deine Erfolge und nach dem 7. Check-in): 7 Tagespunkte je Routine, Abendroutine mit Ø-Wert, Balken je Grundpfeiler, Extras und dem schwächsten Punkt samt Tipp.
 - Loop-Score auf Heute: rechts neben der Begrüßung als Logo (Form dreht sich langsam, Kreis füllt sich bis zum Wert, Punkt am Ende des Bogens), darunter die Veränderung seit dem letzten Check-in. Antippen öffnet Fortschritt. Bei „Bewegung reduzieren“ steht alles still.
 - Tages-Check: einmal pro Tag beim ersten Öffnen (4–18 Uhr, nach der Tour, sobald es einen Score gibt) als Karte in der Mitte: Score mit Wort und Veränderung, To-dos bzw. Kurs, Check-ins, stärkste Routine und ein Tipp aus den eigenen Daten (`dailyHTML`, gemerkt in `dailyCheckDay`).
+
+## Download-PDFs
+
+Alle Karten und Handouts gibt es als fertige PDF zum sofortigen Download (Ordner `pdf/`, offline im Cache). Daneben bleibt „Drucken“ bzw. „Mit deinen Angaben drucken“ für die Vorlagen, in die die App eigene Angaben einsetzt (Handout, Morgen- und Abend-Karte). Die PDFs entstehen direkt aus den Druckvorlagen der App:
+
+```
+node tools/pdf-export.js
+```
+
+Nach jeder Änderung an einer Druckvorlage (`cardHTML`, `morgenCard`, `handout1` in `app.js`) neu erzeugen und die Cache-Version in `sw.js` erhöhen. Neue Vorlagen in `FILES` (tools/pdf-export.js), `PDF_FILE` (app.js) und `CORE` (sw.js) eintragen.
