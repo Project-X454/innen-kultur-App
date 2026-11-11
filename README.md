@@ -76,7 +76,7 @@ Alternativ eine Subdomain (z. B. `app.innen-kultur.de`) per CNAME auf GitHub Pag
 
 ## Willkommen und App-Tour
 
-Nach dem Onboarding begrüßt die App einmalig mit „Herzlich willkommen“ und dem, was Käufer erwartet. Danach führt eine Tour in 11 Schritten über die echten Screens: Check-in, Starter-Liste, Weiterlernen, Navigation, Kurs, Videos, Handout und Goodie, Freischalt-Hinweise mit Beispiel, Bibliothek, Fortschritt. Am Ende kommt eine Übersicht, was wodurch frei wird. Die Tour lässt sich überspringen und jederzeit unter **Profil → App-Tour** neu starten. Texte und Reihenfolge stehen in `inhalte.js` (`TOUR`, `UNLOCK_OVERVIEW`).
+Nach dem Onboarding begrüßt die App einmalig mit „Herzlich willkommen“. Danach erklärt eine kurze Tour in 8 Infokarten die App: Fokus, Routinen, Check-in, Kurs, Glocke, To-dos, Loop-Score und eine Übersicht, was wodurch frei wird. Die App bleibt dabei auf Heute und wird nur abgedunkelt; jede Karte kommt von unten und zeigt oben einen festen Ausschnitt des Bereichs im echten Look. Wischen nach links/rechts blättert, nach unten wischen, X, Escape oder Tippen auf den dunklen Bereich schließen die Tour. Sie lässt sich jederzeit unter **Profil → App-Tour** neu starten. Texte und Reihenfolge stehen in `inhalte.js` (`TOUR`), die Ausschnitte in `app.js` (`tourPreview`).
 
 ## Woche 1: so funktioniert es
 
