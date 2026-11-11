@@ -99,7 +99,7 @@ function render(){
   const side=tabs||view==="video"&&!!S.onboardingCompletedAt&&!rebase; // Video: am Desktop mit Seitenleiste
   app.className=(side?"nav ":"")+"v-"+(S.onboardingCompletedAt?(rebase?"rebase":view):"ob-"+ob);
   applyTheme();
-  const sheet = !S.onboardingCompletedAt ? "" : gapOpen ? gapHTML() : dailyOpen ? dailyHTML() : abendEd ? abendHTML() : whatOpen ? whatHTML() : sheetOpen ? sheetHTML() : lockFor ? lockHTML() : (installSheet||reminderSheet) ? setupSheetHTML() : "";
+  const sheet = !S.onboardingCompletedAt ? "" : startOpen ? startHTML() : gapOpen ? gapHTML() : dailyOpen ? dailyHTML() : abendEd ? abendHTML() : whatOpen ? whatHTML() : sheetOpen ? sheetHTML() : lockFor ? lockHTML() : (installSheet||reminderSheet) ? setupSheetHTML() : "";
   document.body.classList.toggle("sheet-open", !!sheet);
   app.innerHTML=`${side?sideBar():""}<main class="${full?"full ":""}${key!==lastView?"enter":""}">${body}</main>${tabs?tabBar():""}${sheet}`;
   lastView=key;
@@ -220,6 +220,7 @@ function vDran(){
   <div class="card dr-rule"><span class="eyebrow" style="color:var(--darm-text)">Die eine Regel</span><b>${IK.MIN_DAYS} von 7 Tagen eintragen, dann läuft alles weiter.</b>
     <div class="wkstrip">${wd.map((d,i)=>`<span class="${st[i]}"><i>${st[i]==="ok"?CHECK:""}</i><small>${d}</small></span>`).join("")}</div>
     <p class="note">Zwei Tage dürfen fehlen. Alle Videos sind frei. Goodies und Wochen-Check gibt es für eingetragene Wochen. Fehlen mehr, pausieren die nächsten Videos, bis du ${IK.PAUSE_STREAK} Tage in Folge eincheckst.</p></div>
+  <div class="card dr-why"><div><span class="ic" style="${pvars("darm")}">${ICON.kurs}</span><span><b>Die Wertung startet mit den Videos</b><small>Einchecken kannst du sofort. Loop-Score und Woche 1 beginnen, sobald du die Videos ${IK.START_VIDEOS.join(", ")} gesehen hast. Dann weißt du, worum es geht.</small></span></div></div>
   <div class="card dr-late"><div><span class="ic" style="${pvars("recap")}">${UNDO}</span><span><b>Vergessen? Bis morgen Abend nachtragen</b><small>Auf Heute erscheint dann „Gestern fehlt noch“. Danach ist der Tag zu.</small></span></div></div>
   <p class="note dr-j"><span aria-hidden="true">${STAR}</span>Brauchst du es schneller, hast du ${IK.JOKERS} Joker.</p>
   <button class="btn" data-a="finish">Woche 1 starten</button>`;
@@ -314,6 +315,7 @@ function weekInfo(){
   const w=IK.currentWeek(S), today=IK.localDay();
   const todayCi=IK.checkinFor(S,today);
   const td=IK.trackerDay(S,today);
+  if(!IK.scoringStarted(S)) return {w:null, days:0, todayCi, label:"Einführung"};
   if(!w) return {w:null, days:0, todayCi, label:"Woche 1 · Tag 1 von 7"};
   const cis=IK.checkinsOf(S,w.id);
   return {w, cis, days:cis.length, todayCi, label:`Woche ${td.week} · Tag ${td.day} von 7`};
@@ -350,6 +352,7 @@ function greet(){ const h=new Date().getHours(); return h<11?"Guten Morgen":h<18
 const BICON = {bunt:"darm", morgenlicht:"sun", bewegt30:"beweg", abend:"moon"};
 const RULE = {bunt:"Halber Teller Pflanzen", morgenlicht:"10 Min. draußen, feste Zeit", bewegt30:"Aufgeteilt zählt auch", abend:"Pünktlich ins Bett, die letzten 30 Min. ohne Handy"};
 const RSUB = {bunt:"Gemüse, Obst, Hülsenfrüchte", morgenlicht:"10 Min. draußen am Morgen", bewegt30:"Gehen, Rad, Sport, alles zählt", abend:"gestern Abend"};
+const bMax = () => Math.max(1, IK.BASIS.filter(b=>IK.basisUnlocked(S,b.key)).length);
 const pvars = p => `--c:${PC[p]};--s:${PS[p]};--t:${PT[p]}`;
 const ticksToday = () => ((S.dayTicks||{})[IK.localDay()]) || {};
 // Tagsüber abgehakt: vor dem Check-in als Vormerkung, danach direkt im Eintrag des Tages.
@@ -394,7 +397,17 @@ const INFO = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12
 function miniRing(frac,txt,sz){ sz=sz||32; const r=sz/2-3, C=2*Math.PI*r;
   return `<span class="rring" style="width:${sz}px;height:${sz}px" aria-hidden="true"><svg viewBox="0 0 ${sz} ${sz}"><circle cx="${sz/2}" cy="${sz/2}" r="${r}" class="tr"/><circle cx="${sz/2}" cy="${sz/2}" r="${r}" class="fg" stroke-dasharray="${(C*frac).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 ${sz/2} ${sz/2})"/></svg><b>${txt}</b></span>`; }
 function abendHardCount(d){ d=IK.cleanAbend(d); return d ? IK.ABEND.hard.filter(h=>d.hard[h.key]).length : 0; }
+function startCard(){
+  const n=IK.startProgress(S);
+  const row=id=>{ const v=VID.VIDEOS.find(x=>x.id===id), seen=IK.isSeen(S,id), p=pillarOf(v);
+    return `<button class="srow" data-a="video" data-v="${id}" style="${pvars(p)}"><span class="nr">${id}</span><b>${esc(v.title.split(":")[0])}</b><span class="tp-st ${seen?"is-done":"is-next"}" aria-hidden="true">${seen?CHECK:'<svg viewBox="0 0 24 24"><path d="M8 5 19 12 8 19Z"/></svg>'}</span><span class="sr">${seen?"gesehen":"ansehen"}</span></button>`; };
+  return `<section class="rcard scard" aria-label="Deine Wertung startet"><div class="rt-hd"><span class="eyebrow" style="color:var(--schlaf-text)">Deine Wertung startet</span><span class="pn">${streakBars(n).replace(/pbars/,"pbars sb")}${n} von ${IK.START_VIDEOS.length}</span></div>
+    <b class="st-t">Nach diesen ${IK.START_VIDEOS.length} Videos zählen deine Check-ins.</b>
+    <p class="note">Eintragen kannst du schon jetzt. Loop-Score, Woche 1 und deine Routinen starten, sobald du weißt, worum es geht.</p>
+    <div class="slist">${IK.START_VIDEOS.map(row).join("")}</div></section>`;
+}
 function routinesCard(){
+  if(!IK.scoringStarted(S)) return startCard();
   const un=IK.BASIS.filter(b=>IK.basisUnlocked(S,b.key)), n=un.filter(b=>basisState(b.key)).length;
   const bars=IK.BASIS.map(b=>`<i style="${IK.basisUnlocked(S,b.key)&&basisState(b.key)?`background:${PC[b.pillar]}`:""}"></i>`).join("");
   const row=b=>{
@@ -535,7 +548,8 @@ function weeklyCountOf(cis,id,skipId){ return cis.filter(c=>c.id!==skipId&&c.bau
 // Für einen neuen Tag ohne laufende Woche beginnt mit dem Speichern eine neue Tracker-Woche. Dann gelten die Kandidaten aus §5.2.
 function checkinTarget(){
   const today=ciDay||IK.localDay(), ex=IK.checkinFor(S,today);
-  if(ex){ const w=S.weeks.find(x=>x.id===ex.trackerWeekId); return {ex, wk:w, week:w.index, day:ex.dayIndex, ids:w.activeBausteinIds, isNew:w.newBausteinIds||[]}; }
+  if(ex){ const w=S.weeks.find(x=>x.id===ex.trackerWeekId); return w ? {ex, wk:w, week:w.index, day:ex.dayIndex, ids:w.activeBausteinIds, isNew:w.newBausteinIds||[]} : {ex, wk:null, week:0, day:0, ids:[], isNew:[], pre:true}; }
+  if(!IK.scoringStarted(S)) return {ex:null, wk:null, week:0, day:0, ids:[], isNew:[], pre:true};
   const w=IK.currentWeek(S);
   if(w && w.status==="running") return {ex:null, wk:w, week:w.index, day:IK.checkinsOf(S,w.id).length+1, ids:w.activeBausteinIds, isNew:w.newBausteinIds||[]};
   if(w && w.status==="missed") return {ex:null, wk:null, week:w.index, day:1, ids:w.activeBausteinIds, isNew:[]};
@@ -554,8 +568,11 @@ function vCheckin(){
   const isNew = t.cands ? draft.newBausteinIds : t.isNew;
   const cis = t.wk ? IK.checkinsOf(S,t.wk.id) : [];
   const prog=`<div class="cprog" role="img" aria-label="Schritt ${ciStep} von 2">${[1,2].map(k=>`<i class="${k<=ciStep?"on":""}"></i>`).join("")}</div>`;
-  const nd=ciDay?new Date(ciDay+"T12:00").toLocaleDateString("de-DE",{weekday:"long"}):"";
-  const head=`<div class="top"><div class="t"><small>${ciDay?`Nachtrag · ${nd} · `:""}Woche ${t.week} · Tag ${t.day} von 7</small>${prog}</div>${ciStep===1
+  const fd=ciDay||IK.localDay(), fdl=new Date(fd+"T12:00").toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"}), hr=new Date().getHours(), night=!ciDay&&hr<IK.DAY_START_HOUR;
+  const chipSub = ciDay ? "Nachtrag für gestern" : night ? `Es ist ${new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} Uhr · zählt bis 4 Uhr für diesen Tag` : "Check-in für heute";
+  const dchip=`<span class="dchip${ciDay||night?" warm":""}"><span class="ic" aria-hidden="true">${CAL}</span><span><b>${night?"Noch ":""}${esc(fdl)}</b><small>${chipSub}</small></span></span>`;
+  const wkl = t.pre ? `Einführung · noch ${IK.START_VIDEOS.length-IK.startProgress(S)} ${IK.START_VIDEOS.length-IK.startProgress(S)===1?"Video":"Videos"} bis zum Start` : `Woche ${t.week} · Tag ${t.day} von 7`;
+  const head=`<div class="top"><div class="t">${dchip}<small>${wkl}</small>${prog}</div>${ciStep===1
     ? `<button class="iconbtn" data-a="back" data-v="heute" aria-label="Schließen">${ICON.close}</button>` : `<button class="iconbtn" data-a="ci-back" aria-label="Zurück">${ICON.back}</button>`}</div>`;
   if(ciStep===1){
     const tk=t.ex||ciDay?{}:ticksToday(), un=IK.BASIS.filter(b=>IK.basisUnlocked(S,b.key)), n=un.filter(b=>IK.routineDone({basis:draft.basis},b.key)).length;
@@ -570,13 +587,26 @@ function vCheckin(){
     const chooser = t.choose ? `<div class="card soft"><b>Neue Woche: Wähle bis zu ${IK.MAX_NEW_PER_WEEK} neue Bausteine</b>
       <p class="note">Du hast mehr freigeschaltet, als in eine Woche passen. Die übrigen kommen in einer der nächsten Wochen dran.</p>
       ${t.cands.map(id=>{const b=IK.bausteinById(id), on=draft.newBausteinIds.includes(id); return `<button type="button" class="choice" data-a="pick-new" data-v="${id}" aria-pressed="${on}" ${!on&&draft.newBausteinIds.length>=IK.MAX_NEW_PER_WEEK?"disabled":""}><span class="box">${on?CHECK:""}</span><span class="dot" style="--c:${PC[b.pillar]}"></span><b>${esc(b.label)}</b></button>`;}).join("")}</div>` : "";
-    return `${head}<h1 class="ci-h">Was hat ${ciDay?"gestern":"heute"} geklappt?</h1>
+    // To-do des Tages: erledigt mit Ergebnis oder offen mit Weg dorthin
+    const td = !ciDay&&!t.pre&&starterActive() ? (()=>{ const d=IK.trackerDay(S).day; return IK.todoStatus(S,IN.TODOS).find(x=>x.day===d&&x.unlocked)||null; })() : null;
+    const todoTile = td ? (td.done
+      ? `<div class="ctile static" style="${pvars(td.pillar)}" aria-pressed="true"><span class="ic">${ICON.checkin}</span><span class="tx"><b>${esc(td.short||td.title)}</b><small>${todoResult(td)?`Erledigt · ${todoResult(td)}`:"Erledigt"}</small></span><span class="mk" aria-hidden="true">${CHECK}</span></div>`
+      : `<button class="ctile open" ${gAttr({kind:"todo", id:td.id})} style="${pvars(td.pillar)}"><span class="ic">${ICON.checkin}</span><span class="tx"><b>${esc(td.short||td.title)}</b><small>Noch offen · jetzt erledigen</small></span><span class="chev" aria-hidden="true">${CHEV}</span></button>`) : "";
+    const bDone=ids.filter(id=>draft.bausteine[id]===true).length;
+    const doneN=n+(td&&td.done?1:0)+bDone, allN=un.length+(td?1:0)+ids.length;
+    const pre = t.pre ? `<div class="card soft prehint"><b>Zählt ab dem Start</b><p class="note">Du kannst schon eintragen. Woche 1 und dein Loop-Score starten, sobald du die Videos ${IK.START_VIDEOS.join(", ")} gesehen hast.</p></div>` : "";
+    return `${head}<h1 class="ci-h">Dein ${ciDay?"gestriger ":""}Tag im <span class="acc">Überblick</span></h1>
+    <p class="ci-sub">Was du schon abgehakt hast, ist ausgewählt. Was noch fehlt, kannst du hier nachholen.</p>
+    ${pre}
+    ${allN?`<div class="cisum"><span class="ok">${doneN} erledigt</span><span class="no">${allN-doneN} offen</span></div>`:""}
+    <span class="eyebrow csec">Routinen</span>
     <div class="ctiles">${IK.BASIS.filter(b=>!b.yesterday).map(basisTile).join("")}</div>
     <span class="eyebrow csec">Gestern Abend</span>
     <div class="ctiles">${IK.BASIS.filter(b=>b.yesterday).map(basisTile).join("")}</div>
+    ${todoTile?`<span class="eyebrow csec">To-do des Tages</span><div class="ctiles">${todoTile}</div>`:""}
     ${chooser}
-    ${ids.length?`<div class="ctiles">${ids.map(bstTile).join("")}</div>`:""}
-    <div class="cfoot"><button class="btn" data-a="ci-next">Weiter${un.length?` <span>· ${n} von ${un.length}</span>`:""}</button></div>`;
+    ${ids.length?`<span class="eyebrow csec">Bausteine</span><div class="ctiles">${ids.map(bstTile).join("")}</div>`:""}
+    <div class="cfoot"><button class="btn" data-a="ci-next">Weiter${allN?` <span>· ${doneN} von ${allN}</span>`:""}</button></div>`;
   }
   const caps={erholt:["kaum","sehr"],bauch:["unruhig","sehr gut"],energie:["müde","voller Energie"],stress:["entspannt","sehr gestresst"]};
   const num=(k,label,mode,ph)=>`<label for="n-${k}">${label}<input id="n-${k}" data-num="${k}" inputmode="${mode}" placeholder="${ph}" value="${draft[k]!=null?String(draft[k]).replace(".",","):""}"></label>`;
@@ -600,15 +630,16 @@ function saveCheckin(){
   const unpaused=IK.resolvePause(S,IK.localDay());
   ciDay=null; save(); draft=null; ciStep=1; scheduleReminder();
   const w=IK.currentWeek(S);
-  lastSaved={day:ci.dayIndex, updated:!!t.ex, basisN:IK.basisScore(ci), weekDone:w.status==="awaitingCheck", unpaused, backfill:ci.isBackfill};
+  lastSaved={day:ci.dayIndex, updated:!!t.ex, basisN:IK.basisScore(ci), weekDone:!!w&&w.status==="awaitingCheck", unpaused, backfill:ci.isBackfill, pre:!!ci.pre};
   haptic(lastSaved.weekDone?"strong":"success");
   view="geschafft"; render(); window.scrollTo(0,0);
 }
 function vGeschafft(){
   const L=lastSaved; if(!L){ view="heute"; return vHeute(); }
-  const w=IK.currentWeek(S), cis=w?IK.checkinsOf(S,w.id):[], ls=w?IK.loopScore(cis,IK.activeBausteine(w)):{score:null};
+  const w=IK.currentWeek(S), cis=w?IK.checkinsOf(S,w.id):[], ls=w?IK.loopScore(cis,IK.activeBausteine(w),bMax()):{score:null};
   const un=IK.BASIS.filter(b=>IK.basisUnlocked(S,b.key)).length, n=L.basisN, days=cis.length, C=2*Math.PI*58, wc=IK.weekCheckOpen(S);
-  const msg = L.updated ? "Deine Änderungen sind gespeichert."
+  const msg = L.pre ? `Gespeichert. Gezählt wird ab dem Start: noch ${IK.START_VIDEOS.length-IK.startProgress(S)} von ${IK.START_VIDEOS.length} Videos.`
+    : L.updated ? "Deine Änderungen sind gespeichert."
     : !un ? "Eingetragen. Mit den ersten Videos kommen deine Routinen dazu."
     : n>=un ? "Alle Routinen geschafft. Stark."
     : n ? `${n} von ${un} Routinen. Gut gemacht, der Rest kommt mit der Zeit.` : "Eingetragen ist eingetragen. Morgen ist ein neuer Tag.";
@@ -629,7 +660,7 @@ function vGeschafft(){
   return `<div class="done"><svg class="big" viewBox="0 0 132 132" role="img" aria-label="Tag ${L.day} gespeichert"><circle cx="66" cy="66" r="58" fill="none" stroke="var(--line)" stroke-width="8"/>
     <circle class="arc" cx="66" cy="66" r="58" fill="none" stroke="var(--coral)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${C*days/7} ${C}" style="--len:${C*days/7}" transform="rotate(-90 66 66)"/>
     <g class="mk"><path d="${BLOBPATH}" transform="translate(23 23) scale(.86)" style="fill:var(--coral)"/><path d="M50 67 62 78 84 55" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></g></svg>
-    <h1>Tag ${L.day} <span class="acc">${L.updated?"aktualisiert":"geschafft"}</span></h1><p class="lead">${msg}</p>
+    <h1>${L.pre?"Gut":"Tag "+L.day} <span class="acc">${L.pre?"eingetragen":L.updated?"aktualisiert":"geschafft"}</span></h1><p class="lead">${msg}</p>
     <div class="wk7" role="img" aria-label="${days} von 7 Tagen eingetragen">${Array.from({length:7},(_,k)=>`<i class="${k<days?"on":""}"></i>`).join("")}</div>
     ${rows.length?`<div class="list">${rows.map(([a,b])=>`<div><span>${a}</span>${b}</div>`).join("")}</div>`:""}
     ${pauseMsg}
@@ -659,6 +690,18 @@ function loopExample(withStart){
     <p class="note">Werte von 1 bis 5: dein Startpunkt aus dem Onboarding gegen den Durchschnitt deiner letzten Woche.</p>`:""}</div>`;
 }
 const scoreWord = s => s>=75 ? "Läuft sehr rund" : s>=60 ? "Läuft rund" : s>=45 ? "Kommt in Schwung" : "Am Anfang";
+// Läuft das Wissen 2 Wochen oder mehr vor dem Tracking, empfehlen wir eine Video-Pause. Keine Sperre.
+function tempoCard(){
+  if(!IK.scoringStarted(S)) return "";
+  const w=IK.currentWeek(S), tw=w?(w.status==="completed"?w.index+1:w.index):1;
+  const kw=Math.max(0,...VID.VIDEOS.filter(v=>IK.isSeen(S,v.id)).map(v=>v.week));
+  if(kw-tw<2||S.tempoHide===tw) return "";
+  const pc=x=>Math.min(100,Math.round(x/weeksTotal()*100));
+  return `<section class="tempo"><span class="eyebrow">Dein Tempo</span><b>Dein Wissen ist schon in Woche ${kw}, dein Alltag in Woche ${tw}.</b>
+    <div class="tbars"><div><span>Videos</span><i><i style="width:${pc(kw)}%"></i></i><b>Woche ${kw}</b></div><div><span>Tracking</span><i><i class="tr" style="width:${pc(tw)}%"></i></i><b>Woche ${tw}</b></div></div>
+    <p>Neues wirkt erst, wenn es ein paar Tage im Alltag läuft. Wir empfehlen eine kleine Video-Pause, bis dein Tracking aufholt.</p>
+    <div class="btns"><button class="btn small" data-a="tempo-ok">Ich lass es wirken</button><button class="btn small ghost" data-a="tempo-hide" data-v="${tw}">Weiter</button></div></section>`;
+}
 /* ---------- Dranbleiben: Gestern nachtragen, Lücke, Pause, Joker ---------- */
 let ciDay=null, gapOpen=null, watchOk=false; // gapOpen: "info" | "joker" | "watch"
 const yday = () => IK.addDays(IK.localDay(),-1);
@@ -674,6 +717,7 @@ function gapTick(){
   if(S.pause&&!S.pause.seen&&!tour){ S.pause.seen=true; ch=true; gapOpen = IK.jokersLeft(S) ? "info" : "watch"; watchOk=false; }
   if(ch) save();
 }
+const CAL='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>';
 const UNDO='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/></svg>';
 const STAR='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.6 6 .6-4.5 4.1 1.3 6L12 16.8 6.6 19.3l1.3-6L3.4 9.2l6-.6Z"/></svg>';
 function ydCard(){
@@ -736,9 +780,9 @@ function loopNow(){
   const w=IK.currentWeek(S); if(!w) return null;
   let wk=w, cis=IK.checkinsOf(S,w.id);
   if(!cis.length){ wk=S.weeks.filter(x=>x.index<w.index).slice(-1)[0]; if(!wk) return null; cis=IK.checkinsOf(S,wk.id); if(!cis.length) return null; }
-  const act=IK.activeBausteine(wk), score=IK.loopScore(cis,act).score; if(score==null) return null;
+  const act=IK.activeBausteine(wk), score=IK.loopScore(cis,act,bMax()).score; if(score==null) return null;
   const sorted=cis.slice().sort((a,b)=>a.forDate<b.forDate?-1:1), last=sorted[sorted.length-1], before=sorted.slice(0,-1);
-  const pb=before.length?IK.loopScore(before,act).score:null, delta=pb==null?null:score-pb;
+  const pb=before.length?IK.loopScore(before,act,bMax()).score:null, delta=pb==null?null:score-pb;
   const today=IK.localDay(), since=last.forDate===today?"heute":last.forDate===IK.addDays(today,-1)?"seit gestern":"seit dem letzten Check-in";
   return {score, delta, since, wk, cis:sorted};
 }
@@ -752,15 +796,32 @@ function loopMark(score,size,cls){
     ${score!=null?`<circle class="lm-dot" cx="${(50+r*Math.cos(a)).toFixed(1)}" cy="${(50+r*Math.sin(a)).toFixed(1)}" r="5.6"/>`:""}</svg>`;
 }
 function loopBadge(){
+  if(!IK.scoringStarted(S)){ const n=IK.startProgress(S), N=IK.START_VIDEOS.length;
+    return `<button class="lbadge" data-a="video" data-v="${IK.START_VIDEOS.find(id=>!IK.isSeen(S,id))}" aria-label="Loop-Score startet nach ${N} Videos, ${n} gesehen">${loopMark(Math.round(n/N*100),48)}<span class="lbv"><span class="n sm">${n} / ${N}</span><span class="d">Videos</span></span></button>`; }
   const L=loopNow();
   if(!L) return `<button class="lbadge" data-a="go" data-v="fortschritt" aria-label="Loop-Score: noch kein Wert. Zum Fortschritt">${loopMark(null,48)}<span class="lbv"><span class="n">–</span><span class="d">Loop-Score</span></span></button>`;
   return `<button class="lbadge" data-a="go" data-v="fortschritt" aria-label="Loop-Score ${L.score} von 100, ${loopWord(L.score)}${L.delta!=null?`, ${fmtDelta(L.delta)} ${L.since}`:""}. Zum Fortschritt">${loopMark(L.score,48)}<span class="lbv"><span class="n">${L.score}</span>${L.delta!=null?`<span class="d ${L.delta>0?"up":L.delta<0?"down":""}">${fmtDelta(L.delta)}</span>`:`<span class="d">Loop-Score</span>`}</span></button>`;
 }
 const RTIP = {morgenlicht:"10 Minuten raus ins Morgenlicht", bunt:"Eine Mahlzeit nach dem Pflanzen-Teller", bewegt30:"30 Minuten bewegen, gern in Stücken", abend:"Heute Abend die Abendroutine einleiten"};
-let dailyOpen=false;
+let dailyOpen=false, startOpen=false;
+// Einmal, sobald die 3 Basis-Videos gesehen sind. Wer schon Wochen hat (ältere Daten), bekommt den Moment nicht mehr.
+function startTick(){
+  if(!S.onboardingCompletedAt||S.scoreStartAt||!IK.scoringStarted(S)) return;
+  S.scoreStartAt=new Date().toISOString(); save();
+  if(!S.weeks.length){ startOpen=true; haptic("strong"); }
+}
+function startHTML(){
+  const it=(ic,p,a,b)=>`<div class="ws-i" style="${pvars(p)}"><span class="ic">${ic}</span><span><b>${a}</b><small>${b}</small></span></div>`;
+  return `<div class="dc-bg" data-a="start-close"><section class="dcheck wstart" role="dialog" aria-modal="true" aria-labelledby="st-t" data-a="noop">
+    ${loopMark(100,120,"big")}<span class="eyebrow" style="color:var(--darm-text)">${IK.START_VIDEOS.length} von ${IK.START_VIDEOS.length} Videos gesehen</span>
+    <h2 id="st-t">Ab heute <span class="acc">zählt's.</span></h2>
+    <p>Du weißt jetzt, worauf es ankommt. Mit deinem nächsten Check-in beginnt Woche 1, Tag 1.</p>
+    <div class="ws-l">${it(ICON.fortschritt,"recap","Loop-Score","rechnet ab deinem nächsten Check-in")}${it(ICON.darm,"darm","3 Routinen","auf Heute und im Check-in")}${starterActive()?it(ICON.checkin,"schlaf","Ein To-do pro Tag","Tag 1 wartet auf Heute"):""}</div>
+    <button class="btn" data-a="start-close">Los geht's</button></section></div>`;
+}
 function dailyDue(){
   const h=new Date().getHours();
-  return !!S.onboardingCompletedAt && !!(S.tourDoneAt||S.demo) && !tour && !gapOpen && view==="heute" && h>=4 && h<18 && S.dailyCheckDay!==IK.localDay() && !!loopNow();
+  return !!S.onboardingCompletedAt && !!(S.tourDoneAt||S.demo) && !tour && !gapOpen && !startOpen && view==="heute" && h>=4 && h<18 && S.dailyCheckDay!==IK.localDay() && !!loopNow();
 }
 function maybeDaily(){ if(dailyDue()){ dailyOpen=true; S.dailyCheckDay=IK.localDay(); save(); render(); } }
 function dailyHTML(){
@@ -797,7 +858,7 @@ function dailyHTML(){
 }
 
 function vFortschritt(){
-  const weeks=S.weeks.map(w=>{ const c=IK.checkinsOf(S,w.id), act=IK.activeBausteine(w); return {w, c, ls:IK.loopScore(c,act), st:IK.weekStats(c,act)}; });
+  const weeks=S.weeks.map(w=>{ const c=IK.checkinsOf(S,w.id), act=IK.activeBausteine(w); return {w, c, ls:IK.loopScore(c,act,bMax()), st:IK.weekStats(c,act)}; });
   const cur=weeks[weeks.length-1];
   const tg=IK.GOALS.find(g=>g.id===S.topGoal);
   const why=S.why||tg?tcard("recap",`<span class="k">${S.why?"Dein Warum":"Dein wichtigstes Ziel"}</span><b class="tt">${esc(S.why||tg.label)}</b>${S.why&&tg?`<p>Wichtigstes Ziel: ${esc(tg.label)}</p>`:""}`,"why-card"):"";
@@ -868,7 +929,7 @@ function vKurs(){
   const hcard=`<button class="hcard kurs-extra" ${hAttr}><span class="hic">${ICON.doc}</span><span><span class="row"><b style="font-size:15px">Handout Woche ${kursWeek}</b><span class="note">${p.handoutFree?(ho?"frei · öffnen":"frei, folgt als Datei"):`${p.kernSeen} von ${p.kernTotal} Kernvideos`}</span></span>
     <span class="bar" style="--c:var(--recap)"><i style="width:${p.kernTotal?Math.round(p.kernSeen/p.kernTotal*100):0}%"></i></span></span></span></button>`;
   return `${brandBar()}<div class="top"><div class="t"><b>Kurs</b></div>${kseg}</div>
-  ${pauseCard()}
+  ${pauseCard()||tempoCard()}
   <div class="wchips" role="group" aria-label="Kurswochen">${partWeeks.map(chip).join("")}</div>
   <div style="display:flex;flex-direction:column;gap:2px;padding:0 4px"><b style="font-family:var(--f-head);font-size:22px;font-weight:800;letter-spacing:-.02em">${esc(VID.WEEKS[kursWeek].title)}</b><span class="note">${p.seen} von ${p.total} Videos gesehen</span></div>
   ${hcard}
@@ -876,6 +937,17 @@ function vKurs(){
 }
 
 const hoOf = w => IN.MATERIALS.find(m=>m.kind==="Handout"&&m.week===w) || null;
+// Nach dem Video: alles, was es freigeschaltet hat, mit Ort und Knopf direkt hin
+function unlockCard(){
+  const rows=[];
+  openNotices(e=>freshIds.includes(e.id)).forEach(e=>{ const n=noticeOf(e); if(!n) return; markNotice(e.id);
+    const t = e.type==="basis" ? `Routine · ${IK.BASIS.find(x=>x.key===e.ref).label}` : e.type==="material" ? (()=>{ const m=matById(e.ref); return `${m.kind} · ${m.short||m.title}`; })() : n.title;
+    rows.push({p:n.pillar, ic:noticeIcon(e,n), t, w:n.where, go:n.go?gAttr(n.go):"", label:"Ansehen"}); });
+  freshTodos.map(todoById).filter(Boolean).forEach(t=>rows.push({p:t.pillar, ic:ICON.checkin, t:`To-do Tag ${t.day} · ${t.short||t.title}`, w:"Auf Heute bei deinen To-dos", go:gAttr({kind:"todo", id:t.id}), label:t.input?"Eintragen":"Öffnen"}));
+  if(!rows.length) return "";
+  return `<section class="ucard"><span class="eyebrow">Neu freigeschaltet</span><b class="ut">Das hast du dir gerade freigeschaltet</b>
+    ${rows.map(r=>`<div class="urow" style="${pvars(r.p)}"><span class="ic">${r.ic}</span><span class="tx"><b>${esc(r.t)}</b><small>${esc(r.w)}</small></span>${r.go?`<button class="btn small" ${r.go}>${esc(r.label)}</button>`:""}</div>`).join("")}</section>`;
+}
 function vVideo(){
   const v=VID.VIDEOS.find(x=>x.id===videoId); if(!v){ view="kurs"; return vKurs(); }
   const seen=IK.isSeen(S,v.id), b=IK.bausteinForVideo(v.id), list=VID.VIDEOS.filter(x=>x.week<=weeksTotal()).sort((a,c)=>a.week-c.week||a.order-c.order);
@@ -897,9 +969,7 @@ function vVideo(){
   ${flash?`<div class="card soft"><p class="okmsg">${flash}</p></div>`:""}`,
   `${seen?"":`<div class="card"><button class="btn" data-a="seen" data-v="${v.id}">Als gesehen markieren</button><p class="note">Mit dem Player zählt ein Video später automatisch ab 90 Prozent als gesehen.</p></div>`}
   ${seen&&v.machJetzt?tcard(pillarOf(v),`<span class="k">Mach jetzt · 30 Sekunden</span><b class="tt">${esc(v.machJetzt)}</b>${v.id==="1.0"&&S.goals.length?`<div class="btns">${IK.GOALS.filter(g=>S.goals.includes(g.id)).map(g=>`<button class="btn small${S.topGoal===g.id?"":" ghost"}" data-a="top-goal" data-v="${g.id}" aria-pressed="${S.topGoal===g.id}">${S.topGoal===g.id?CHECK+" ":""}${esc(g.label)}</button>`).join("")}</div>`:""}${IN.MACH_JETZT_GO[v.id]?`<div class="btns"><button class="btn small" ${gAttr(IN.MACH_JETZT_GO[v.id])}>${esc(IN.MACH_JETZT_GO[v.id].label)}</button></div>`:""}`):""}
-  ${freshIds.length?openNotices(e=>freshIds.includes(e.id)).map(noticeCard).join(""):""}
-  ${freshTodos.length?tcard("recap",`<span class="k">Neu in deinen To-dos</span>
-    ${freshTodos.map(todoById).map(t=>`<div class="trow"><span><b>${esc(t.title)}</b><small>${AREA[t.pillar]} · Tag ${t.day}</small></span><button class="btn small" ${gAttr({kind:"todo", id:t.id})}>${t.input?"Eintragen":"Ansehen"}</button></div>`).join("")}`):""}
+  ${unlockCard()}
   ${bCard}
   ${next?`<button class="btn ghost" data-a="video" data-v="${next.id}" style="justify-content:space-between"><span>Nächstes: ${esc(next.title)}</span><span aria-hidden="true">›</span></button>`:""}
   ${seen?`<button class="btn link small" data-a="unseen" data-v="${v.id}" style="align-self:center">Doch nicht gesehen</button>`:""}`,"side-r");
@@ -1143,8 +1213,8 @@ function weekInsight(c){
 function vWochencheck(){
   const w=IK.currentWeek(S);
   if(!w||!IK.weekCheckOpen(S)){ view="heute"; return vHeute(); }
-  const c=IK.checkinsOf(S,w.id), act=IK.activeBausteine(w), ls=IK.loopScore(c,act), stats=IK.weekStats(c,act);
-  const prev=S.weeks.filter(x=>x.index<w.index).slice(-1)[0], pls=prev?IK.loopScore(IK.checkinsOf(S,prev.id),IK.activeBausteine(prev)):null;
+  const c=IK.checkinsOf(S,w.id), act=IK.activeBausteine(w), ls=IK.loopScore(c,act,bMax()), stats=IK.weekStats(c,act);
+  const prev=S.weeks.filter(x=>x.index<w.index).slice(-1)[0], pls=prev?IK.loopScore(IK.checkinsOf(S,prev.id),IK.activeBausteine(prev),bMax()):null;
   const cands=IK.newWeekCandidates(S).map(IK.bausteinById);
   const cmp=IK.compareToStart(latestBaseline(), stats.avg).filter(r=>!r.text&&r.diff>0).sort((a,b)=>b.diff-a.diff)[0];
   const trend = pls&&pls.score!=null&&ls.score!=null ? `${ls.score>=pls.score?"+":"−"}${Math.abs(ls.score-pls.score)} zur Vorwoche` : cmp ? `${esc(cmp.label)} ${fmtSigned(cmp.diff)} seit dem Start` : "Dein erster Wert";
@@ -1543,6 +1613,9 @@ document.addEventListener("click", e=>{
   if(a==="sheet-item"){ sheetItem = sheetItem===v ? "" : v; return render(); }
   if(a==="notice-all"){ openNotices().forEach(x=>markNotice(x.id)); sheetOpen=false; return render(); }
   if(a==="tick"){ if(v==="abend") return openAbend("heute"); toggleTick(v); haptic("tap"); return render(); }
+  if(a==="tempo-ok"){ haptic("tap"); return go("heute"); }
+  if(a==="tempo-hide"){ S.tempoHide=+v; save(); return render(); }
+  if(a==="start-close"){ startOpen=false; return go("heute"); }
   if(a==="gap-close"){ gapOpen=null; return render(); }
   if(a==="gap-joker"){ gapOpen="joker"; haptic("tap"); return render(); }
   if(a==="gap-joker-yes"){ IK.useJoker(S); save(); gapOpen=null; haptic("success"); flash="Joker eingesetzt. Die Videos sind wieder frei."; return go("heute"); }
@@ -1603,7 +1676,7 @@ document.addEventListener("click", e=>{
     freshTodos=starterActive()?IK.todoStatus(S,IN.TODOS).filter(t=>!t.done&&t.unlocked&&!tBefore.has(t.id)).map(t=>t.id):[];
     const fresh=IK.newUnlocks(S,uctx()).filter(x=>!before.has(x.id));
     fresh.filter(x=>x.type==="baustein").forEach(x=>markNotice(x.id)); // erklärt die Baustein-Karte darunter
-    freshIds=fresh.filter(x=>x.type!=="baustein").map(x=>x.id); save(); haptic(fresh.length?"unlock":"tap");
+    freshIds=fresh.filter(x=>x.type!=="baustein").map(x=>x.id); save(); haptic(fresh.length?"unlock":"tap"); startTick();
     const b=IK.bausteinForVideo(v); flash=b?`Gesehen. Damit ist „${b.label}“ freigeschaltet.`:"Als gesehen markiert."; return render(); }
   if(a==="goto"){ let g=null; try{ g=JSON.parse(el.dataset.g); }catch(err){} if(el.dataset.n) markNotice(el.dataset.n); sheetOpen=false; lockFor=null; return goTo(g); }
   if(a==="lock"){ lockFor=v; haptic("tap"); return render(); }
@@ -1674,7 +1747,7 @@ async function fromLink(){
 }
 // Wer schon vor diesem Update dabei war, bekommt keine Flut alter Hinweise.
 if(migrateNotices && S.onboardingCompletedAt){ IK.unlockEvents(S,uctx()).forEach(x=>{ S.noticesSeen[x.id]="update"; }); save(); }
-fromLink().then(()=>{ if(location.hash==="#checkin"&&S.onboardingCompletedAt){ history.replaceState(null,"",location.pathname); view="checkin"; draft=null; ciStep=1; } gapTick(); render(); scheduleReminder(); setTimeout(maybeDaily,600); });
+fromLink().then(()=>{ if(location.hash==="#checkin"&&S.onboardingCompletedAt){ history.replaceState(null,"",location.pathname); view="checkin"; draft=null; ciStep=1; } startTick(); gapTick(); render(); scheduleReminder(); setTimeout(maybeDaily,600); });
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"){ gapTick(); if(gapOpen) render(); setTimeout(maybeDaily,400); } });
 if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 })();

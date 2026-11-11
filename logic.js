@@ -61,7 +61,9 @@ const mean = a => { const n=a.filter(isNum); return n.length ? n.reduce((p,c)=>p
 const norm = x => (x-1)/4*100;
 
 /* ---------- Kalendertage (immer lokaler Tag der Person, §8) ---------- */
-function localDay(d){ d = d || new Date(); const p=n=>String(n).padStart(2,"0");
+// Ein Tag beginnt um 4 Uhr: Wer um 0:30 eincheckt, trägt noch für den Vorabend ein.
+const DAY_START_HOUR = 4;
+function localDay(d){ d = d || new Date(Date.now()-DAY_START_HOUR*36e5); const p=n=>String(n).padStart(2,"0");
   return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate()); }
 function parseDay(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); }
 function addDays(s,n){ const d=parseDay(s); d.setDate(d.getDate()+n); return localDay(d); }
@@ -133,11 +135,12 @@ function loopScoreFromParts(p){
   return {score, befinden:r(befinden), umsetzung:r(umsetzung), dranbleiben:r(dranbleiben)};
 }
 
-function loopScore(checkins, activeBausteine){
+function loopScore(checkins, activeBausteine, basisMax){
   const st = weekStats(checkins, activeBausteine);
   const rates = st.bausteine.map(b=>b.rate).filter(isNum);
   return loopScoreFromParts(Object.assign({}, st.avg, {
     bausteinePct: rates.length ? mean(rates)*100 : null,
+    basisMax: basisMax || undefined,
     days: st.days
   }));
 }
@@ -186,6 +189,11 @@ function saveCheckIn(state, data, today, now){
     Object.assign(existing, pickEntry(data), {updatedAt:now});
     return existing;
   }
+  // Vor dem Wertungsstart: Eintrag wird gespeichert, gehört aber zu keiner Woche
+  if(!scoringStarted(state)){
+    const pre = Object.assign({id:"c"+day, trackerWeekId:null, dayIndex:0, pre:true, forDate:day, createdAt:now, isBackfill:day!==today, isQuick:false}, pickEntry(data));
+    state.checkins.push(pre); return pre;
+  }
   let w = currentWeek(state);
   if(w && w.status==="awaitingCheck") completeWeek(state, now);
   if(w && w.status==="missed") restartWeek(state, w, now);
@@ -196,6 +204,11 @@ function saveCheckIn(state, data, today, now){
   if(ci.dayIndex>=DAYS_PER_WEEK) w.status="awaitingCheck";
   return ci;
 }
+
+/* ---------- Wertungsstart: erst nach den 3 Basis-Videos zählen die Check-ins ---------- */
+const START_VIDEOS = ["1.1","1.2","1.3"];
+const scoringStarted = state => START_VIDEOS.every(id=>isSeen(state,id));
+const startProgress = state => START_VIDEOS.filter(id=>isSeen(state,id)).length;
 
 /* ---------- Dranbleiben: 5 von 7 Tagen, Lücke, Pause, Joker ---------- */
 const MIN_DAYS = 5, PAUSE_STREAK = 3, JOKERS = 2;
@@ -348,7 +361,7 @@ function todoDone(state, t){
 // Ein To-do pro Tracker-Tag. Frei, sobald sein Tag erreicht und sein Video gesehen ist.
 // Tracker-Tag: der heutige Check-in, sonst der nächste Tag der laufenden Woche (höchstens 7).
 function trackerDay(state, today){
-  const ci=checkinFor(state, today||localDay()); if(ci) return {week:(state.weeks.find(w=>w.id===ci.trackerWeekId)||{}).index||1, day:ci.dayIndex};
+  const ci=checkinFor(state, today||localDay()); if(ci&&!ci.pre) return {week:(state.weeks.find(w=>w.id===ci.trackerWeekId)||{}).index||1, day:ci.dayIndex};
   const w=currentWeek(state); if(!w) return {week:1, day:1};
   if(w.status==="completed") return {week:w.index+1, day:1};
   return {week:w.index, day:Math.min(DAYS_PER_WEEK, checkinsOf(state,w.id).length+1)};
@@ -393,7 +406,7 @@ function pickEntry(d){
 }
 
 const api = {WEIGHTS, UMSETZUNG, DAYS_PER_WEEK, PILLARS, BASIS, SCALES, GOALS, BASELINE, BAUSTEINE,
-  isNum, mean, norm, localDay, addDays, daysBetween, canEdit, basisScore, MIN_DAYS, PAUSE_STREAK, JOKERS, restartWeek, weekWindow, checkGap, pauseStreak, resolvePause, jokersLeft, useJoker, allowWatchOnly, videoPaused, routineVal, routineDone, ABEND, abendValue, cleanAbend, weekStats, befindenOf,
+  isNum, mean, norm, localDay, addDays, daysBetween, canEdit, basisScore, DAY_START_HOUR, START_VIDEOS, scoringStarted, startProgress, MIN_DAYS, PAUSE_STREAK, JOKERS, restartWeek, weekWindow, checkGap, pauseStreak, resolvePause, jokersLeft, useJoker, allowWatchOnly, videoPaused, routineVal, routineDone, ABEND, abendValue, cleanAbend, weekStats, befindenOf,
   loopScoreFromParts, loopScore, compareToStart, biggestLever, currentWeek, checkinsOf, checkinFor,
   completeWeek, saveCheckIn, MAX_NEW_PER_WEEK, SEEN_PERCENT, isSeen, markSeen, markUnseen, bausteinById, bausteinForVideo,
   unlockedBausteine, newWeekCandidates, startWeek, activationState, activateNow, pauseBaustein, resumeBaustein, activeBausteine,
