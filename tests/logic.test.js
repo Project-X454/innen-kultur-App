@@ -50,7 +50,7 @@ test("Startpunkt → jetzt: Stress wird zu Entspannt umgerechnet", () => {
 });
 
 test("Tracker-Woche: 7 Check-ins → awaitingCheck, nächster Check-in startet Woche 2", () => {
-  const s = {weeks:[], checkins:[]};
+  const s = {weeks:[], checkins:[], videoProgress:START()};
   let day = "2026-10-01";
   for (let i = 0; i < 7; i++) { IK.saveCheckIn(s, {basis:{bunt:true}}, day); day = IK.addDays(day, 1); }
   assert.equal(s.weeks.length, 1);
@@ -63,14 +63,14 @@ test("Tracker-Woche: 7 Check-ins → awaitingCheck, nächster Check-in startet W
 });
 
 test("Tracker-Woche: ausgelassene Tage zählen nicht, dayIndex folgt den Einträgen", () => {
-  const s = {weeks:[], checkins:[]};
+  const s = {weeks:[], checkins:[], videoProgress:START()};
   IK.saveCheckIn(s, {}, "2026-10-01");
   IK.saveCheckIn(s, {}, "2026-10-04");
   assert.equal(s.checkins[1].dayIndex, 2);
 });
 
 test("Check-in: gleicher Tag wird aktualisiert, bearbeitbar bis Ende des Folgetags", () => {
-  const s = {weeks:[], checkins:[]};
+  const s = {weeks:[], checkins:[], videoProgress:START()};
   IK.saveCheckIn(s, {erholt:2}, "2026-10-01");
   IK.saveCheckIn(s, {forDate:"2026-10-01", erholt:4}, "2026-10-02");
   assert.equal(s.checkins.length, 1);
@@ -84,7 +84,9 @@ test("Kalendertage über Monatsgrenzen", () => {
 });
 
 const {VIDEOS} = require("../videos.js");
-const fresh = () => ({weeks:[], checkins:[], videoProgress:{}, pausedBausteinIds:[], queuedBausteinIds:[]});
+const START = () => ({"1.1":{percent:100,watchedAt:"2026-01-01T00:00:00.000Z"},"1.2":{percent:100,watchedAt:"2026-01-01T00:00:00.000Z"},"1.3":{percent:100,watchedAt:"2026-01-01T00:00:00.000Z"}});
+const fresh = () => ({weeks:[], checkins:[], videoProgress:START(), pausedBausteinIds:[], queuedBausteinIds:[]});
+const empty = () => ({weeks:[], checkins:[], videoProgress:{}, pausedBausteinIds:[], queuedBausteinIds:[]});
 const at = (day, h = 21) => `${day}T${String(h).padStart(2, "0")}:00:00.000Z`;
 
 test("Videoliste: jeder Baustein hat ein Video", () => {
@@ -166,7 +168,7 @@ test("Inhalte: jedes Video, auf das ein To-do, eine Routine oder ein Material ze
 });
 
 test("Basis-Routine: erst nach ihrem Video im Check-in, ältere Haken bleiben", () => {
-  const s = fresh();
+  const s = empty();
   assert.equal(IK.basisUnlocked(s, "bunt"), false);
   IK.markSeen(s, "1.1");
   assert.equal(IK.basisUnlocked(s, "bunt"), true);
@@ -176,7 +178,7 @@ test("Basis-Routine: erst nach ihrem Video im Check-in, ältere Haken bleiben", 
 });
 
 test("To-dos: eins pro Tracker-Tag, frei mit Tag und Video, Profilfelder haken ab", () => {
-  const s = fresh(), st = id => IK.todoStatus(s, IN.TODOS, "2026-10-01").find(t => t.id === id);
+  const s = empty(), st = id => IK.todoStatus(s, IN.TODOS, "2026-10-01").find(t => t.id === id);
   assert.equal(IN.TODOS.length, 7);
   assert.deepEqual(IN.TODOS.map(t => t.day), [1, 2, 3, 4, 5, 6, 7]);
   IN.TODOS.forEach(t => { assert.ok(["darm", "schlaf", "beweg", "recap"].includes(t.pillar), t.id); assert.ok(VIDEOS.find(v => v.id === t.after), t.id + " braucht ein Video"); });
@@ -184,7 +186,7 @@ test("To-dos: eins pro Tracker-Tag, frei mit Tag und Video, Profilfelder haken a
   IK.markSeen(s, "1.2"); assert.equal(st("d1").status, "today");
   assert.equal(st("d4").dayOk, false); assert.equal(st("d4").status, "locked");
   s.wakeTime = "06:45"; assert.equal(st("d1").status, "done");
-  IK.markSeen(s, "1.1");
+  IK.markSeen(s, "1.1"); IK.markSeen(s, "1.3");
   IK.saveCheckIn(s, {}, "2026-10-01", at("2026-10-01"));
   assert.equal(IK.trackerDay(s, "2026-10-01").day, 1);
   assert.equal(IK.trackerDay(s, "2026-10-02").day, 2);
@@ -192,8 +194,7 @@ test("To-dos: eins pro Tracker-Tag, frei mit Tag und Video, Profilfelder haken a
   assert.equal(s2("d2").status, "today");
   s.todosDone = {d2: "x"}; assert.equal(s2("d2").status, "done");
   for(let d = 2; d <= 5; d++) IK.saveCheckIn(s, {}, `2026-10-0${d}`, at(`2026-10-0${d}`));
-  assert.equal(IK.todoStatus(s, IN.TODOS, "2026-10-06").find(t => t.id === "d3").status, "locked"); // Video 1.3 fehlt
-  IK.markSeen(s, "1.3"); assert.equal(IK.todoStatus(s, IN.TODOS, "2026-10-06").find(t => t.id === "d3").status, "open");
+  assert.equal(IK.todoStatus(s, IN.TODOS, "2026-10-06").find(t => t.id === "d3").status, "open"); // 1.3 gesehen, Tag vorbei
   assert.equal(IK.todoStatus(s, IN.TODOS, "2026-10-06").find(t => t.id === "d6").status, "today");
 });
 
@@ -223,7 +224,7 @@ test("Materialien: Mini-Karte nach Video, Handout nach allen Kernvideos, Goodie 
 });
 
 test("Hinweise: jede Freischaltung einmal, gesehene verschwinden", () => {
-  const s = fresh();
+  const s = empty();
   assert.deepEqual(IK.newUnlocks(s, ctx(s)), []);
   IK.markSeen(s, "1.1"); IK.markSeen(s, "1.6");
   assert.deepEqual(IK.newUnlocks(s, ctx(s)).map(e => e.id), ["basis-bunt", "mat-teller"]);
@@ -306,4 +307,31 @@ test("Joker: 2 Stück heben die Pause auf, danach nur schauen mit Zustimmung", (
   IK.allowWatchOnly(s);
   assert.equal(IK.videoPaused(s, {id:"3.1", week:3}), false);
   assert.equal(IK.checkGap(s, "2026-12-01"), false);
+});
+
+test("Wertungsstart: vor den Videos 1.1–1.3 zählen Check-ins zu keiner Woche", () => {
+  const s = empty();
+  IK.markSeen(s, "1.1");
+  const c = IK.saveCheckIn(s, {basis:{bunt:true}}, "2026-10-01", at("2026-10-01"));
+  assert.equal(c.pre, true); assert.equal(s.weeks.length, 0);
+  assert.equal(IK.startProgress(s), 1); assert.equal(IK.scoringStarted(s), false);
+  assert.equal(IK.checkGap(s, "2026-10-09"), false);
+  IK.markSeen(s, "1.2"); IK.markSeen(s, "1.3");
+  const d = IK.saveCheckIn(s, {}, "2026-10-02", at("2026-10-02"));
+  assert.equal(d.dayIndex, 1); assert.equal(s.weeks[0].index, 1);
+  assert.equal(IK.checkinsOf(s, s.weeks[0].id).length, 1);
+});
+
+test("Umsetzung zählt nur freigeschaltete Routinen", () => {
+  const c = [{basis:{bunt:true, morgenlicht:true}, erholt:3, energie:3, bauch:3, stress:3}];
+  assert.equal(IK.loopScore(c, [], 4).umsetzung, 50);
+  assert.equal(IK.loopScore(c, [], 2).umsetzung, 100);
+});
+
+test("Tagesgrenze 4 Uhr: um 0:30 ist noch der Vortag", () => {
+  const real = Date.now;
+  Date.now = () => new Date(2026, 10, 12, 0, 30).getTime();
+  try { assert.equal(IK.localDay(), "2026-11-11"); } finally { Date.now = real; }
+  Date.now = () => new Date(2026, 10, 12, 4, 5).getTime();
+  try { assert.equal(IK.localDay(), "2026-11-12"); } finally { Date.now = real; }
 });

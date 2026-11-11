@@ -149,3 +149,12 @@ Nach jeder Änderung an einer Druckvorlage (`cardHTML`, `morgenCard`, `handout1`
 - **Joker:** 2 Stück (`JOKERS`), heben die Pause sofort auf. Goodie und Wochen-Check der Lückenwoche bleiben zu.
 - **Nur schauen:** Sind beide Joker verbraucht und es entsteht wieder eine Lücke, kommt einmalig „Lieber schauen als eintragen?“. Mit Zustimmung sind alle Videos dauerhaft frei (`watchOnly`); Goodies, Wochen-Check und Loop-Score bleiben an die Check-ins gebunden. Diese Möglichkeit wird vorher nirgends angekündigt.
 - **Onboarding:** neuer Schritt 4 „Dein Loop lebt vom Mitmachen“ mit Regel, Nachtragen und Jokern.
+
+## Tagesgrenze, Wertungsstart, Freischaltungen, Tempo
+
+- **Tagesgrenze 4 Uhr** (`DAY_START_HOUR`): `localDay()` ohne Datum zählt bis 4 Uhr nachts zum Vortag. Der Check-in zeigt oben das Datum, für das erfasst wird; zwischen 0 und 4 Uhr mit dem Hinweis „Noch …“.
+- **Wertungsstart** nach den Videos 1.1, 1.2, 1.3 (`START_VIDEOS`). Vorher sind Check-ins möglich, gehören aber zu keiner Woche (`pre`). Woche 1, Loop-Score, Lücken-Regel und Joker beginnen erst danach. Auf Heute steht bis dahin die Karte „Deine Wertung startet“, das Loop-Logo zeigt „x / 3 Videos“. Nach dem 3. Video einmal „Ab heute zählt's.“ (`scoreStartAt`).
+- **Umsetzung** im Loop-Score zählt nur Routinen, deren Video gesehen ist (`loopScore(…, basisMax)`).
+- **Check-in Schritt 1** „Dein Tag im Überblick“: Routinen, Abendroutine, To-do des Tages (erledigt mit Ergebnis oder offen mit Weg dorthin) und Bausteine, oben „x erledigt · y offen“.
+- **Nach jedem Video:** „Das hast du dir gerade freigeschaltet“ mit Ort und Knopf.
+- **Tempo:** Liegen die gesehenen Videos 2 Wochen oder mehr vor dem Tracking, empfiehlt eine Karte im Kurs eine Video-Pause. Keine Sperre; „Weiter“ blendet sie bis zur nächsten Tracker-Woche aus.
