@@ -69,7 +69,32 @@ function daysBetween(a,b){ return Math.round((parseDay(b)-parseDay(a))/864e5); }
 function canEdit(forDate,today){ const d=daysBetween(forDate,today); return d>=0 && d<=EDIT_DAYS; }
 
 /* ---------- Tageswerte ---------- */
-function basisScore(ci){ return BASIS.reduce((n,b)=>n+(ci.basis&&ci.basis[b.key]?1:0),0); }
+/* ---------- Abendroutine: 3 Grundpfeiler je 25 %, Extras zusammen 25 % (voll ab 2) ---------- */
+const ABEND = {
+  hard:[{key:"einleiten", label:"Routine eingeleitet", sub:"30 Min. vor dem Schlafen: Licht dimmen, runterfahren"},
+        {key:"bildschirm", label:"Bildschirm aus", sub:"Letzte 60 Min. ohne Handy, Laptop, TV"},
+        {key:"bett", label:"Feste Bettgehzeit", sub:"Im Bett zu deiner Zeit, ± 30 Min."}],
+  extras:[{key:"wasser",label:"Glas Wasser"},{key:"lesen",label:"Gelesen"},{key:"tee",label:"Kräutertee"},{key:"dehnen",label:"Dehnen, Atmen"},
+          {key:"dinge",label:"3 gute Dinge"},{key:"lueften",label:"Gelüftet"},{key:"alkohol",label:"Ohne Alkohol"}],
+  hardWeight:0.25, extrasWeight:0.25, extrasFull:2, doneAt:0.75
+};
+function cleanAbend(d){
+  if(!d||typeof d!=="object") return undefined;
+  const hard={}; ABEND.hard.forEach(h=>{ hard[h.key]=!!(d.hard&&d.hard[h.key]); });
+  const keys=ABEND.extras.map(e=>e.key), extras=(Array.isArray(d.extras)?d.extras:[]).filter((k,i,a)=>keys.includes(k)&&a.indexOf(k)===i);
+  return {hard, extras};
+}
+function abendValue(d){
+  d=cleanAbend(d); if(!d) return 0;
+  const h=ABEND.hard.filter(x=>d.hard[x.key]).length;
+  const v=h*ABEND.hardWeight + ABEND.extrasWeight*Math.min(1, d.extras.length/ABEND.extrasFull);
+  return Math.round(v*100)/100;
+}
+// Wert einer Routine an einem Tag (0 bis 1). Ältere Einträge speichern Ja/Nein, die Abendroutine jetzt einen Anteil.
+function routineVal(ci,key){ const v=ci&&ci.basis?ci.basis[key]:undefined; return isNum(v) ? Math.max(0,Math.min(1,v)) : (v?1:0); }
+// „Erledigt“ für Zählungen: Abendroutine ab 75 % (alle drei Grundpfeiler oder zwei plus Extras), sonst abgehakt.
+function routineDone(ci,key){ const v=routineVal(ci,key); return key==="abend" ? v>=ABEND.doneAt-1e-9 : v>0; }
+function basisScore(ci){ return BASIS.reduce((n,b)=>n+routineVal(ci,b.key),0); }
 
 /* ---------- Woche: Durchschnitte und Loop-Score (§5.6, §5.7) ---------- */
 function weekStats(checkins, activeBausteine){
@@ -78,7 +103,7 @@ function weekStats(checkins, activeBausteine){
   SCALES.forEach(s=>{ avg[s.key]=mean(checkins.map(c=>c[s.key])); });
   avg.basis = days ? mean(checkins.map(basisScore)) : null;
   avg.bewegungMin = mean(checkins.map(c=>c.bewegungMin));
-  avg.bewegt30 = days ? checkins.filter(c=>c.basis&&c.basis.bewegt30).length/days : null;
+  avg.bewegt30 = days ? checkins.filter(c=>routineDone(c,"bewegt30")).length/days : null;
   const bausteine = (activeBausteine||[]).map(b=>{
     const vals = checkins.map(c=>c.bausteine ? c.bausteine[b.id] : undefined);
     let rate = null;
@@ -247,7 +272,7 @@ function currentCourseWeek(videos, state, maxWeek){
 // Eine Basis-Routine ist frei, wenn ihr Video gesehen ist. Wer sie schon einmal abgehakt hat, behält sie (ältere Einträge).
 function basisUnlocked(state,key){
   const b=BASIS.find(x=>x.key===key); if(!b) return false;
-  return isSeen(state,b.videoId) || (state.checkins||[]).some(c=>c.basis&&c.basis[key]);
+  return isSeen(state,b.videoId) || (state.checkins||[]).some(c=>routineVal(c,key)>0);
 }
 // Wochen-Check offen: nach 7 Tagen, oder ab 5 Tagen, wenn seit Wochenstart 9 Kalendertage vergangen sind (SPEC §5.6).
 const WEEKCHECK_MIN_DAYS = 5, WEEKCHECK_LATE_DAYS = 9;
@@ -314,11 +339,13 @@ const newUnlocks = (state, ctx) => unlockEvents(state,ctx).filter(e=>!(state.not
 function pickEntry(d){
   const o={basis:Object.assign({bunt:false,morgenlicht:false,bewegt30:false,abend:false}, d.basis||{}), bausteine:Object.assign({}, d.bausteine||{})};
   ["erholt","bauch","energie","stress","tagGesamt","schlafStunden","pflanzen","bewegungMin"].forEach(k=>{ o[k]=isNum(d[k])?d[k]:undefined; });
+  o.abendD=cleanAbend(d.abendD);
+  if(o.abendD) o.basis.abend=abendValue(o.abendD);
   return o;
 }
 
 const api = {WEIGHTS, UMSETZUNG, DAYS_PER_WEEK, PILLARS, BASIS, SCALES, GOALS, BASELINE, BAUSTEINE,
-  isNum, mean, norm, localDay, addDays, daysBetween, canEdit, basisScore, weekStats, befindenOf,
+  isNum, mean, norm, localDay, addDays, daysBetween, canEdit, basisScore, routineVal, routineDone, ABEND, abendValue, cleanAbend, weekStats, befindenOf,
   loopScoreFromParts, loopScore, compareToStart, biggestLever, currentWeek, checkinsOf, checkinFor,
   completeWeek, saveCheckIn, MAX_NEW_PER_WEEK, SEEN_PERCENT, isSeen, markSeen, markUnseen, bausteinById, bausteinForVideo,
   unlockedBausteine, newWeekCandidates, startWeek, activationState, activateNow, pauseBaustein, resumeBaustein, activeBausteine,

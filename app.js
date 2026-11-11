@@ -47,7 +47,7 @@ function blank(){ return {v:2, code:"", product:null, demo:false, goals:[], remi
   onboardingCompletedAt:null, consentHealthDataAt:null, baselines:[], weeks:[], checkins:[], videoProgress:{},
   pausedBausteinIds:[], queuedBausteinIds:[], lastBackup:null,
   wakeTime:null, lightSpot:null, why:null, standTest:null, standTestAt:null, plantCount:null, topGoal:null, textSize:"normal", installSnooze:null, reminderSetupAt:null, notify:false, backupSnooze:null, todosDone:{}, noticesSeen:{},
-  dayTicks:{}, focusSnooze:{}, eveningMode:"auto", haptics:true}; }
+  dayTicks:{}, focusSnooze:{}, eveningMode:"auto", haptics:true, bedTime:"22:30"}; }
 function load(){
   try{ const r=localStorage.getItem(KEY); if(r){ const o=JSON.parse(r); if(!("noticesSeen" in o)) migrateNotices=true;
     const d=o.todosDone||{}; if(d.t6&&!d.d2) d.d2=d.t6; if(d.t7&&!d.d5) d.d5=d.t7; // alte Starter-Liste → Tages-To-dos
@@ -83,7 +83,7 @@ function back(fallback){
   restoreNav(fallback); }
 window.addEventListener("popstate", ()=>{ if(navStack.length) restoreNav(); });
 function go(v){ if(v==="kurs"&&view!=="video") kursWeek=null; view=v; flash=v==="heute"?flash:""; confirmWipe=false; transfer=null; wissen=null; rebase=false; mat=null; focusTodo=null; freshIds=[]; freshTodos=[];
-  sheetOpen=false; lockFor=null; if(v==="checkin"){ draft=null; ciStep=1; ciMore=false; } render(); window.scrollTo(0,0); }
+  sheetOpen=false; lockFor=null; whatOpen=false; abendEd=null; if(v==="checkin"){ draft=null; ciStep=1; ciMore=false; } render(); window.scrollTo(0,0); }
 
 function render(){
   const app=document.getElementById("app");
@@ -98,7 +98,7 @@ function render(){
   const side=tabs||view==="video"&&!!S.onboardingCompletedAt&&!rebase; // Video: am Desktop mit Seitenleiste
   app.className=(side?"nav ":"")+"v-"+(S.onboardingCompletedAt?(rebase?"rebase":view):"ob-"+ob);
   applyTheme();
-  const sheet = !S.onboardingCompletedAt ? "" : sheetOpen ? sheetHTML() : lockFor ? lockHTML() : (installSheet||reminderSheet) ? setupSheetHTML() : "";
+  const sheet = !S.onboardingCompletedAt ? "" : abendEd ? abendHTML() : whatOpen ? whatHTML() : sheetOpen ? sheetHTML() : lockFor ? lockHTML() : (installSheet||reminderSheet) ? setupSheetHTML() : "";
   document.body.classList.toggle("sheet-open", !!sheet);
   app.innerHTML=`${side?sideBar():""}<main class="${full?"full ":""}${key!==lastView?"enter":""}">${body}</main>${tabs?tabBar():""}${sheet}`;
   lastView=key;
@@ -332,18 +332,21 @@ function greet(){ const h=new Date().getHours(); return h<11?"Guten Morgen":h<18
 /* ---------- Heute (Screen 04): ein Fokus, Routinen tagsüber, Glocke ---------- */
 const BICON = {bunt:"darm", morgenlicht:"sun", bewegt30:"beweg", abend:"moon"};
 const RULE = {bunt:"Halber Teller Pflanzen", morgenlicht:"10 Min. draußen, feste Zeit", bewegt30:"Aufgeteilt zählt auch", abend:"Pünktlich ins Bett, die letzten 30 Min. ohne Handy"};
-const RSUB = {bunt:"Halber Teller Pflanzen", morgenlicht:"10 Min. draußen", bewegt30:"Aufgeteilt zählt", abend:"gestern Abend"};
+const RSUB = {bunt:"Gemüse, Obst, Hülsenfrüchte", morgenlicht:"10 Min. draußen am Morgen", bewegt30:"Gehen, Rad, Sport, alles zählt", abend:"gestern Abend"};
 const pvars = p => `--c:${PC[p]};--s:${PS[p]};--t:${PT[p]}`;
 const ticksToday = () => ((S.dayTicks||{})[IK.localDay()]) || {};
 // Tagsüber abgehakt: vor dem Check-in als Vormerkung, danach direkt im Eintrag des Tages.
-function basisState(key){ const ci=IK.checkinFor(S,IK.localDay()); return ci ? !!(ci.basis&&ci.basis[key]) : !!ticksToday()[key]; }
+const todayEntry = () => IK.checkinFor(S,IK.localDay()) || {basis:ticksToday(), abendD:ticksToday().abendD};
+function basisState(key){ return IK.routineDone(todayEntry(),key); }
+function basisVal(key){ return IK.routineVal(todayEntry(),key); }
 function toggleTick(key){
+  if(key==="abend"){ openAbend("heute"); return basisState(key); }
   const today=IK.localDay(), ci=IK.checkinFor(S,today), on=!basisState(key);
   if(ci) IK.saveCheckIn(S, Object.assign({}, ci, {basis:Object.assign({}, ci.basis, {[key]:on})}), today);
   else S.dayTicks={[today]:Object.assign({}, ticksToday(), {[key]:on})}; // nur der heutige Tag wird gemerkt
   save(); return on;
 }
-function addMinutes(t,m){ const [h,mi]=t.split(":").map(Number), d=h*60+mi+m; return String(Math.floor(d/60)%24).padStart(2,"0")+":"+String(d%60).padStart(2,"0"); }
+function addMinutes(t,m){ const [h,mi]=t.split(":").map(Number), d=(((h*60+mi+m)%1440)+1440)%1440; return String(Math.floor(d/60)%24).padStart(2,"0")+":"+String(d%60).padStart(2,"0"); }
 // Priorität: Wochen-Check, Abend-Check-in, Morgenlicht, nächstes Video, Check-in für später, erledigt.
 function focusOf(i,nx){
   const h=new Date().getHours(), today=IK.localDay(), done=!!i.todayCi, sn=((S.focusSnooze||{})[today])||[], w=i.w;
@@ -368,13 +371,69 @@ function focusCard(f){
     <span class="eb">${f.eb}</span><h2 class="ft">${f.t}</h2>${f.p?`<p>${f.p}</p>`:""}${checks}
     <div class="acts"><button class="btn white" ${f.btn}>${f.label}</button>${f.later?`<button class="btn later" data-a="focus-later" data-v="${f.later}">Später</button>`:""}</div></section>`;
 }
+const RCHK = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 10 17 19 7"/></svg>`;
+const CHEV = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>`;
+const INFO = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/></svg>`;
+function miniRing(frac,txt,sz){ sz=sz||32; const r=sz/2-3, C=2*Math.PI*r;
+  return `<span class="rring" style="width:${sz}px;height:${sz}px" aria-hidden="true"><svg viewBox="0 0 ${sz} ${sz}"><circle cx="${sz/2}" cy="${sz/2}" r="${r}" class="tr"/><circle cx="${sz/2}" cy="${sz/2}" r="${r}" class="fg" stroke-dasharray="${(C*frac).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 ${sz/2} ${sz/2})"/></svg><b>${txt}</b></span>`; }
+function abendHardCount(d){ d=IK.cleanAbend(d); return d ? IK.ABEND.hard.filter(h=>d.hard[h.key]).length : 0; }
 function routinesCard(){
   const un=IK.BASIS.filter(b=>IK.basisUnlocked(S,b.key)), n=un.filter(b=>basisState(b.key)).length;
-  return `<section aria-label="Deine Routinen heute" style="display:flex;flex-direction:column;gap:10px"><div class="rt-hd"><b>Deine Routinen heute</b><span class="note">${un.length?`${n} von ${un.length}`:"ab Video 1.1"}</span></div>
-  <div class="rts">${IK.BASIS.map(b=>{
-    if(!IK.basisUnlocked(S,b.key)) return `<button class="rt locked" data-a="video" data-v="${b.videoId}" style="${pvars(b.pillar)}"><span class="ic">${ICON[BICON[b.key]]}</span><span class="rtx"><b>${b.label}</b><small>nach Video ${b.videoId}</small></span></button>`;
+  const bars=IK.BASIS.map(b=>`<i style="${IK.basisUnlocked(S,b.key)&&basisState(b.key)?`background:${PC[b.pillar]}`:""}"></i>`).join("");
+  const row=b=>{
+    if(!IK.basisUnlocked(S,b.key)) return `<button class="rrow locked" data-a="video" data-v="${b.videoId}" style="${pvars(b.pillar)}"><span class="ic">${ICON[BICON[b.key]]}</span><span class="rtx"><b>${b.label}</b><small>frei nach Video ${b.videoId}</small></span><span class="rchk lk" aria-hidden="true">${LOCK}</span></button>`;
+    if(b.key==="abend"){ const d=todayEntry().abendD, h=abendHardCount(d), v=basisVal("abend");
+      return `<button class="rrow${basisState("abend")?" on":""}" data-a="abend-open" data-v="heute" aria-label="Abendroutine gestern, ${h} von 3 Grundpfeilern, Liste öffnen" style="${pvars(b.pillar)}"><span class="ic">${ICON[BICON[b.key]]}</span><span class="rtx"><b>${b.label} <span class="yd">gestern</span></b><small>${d?`${h} von 3 Grundpfeilern${d.extras.length?` · ${d.extras.length} Extra${d.extras.length>1?"s":""}`:""}`:"3 Grundpfeiler · antippen"}</small></span>${miniRing(v,`${h}/3`)}<span class="chev" aria-hidden="true">${CHEV}</span></button>`; }
     const on=basisState(b.key);
-    return `<button class="rt${on?" on":""}" data-a="tick" data-v="${b.key}" aria-pressed="${on}" aria-label="${b.label}${b.yesterday?" gestern Abend":""}, ${on?"erledigt":"offen"}" style="${pvars(b.pillar)}">${on?`<svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg><span class="ok" aria-hidden="true">${CHECK}</span>`:""}<span class="ic">${ICON[BICON[b.key]]}</span><span class="rtx"><b>${b.label}</b></span></button>`; }).join("")}</div></section>`;
+    return `<button class="rrow${on?" on":""}" data-a="tick" data-v="${b.key}" aria-pressed="${on}" aria-label="${b.label}, ${on?"erledigt":"offen"}" style="${pvars(b.pillar)}"><span class="ic">${ICON[BICON[b.key]]}</span><span class="rtx"><b>${b.label}</b><small>${RSUB[b.key]}</small></span><span class="rchk" aria-hidden="true">${RCHK}</span></button>`;
+  };
+  return `<section class="rcard" aria-label="Deine Routinen heute"><div class="rt-hd"><b>Deine Routinen heute</b><button class="rinfo" data-a="what-open">${INFO}Was zählt?</button></div>
+  <p class="rhint"><span class="rbars" aria-hidden="true">${bars}</span>${un.length?`${n} von ${un.length} · antippen, sobald erledigt`:"Frei ab Video 1.1"}</p>
+  <div class="rlist">${IK.BASIS.map(row).join("")}</div></section>`;
+}
+/* ---------- „Was zählt?“ und die Abendroutine als eigene Karte ---------- */
+const WHAT = {
+  bunt:["Mindestens eine Mahlzeit nach dem Pflanzen-Teller: die Hälfte Gemüse, Obst oder Hülsenfrüchte, dabei mindestens 3 verschiedene Pflanzen.","Zählt nicht: ein Apfel nebenbei, Saft, Pommes."],
+  morgenlicht:["Mindestens 10 Minuten draußen bei Tageslicht, in den ersten 2 Stunden nach dem Aufstehen. Bewölkt zählt.","Zählt nicht: durchs Fenster oder mit Sonnenbrille."],
+  bewegt30:["Zusammen mindestens 30 Minuten, bei denen du etwas schneller atmest: zügig gehen, Rad, Sport, Garten. Darf in Stücken sein.","Zählt nicht: normales Herumlaufen in der Wohnung."],
+  abend:["Drei Grundpfeiler am Vorabend: Routine eingeleitet, Bildschirm aus, feste Bettgehzeit. Dazu Extras, die gut tun. Jeder Grundpfeiler zählt 25 %, die Extras zusammen 25 %.","Wird für gestern Abend eingetragen, weil der Check-in vor dem Schlafen liegt."]
+};
+let whatOpen=false, abendEd=null;
+function whatHTML(){
+  return `<div class="sheet-bg" data-a="what-close"><section class="sheet what" role="dialog" aria-modal="true" aria-labelledby="wz-t" data-a="noop"><span class="grab" aria-hidden="true"></span>
+    <div class="sh"><div><span class="eyebrow">Deine Routinen</span><h2 id="wz-t">Was zählt?</h2></div><button class="iconbtn" data-a="what-close" aria-label="Schließen" style="background:var(--btn2-bg);box-shadow:none">${ICON.close}</button></div>
+    <p class="note">So weißt du genau, wann du abhaken darfst.</p>
+    <ul class="wz">${IK.BASIS.map(b=>`<li style="${pvars(b.pillar)}"><span class="ic">${ICON[BICON[b.key]]}</span><span><b>${b.label}</b><span>${esc(WHAT[b.key][0])}</span><small>${esc(WHAT[b.key][1])}</small></span></li>`).join("")}</ul>
+    <button class="btn" data-a="what-close">Verstanden</button></section></div>`;
+}
+function openAbend(src,bed){
+  const base = src==="ci" ? (draft&&draft.abendD) : todayEntry().abendD;
+  abendEd={src, bed:!!bed, d:IK.cleanAbend(base)||IK.cleanAbend({})};
+  haptic("tap"); render();
+}
+function saveAbend(){
+  const d=abendEd.d, v=IK.abendValue(d);
+  if(abendEd.src==="ci"){ draft.abendD=d; draft.basis.abend=v; }
+  else { const today=IK.localDay(), ci=IK.checkinFor(S,today);
+    if(ci) IK.saveCheckIn(S, Object.assign({}, ci, {basis:Object.assign({}, ci.basis, {abend:v}), abendD:d}), today);
+    else S.dayTicks={[today]:Object.assign({}, ticksToday(), {abend:v, abendD:d})};
+    save(); }
+  abendEd=null; haptic(v>=IK.ABEND.doneAt?"success":"tap"); render();
+}
+const BEDTIMES=["21:30","22:00","22:30","23:00","23:30","00:00"];
+function abendHTML(){
+  const d=abendEd.d, v=IK.abendValue(d), pct=Math.round(v*100), ex=d.extras.length;
+  const yd=new Date(); yd.setDate(yd.getDate()-1); const wd=yd.toLocaleDateString("de-DE",{weekday:"long"});
+  const hard=h=>{ const on=d.hard[h.key], sub=h.key==="bett"?`Im Bett bis ${esc(S.bedTime||"22:30")} Uhr, ± 30 Min.`:h.sub;
+    return `<button class="abh${on?" on":""}" data-a="ab-hard" data-v="${h.key}" aria-pressed="${on}"><span class="rchk" aria-hidden="true">${RCHK}</span><span class="rtx"><b>${esc(h.label)}</b><small>${sub}</small></span><span class="w">25 %</span></button>`; };
+  const bed=`<div class="abbed"><span>Deine Bettgehzeit</span><div class="times" role="group" aria-label="Bettgehzeit">${BEDTIMES.map(t=>`<button type="button" data-a="bed-time" data-v="${t}" aria-pressed="${(S.bedTime||"22:30")===t}">${t}</button>`).join("")}</div></div>`;
+  return `<div class="sheet-bg" data-a="ab-close"><section class="sheet abend" role="dialog" aria-modal="true" aria-labelledby="ab-t" data-a="noop" style="${pvars("schlaf")}"><span class="grab" aria-hidden="true"></span>
+    <div class="sh"><div><span class="eyebrow">Gestern Abend · ${esc(wd)}</span><h2 id="ab-t">Deine Abendroutine</h2></div><button class="iconbtn" data-a="ab-close" aria-label="Schließen" style="background:var(--btn2-bg);box-shadow:none">${ICON.close}</button></div>
+    <div class="abgrp"><span class="eyebrow ac">Die 3 Grundpfeiler</span>${IK.ABEND.hard.map(hard).join("")}
+      ${abendEd.bed?bed:`<button class="btn link small abedit" data-a="bed-edit">Bettgehzeit ändern · ${esc(S.bedTime||"22:30")} Uhr</button>`}</div>
+    <div class="abgrp"><span class="eyebrow">Extras, die gut tun${ex?` · ${ex} gewählt`:""}</span><div class="abx">${IK.ABEND.extras.map(e=>{ const on=d.extras.includes(e.key); return `<button type="button" data-a="ab-extra" data-v="${e.key}" aria-pressed="${on}"><span class="rchk" aria-hidden="true">${RCHK}</span>${esc(e.label)}</button>`; }).join("")}</div></div>
+    <div class="abscore">${miniRing(v,`${pct} %`,46)}<span><b>Abend-Wert ${pct} %</b><small>Grundpfeiler je 25 %, Extras zusammen 25 % (voll ab 2). Fließt in deinen Loop-Score.</small></span></div>
+    <button class="btn" data-a="ab-save">Speichern</button></section></div>`;
 }
 // Heute: ist der Check-in schon erledigt?
 function ciStatus(i){
@@ -468,7 +527,8 @@ function checkinTarget(){
 let ciStep=1, ciMore=false, lastSaved=null;
 function vCheckin(){
   const t=checkinTarget();
-  if(!draft){ draft = t.ex ? JSON.parse(JSON.stringify(t.ex)) : {basis:Object.assign({bunt:false,morgenlicht:false,bewegt30:false,abend:false}, ticksToday()), bausteine:{}};
+  if(!draft){ const tk0=Object.assign({}, ticksToday()), ad=tk0.abendD; delete tk0.abendD;
+    draft = t.ex ? JSON.parse(JSON.stringify(t.ex)) : {basis:Object.assign({bunt:false,morgenlicht:false,bewegt30:false,abend:false}, tk0), abendD:ad, bausteine:{}};
     if(t.cands) draft.newBausteinIds=t.cands.slice(0,IK.MAX_NEW_PER_WEEK);
     ciMore = !!(t.ex && (t.ex.schlafStunden!=null||t.ex.pflanzen!=null||t.ex.bewegungMin!=null)); }
   const ids = t.cands ? t.kept.concat(draft.newBausteinIds) : t.ids;
@@ -478,8 +538,10 @@ function vCheckin(){
   const head=`<div class="top"><div class="t"><small>Woche ${t.week} · Tag ${t.day} von 7</small>${prog}</div>${ciStep===1
     ? `<button class="iconbtn" data-a="back" data-v="heute" aria-label="Schließen">${ICON.close}</button>` : `<button class="iconbtn" data-a="ci-back" aria-label="Zurück">${ICON.back}</button>`}</div>`;
   if(ciStep===1){
-    const tk=t.ex?{}:ticksToday(), un=IK.BASIS.filter(b=>IK.basisUnlocked(S,b.key)), n=un.filter(b=>draft.basis[b.key]).length;
+    const tk=t.ex?{}:ticksToday(), un=IK.BASIS.filter(b=>IK.basisUnlocked(S,b.key)), n=un.filter(b=>IK.routineDone({basis:draft.basis},b.key)).length;
     const basisTile=b=>{ if(!IK.basisUnlocked(S,b.key)) return `<button class="ctile locked" data-a="video" data-v="${b.videoId}" style="${pvars(b.pillar)}"><span class="ic">${ICON[BICON[b.key]]}</span><span class="tx"><b>${b.label}</b><small>Frei nach Video ${b.videoId}</small></span></button>`;
+      if(b.key==="abend"){ const d=draft.abendD, h=abendHardCount(d), v=IK.routineVal({basis:draft.basis},"abend"), done=v>=IK.ABEND.doneAt;
+        return `<button class="ctile" data-a="basis" data-v="abend" aria-pressed="${done}" aria-label="Abendroutine gestern, ${h} von 3 Grundpfeilern, Liste öffnen" style="${pvars(b.pillar)}"><span class="ic">${ICON[BICON[b.key]]}</span><span class="tx"><b>${b.label}</b><small>${d?`${h} von 3 Grundpfeilern${d.extras.length?` · ${d.extras.length} Extra${d.extras.length>1?"s":""}`:""} · ${Math.round(v*100)} %`:"3 Grundpfeiler und Extras · antippen"}</small></span>${miniRing(v,`${h}/3`,30)}</button>`; }
       const on=!!draft.basis[b.key];
       return `<button class="ctile" data-a="basis" data-v="${b.key}" aria-pressed="${on}" style="${pvars(b.pillar)}"><span class="ic">${ICON[BICON[b.key]]}</span><span class="tx"><b>${b.label}</b><small>${RULE[b.key]}${on&&tk[b.key]?" · tagsüber abgehakt":""}</small></span><span class="mk" aria-hidden="true">${on?CHECK:""}</span></button>`; };
     const bstTile=id=>{ const b=IK.bausteinById(id), on=draft.bausteine[id]===true;
@@ -611,7 +673,7 @@ function vErfolge(n){
   const why=W.why?tcard("recap",`<span class="k">Dein Warum</span><b class="tt">„${esc(W.why)}“</b>`):"";
   const empty=!W.N&&!W.steps?`<div class="card"><h2>Noch keine Erfolge in Woche ${n}</h2><p class="note">Jeder Check-in und jedes To-do landet hier. Am Ende der Woche siehst du alles auf einen Blick.</p></div>`:"";
   const run=running&&W.stepsTotal&&starterActive()?`<div class="card soft wrun"><span><b>Woche ${n} läuft</b><span class="note">${W.steps} von ${W.stepsTotal} To-dos erledigt · ${W.N} von 7 Tagen eingetragen</span></span><button class="btn small" data-a="go" data-v="starter">Ansehen</button></div>`:"";
-  return empty || lay(`${W.N?`<div class="wtiles">${tile("bunt","darm","Tage bunt gegessen")}${tile("morgenlicht","schlaf","Tage Morgenlicht")}${tile("bewegt30","beweg","Tage 30 Min bewegt")}${tile("abend","schlaf","Abende mit Abendroutine")}</div>`:""}${list}`, `${why}${run}`);
+  return empty || lay(`${W.N?routineRecap(W):""}${list}`, `${why}${run}`);
 }
 
 /* ---------- Kurs (Screen 05) und Video (Screen 06) ---------- */
@@ -858,16 +920,40 @@ function weekWins(index){
   const A={darm:[], schlaf:[], beweg:[], recap:[]}, B={darm:[], schlaf:[], beweg:[], recap:[]}, days={};
   const td=weekTodos(index).filter(t=>t.done);
   td.forEach(t=>{ if(!t.win) return; const v=t.input?S[t.input.field]:null; A[t.pillar].push(t.win.replace("{v}", esc(String(v==null?"":v)))); });
-  IK.BASIS.forEach(b=>{ const n=cis.filter(c=>c.basis&&c.basis[b.key]).length; days[b.key]=n; if(n) B[b.pillar].push(`${b.label==="30 Min bewegt"?"30 Minuten bewegt":b.label} an ${n} von ${N} Tag${N===1?"":"en"}`); });
+  IK.BASIS.forEach(b=>{ const n=cis.filter(c=>IK.routineDone(c,b.key)).length; days[b.key]=n; if(n) B[b.pillar].push(`${b.label==="30 Min bewegt"?"30 Minuten bewegt":b.label} an ${n} von ${N} Tag${N===1?"":"en"}`); });
   if(w) IK.activeBausteine(w).forEach(b=>{ const n=weeklyCountOf(cis,b.id); if(n&&A[b.pillar]) A[b.pillar].push(`${esc(b.label)} an ${n} von ${N} Tag${N===1?"":"en"}`); });
   const why = td.some(t=>t.input&&t.input.field==="why") && S.why ? S.why : null;
   const all={}; Object.keys(A).forEach(p=>{ all[p]=A[p].slice(0,99); });
   // Reihenfolge je Bereich: To-dos, Routinen, Bausteine
   Object.keys(A).forEach(p=>{ const todo=A[p].filter((x,i)=>i<td.filter(t=>t.pillar===p&&t.win).length), rest=A[p].slice(todo.length); all[p]=[...todo, ...B[p], ...rest]; });
-  return {index, A, B, all, days, N, why, steps:td.length, stepsTotal:weekTodos(index).length, total:Object.values(all).reduce((a,l)=>a+l.length,0)+(why?1:0)};
+  return {index, A, B, all, days, N, cis, why, steps:td.length, stepsTotal:weekTodos(index).length, total:Object.values(all).reduce((a,l)=>a+l.length,0)+(why?1:0)};
+}
+// Rückblick der Routinen: 7 Tagespunkte je Routine, Abendroutine aufgeschlüsselt, schwächster Punkt mit Tipp.
+const ABTIP = {einleiten:()=>`Stell dir 30 Minuten vor deiner Bettgehzeit${S.bedTime?` (${addMinutes(S.bedTime,-30)} Uhr)`:""} einen Wecker als Startsignal.`,
+  bildschirm:()=>`Leg das Handy ab ${S.bedTime?addMinutes(S.bedTime,-60):"21:30"} Uhr in einen anderen Raum. Ein Wecker statt Handy hilft.`,
+  bett:()=>`Halte ${S.bedTime?S.bedTime+" Uhr":"deine Bettgehzeit"} auch am Wochenende, höchstens 30 Minuten später.`};
+function routineRecap(W){
+  const cis=(W.cis||[]).slice().sort((a,b)=>a.forDate<b.forDate?-1:1), N=cis.length; if(!N) return "";
+  const un=IK.BASIS.filter(b=>IK.basisUnlocked(S,b.key)&&b.key!=="abend");
+  const dots=(b)=>`<span class="rdots" aria-hidden="true">${cis.map(c=>`<i class="${IK.routineDone(c,b.key)?"on":""}"></i>`).join("")}</span>`;
+  const rows=un.map(b=>{ const n=cis.filter(c=>IK.routineDone(c,b.key)).length;
+    return `<div class="rrec" style="${pvars(b.pillar)}"><span class="ic">${ICON[BICON[b.key]]}</span><span class="rtx"><b>${b.label}</b><small>${n} von ${N} Tag${N===1?"":"en"}</small></span>${dots(b)}</div>`; }).join("");
+  let abend="";
+  if(IK.basisUnlocked(S,"abend")){
+    const vals=cis.map(c=>IK.routineVal(c,"abend")), avg=vals.reduce((a,b)=>a+b,0)/N, full=cis.filter(c=>IK.routineDone(c,"abend")).length;
+    const det=cis.map(c=>IK.cleanAbend(c.abendD)).filter(Boolean);
+    const hc=IK.ABEND.hard.map(h=>({h, n:det.filter(d=>d.hard[h.key]).length}));
+    const weak=det.length ? hc.slice().sort((a,b)=>a.n-b.n)[0] : null, weakKey = weak && weak.n<det.length*0.6 ? weak.h.key : null;
+    const ex=IK.ABEND.extras.map(e=>({e, n:det.filter(d=>d.extras.includes(e.key)).length})).filter(x=>x.n).sort((a,b)=>b.n-a.n);
+    const bar=({h,n})=>`<div class="rbar${h.key===weakKey?" weak":""}"><span><b>${esc(h.label)}</b><span>${n} von ${N}</span></span><i><i style="width:${Math.round(n/N*100)}%"></i></i></div>`;
+    abend=`<div class="rabend" style="${pvars("schlaf")}"><div class="rah">${miniRing(avg,`${Math.round(avg*100)} %`,52)}<span><b>Abendroutine</b><small>Ø Abend-Wert · ${full} Abend${full===1?"":"e"} erfüllt</small></span></div>
+      ${det.length?`<span class="eyebrow ac">Grundpfeiler</span>${hc.map(bar).join("")}${ex.length?`<span class="eyebrow">Extras</span><div class="rex">${ex.map(x=>`<span>${esc(x.e.label)} · ${x.n}×</span>`).join("")}</div>`:""}`:`<p class="note">Ab jetzt hakst du die drei Grundpfeiler einzeln ab. Nächste Woche siehst du hier, was davon klappt.</p>`}</div>`
+      + (weakKey ? `<div class="rweak"><span class="eyebrow">Noch nicht geklappt</span><b>${esc(weak.h.label)} nur an ${weak.n} von ${N} Abenden</b><p>${esc(ABTIP[weakKey]())}</p></div>` : "");
+  }
+  return `<section class="rrecap" aria-label="Deine Routinen diese Woche"><b class="rrh">Deine Routinen diese Woche</b>${rows?`<div class="rlist">${rows}</div>`:""}${abend}</section>`;
 }
 function winsCards(W){
-  return ["darm","schlaf","beweg","recap"].filter(p=>W.all[p].length).map(p=>tcard(p,`<span class="k kic">${ICON[p]}${AREA[p]}</span><ul class="wins">${W.all[p].map(x=>`<li><span class="ok" aria-hidden="true">${CHECK}</span><span>${x}</span></li>`).join("")}</ul>`)).join("")
+  return routineRecap(W) + ["darm","schlaf","beweg","recap"].filter(p=>W.all[p].length).map(p=>tcard(p,`<span class="k kic">${ICON[p]}${AREA[p]}</span><ul class="wins">${W.all[p].map(x=>`<li><span class="ok" aria-hidden="true">${CHECK}</span><span>${x}</span></li>`).join("")}</ul>`)).join("")
     + (W.why?tcard("recap",`<span class="k">Dein Warum</span><b class="tt">„${esc(W.why)}“</b>`):"");
 }
 
@@ -883,7 +969,7 @@ function weekCheckCard(){
 function weekInsight(c){
   const sc=[["energie","mehr Energie",1],["erholt","dich erholter gefühlt",1],["bauch","ein besseres Bauchgefühl",1],["stress","weniger Stress",-1]];
   let best=null;
-  IK.BASIS.forEach(b=>{ const on=c.filter(x=>x.basis&&x.basis[b.key]), off=c.filter(x=>!(x.basis&&x.basis[b.key]));
+  IK.BASIS.forEach(b=>{ const on=c.filter(x=>IK.routineDone(x,b.key)), off=c.filter(x=>!IK.routineDone(x,b.key));
     if(on.length<2||off.length<2) return;
     sc.forEach(([k,txt,dir])=>{ const av=a=>{ const v=a.map(x=>x[k]).filter(v=>typeof v==="number"); return v.length?v.reduce((p,q)=>p+q,0)/v.length:null; };
       const a=av(on), z=av(off); if(a==null||z==null) return; const d=(a-z)*dir;
@@ -898,7 +984,7 @@ function vWochencheck(){
   const cands=IK.newWeekCandidates(S).map(IK.bausteinById);
   const cmp=IK.compareToStart(latestBaseline(), stats.avg).filter(r=>!r.text&&r.diff>0).sort((a,b)=>b.diff-a.diff)[0];
   const trend = pls&&pls.score!=null&&ls.score!=null ? `${ls.score>=pls.score?"+":"−"}${Math.abs(ls.score-pls.score)} zur Vorwoche` : cmp ? `${esc(cmp.label)} ${fmtSigned(cmp.diff)} seit dem Start` : "Dein erster Wert";
-  const tile=(b)=>`<div class="wtile" style="${pvars(b.pillar)}"><span class="ic">${ICON[b.pillar]}</span><b>${c.filter(x=>x.basis&&x.basis[b.key]).length}<small> von ${c.length}</small></b><span>Tage ${esc(b.label==="30 Min bewegt"?"30 Min bewegt":b.label)}</span></div>`;
+  const tile=(b)=>`<div class="wtile" style="${pvars(b.pillar)}"><span class="ic">${ICON[b.pillar]}</span><b>${c.filter(x=>IK.routineDone(x,b.key)).length}<small> von ${c.length}</small></b><span>Tage ${esc(b.label==="30 Min bewegt"?"30 Min bewegt":b.label)}</span></div>`;
   const ins=weekInsight(c), gd=w.index===1?matById("goodie1"):null;
   return `<div class="wcwrap"><div class="tf-top"><span class="eyebrow" style="color:var(--muted)">Woche ${w.index} · ${c.length} Tage eingetragen</span><button class="iconbtn" data-a="back" data-v="heute" aria-label="Schließen">${ICON.close}</button></div>
   <h1>Dein <span class="acc">Wochen-Check</span></h1>
@@ -1188,7 +1274,7 @@ function vProfil(){
   ${pending?`<div class="card soft"><p class="okmsg">Übertragung erkannt. Auf diesem Gerät sind schon Einträge. Mit „Übernehmen“ werden sie durch den übertragenen Stand ersetzt.</p><div class="btns"><button class="btn small" data-a="pend-yes">Übernehmen</button><button class="btn ghost small" data-a="pend-no">Verwerfen</button></div></div>`:""}
   ${flash?`<div class="card soft"><p class="okmsg">${flash}</p></div>`:""}
   ${lay(`${hero}
-  ${pgroup("Deine Basis", fieldRow("wakeTime","Aufstehzeit")+fieldRow("lightSpot","Morgenlicht-Ort")+fieldRow("standTest","Aufsteh-Test")+fieldRow("why","Dein Warum"))}
+  ${pgroup("Deine Basis", fieldRow("wakeTime","Aufstehzeit")+prow('data-a="abend-open" data-v="profil" data-bed="1"',"Bettgehzeit",esc(S.bedTime||"22:30")+" Uhr")+fieldRow("lightSpot","Morgenlicht-Ort")+fieldRow("standTest","Aufsteh-Test")+fieldRow("why","Dein Warum"))}
   ${pgroup("Dein Startpunkt", (b?`<div class="pbase">${IK.BASELINE.map(x=>`<span><b>${b[x.key]}</b><small>${x.short}</small></span>`).join("")}</div>`:"")+prow(`data-a="rebase"`, b?"Neu erfassen":"Jetzt erfassen", b?`erfasst am ${new Date(b.createdAt).toLocaleDateString("de-DE")}`:""))}
   ${bst}
   ${pgroup("Darstellung", pseg("Abendmodus","set-theme",[["auto","Ab 18 Uhr"],["off","Immer hell"]],S.eveningMode==="off"?"off":"auto")+pseg("Schriftgröße","set-text",[["normal","Normal"],["gross","Größer"]],S.textSize==="gross"?"gross":"normal")+pseg("Haptik","set-haptic",[["on","An"],["off","Aus"]],S.haptics===false?"off":"on"))}`,
@@ -1260,9 +1346,10 @@ function loadDemo(){
   VID.VIDEOS.filter(v=>v.week===1).forEach(v=>IK.markSeen(S,v.id,ts(IK.addDays(start,-1),"19:00")));
   const seenOn={2:["2.0","2.1","2.2","2.3","2.4"], 9:["3.0","3.1","2.5"]};
   const bst=i=>({ballaststoff:i%3!==0, bildschirm:i%2===0, kraft:i%3===0, fermentiert:i%2===1});
+  const ab=i=>({hard:{einleiten:i%5!==2, bildschirm:i%3===0, bett:i%4!==1}, extras:[["wasser","lesen"],["wasser"],[],["lesen","dehnen"],["wasser","tee"]][i%5]});
   rows.forEach((r,i)=>{ const day=IK.addDays(start,i+(i>=7?1:0));
     (seenOn[i]||[]).forEach(id=>IK.markSeen(S,id,ts(day,"12:00")));
-    IK.saveCheckIn(S,{basis:{bunt:!!r[0],morgenlicht:!!r[1],bewegt30:!!r[2],abend:i%3!==1},bausteine:i>=7?bst(i):{},erholt:r[3],bauch:r[4],energie:r[5],stress:r[6],schlafStunden:r[7],pflanzen:r[8],bewegungMin:r[9]},day,ts(day,"21:00")); });
+    IK.saveCheckIn(S,{basis:{bunt:!!r[0],morgenlicht:!!r[1],bewegt30:!!r[2]},abendD:ab(i),bausteine:i>=7?bst(i):{},erholt:r[3],bauch:r[4],energie:r[5],stress:r[6],schlafStunden:r[7],pflanzen:r[8],bewegungMin:r[9]},day,ts(day,"21:00")); });
   S.todosDone={d2:S.onboardingCompletedAt, d5:S.onboardingCompletedAt}; S.plantCount=18;
   S.wakeTime="06:45"; S.lightSpot="Weg zum Bäcker"; S.why="Mit meinen Enkeln noch auf Berge steigen."; S.standTest=11; S.standTestAt=S.onboardingCompletedAt;
   IK.unlockEvents(S,uctx()).forEach(x=>{ S.noticesSeen[x.id]=S.onboardingCompletedAt; });
@@ -1284,7 +1371,16 @@ document.addEventListener("click", e=>{
   if(a==="sheet-close"){ sheetOpen=false; return render(); }
   if(a==="sheet-item"){ sheetItem = sheetItem===v ? "" : v; return render(); }
   if(a==="notice-all"){ openNotices().forEach(x=>markNotice(x.id)); sheetOpen=false; return render(); }
-  if(a==="tick"){ toggleTick(v); haptic("tap"); return render(); }
+  if(a==="tick"){ if(v==="abend") return openAbend("heute"); toggleTick(v); haptic("tap"); return render(); }
+  if(a==="what-open"){ whatOpen=true; haptic("tap"); return render(); }
+  if(a==="what-close"){ whatOpen=false; return render(); }
+  if(a==="abend-open"){ return openAbend(v||"heute", e && el && el.dataset.bed==="1"); }
+  if(a==="ab-close"){ abendEd=null; return render(); }
+  if(a==="ab-hard"){ abendEd.d.hard[v]=!abendEd.d.hard[v]; haptic("tap"); return render(); }
+  if(a==="ab-extra"){ const x=abendEd.d.extras, i=x.indexOf(v); if(i<0) x.push(v); else x.splice(i,1); haptic("tap"); return render(); }
+  if(a==="ab-save"){ return saveAbend(); }
+  if(a==="bed-edit"){ abendEd.bed=true; return render(); }
+  if(a==="bed-time"){ S.bedTime=v; save(); haptic("tap"); return render(); }
   if(a==="focus-done"){ if(!basisState(v)) toggleTick(v); haptic("success"); flash="Abgehakt. Abends ist es im Check-in schon ausgewählt."; return render(); }
   if(a==="focus-later"){ const d=IK.localDay(); S.focusSnooze={[d]:(((S.focusSnooze||{})[d])||[]).concat(v)}; save(); return render(); }
   if(a==="ci-next"){ ciStep=2; render(); return window.scrollTo(0,0); }
@@ -1313,7 +1409,7 @@ document.addEventListener("click", e=>{
   if(a==="set"){ const [scope,k]=el.dataset.k.split("."), n=+v;
     if(scope==="bl"){ obD.baseline[k]=obD.baseline[k]===n?undefined:n; } else { readNums(); draft[k]=draft[k]===n?undefined:n; }
     haptic("tap"); return render(); }
-  if(a==="basis"){ readNums(); draft.basis[v]=!draft.basis[v]; haptic("tap"); return render(); }
+  if(a==="basis"){ readNums(); if(v==="abend") return openAbend("ci"); draft.basis[v]=!draft.basis[v]; haptic("tap"); return render(); }
   if(a==="save-ci") return saveCheckin();
   if(a==="bst"){ readNums(); draft.bausteine[v]=draft.bausteine[v]!==true; haptic("tap"); return render(); }
   if(a==="pick-new"){ readNums(); const n=draft.newBausteinIds, i=n.indexOf(v); if(i>=0) n.splice(i,1); else if(n.length<IK.MAX_NEW_PER_WEEK) n.push(v); return render(); }
