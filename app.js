@@ -98,7 +98,7 @@ function render(){
   const side=tabs||view==="video"&&!!S.onboardingCompletedAt&&!rebase; // Video: am Desktop mit Seitenleiste
   app.className=(side?"nav ":"")+"v-"+(S.onboardingCompletedAt?(rebase?"rebase":view):"ob-"+ob);
   applyTheme();
-  const sheet = !S.onboardingCompletedAt ? "" : abendEd ? abendHTML() : whatOpen ? whatHTML() : sheetOpen ? sheetHTML() : lockFor ? lockHTML() : (installSheet||reminderSheet) ? setupSheetHTML() : "";
+  const sheet = !S.onboardingCompletedAt ? "" : dailyOpen ? dailyHTML() : abendEd ? abendHTML() : whatOpen ? whatHTML() : sheetOpen ? sheetHTML() : lockFor ? lockHTML() : (installSheet||reminderSheet) ? setupSheetHTML() : "";
   document.body.classList.toggle("sheet-open", !!sheet);
   app.innerHTML=`${side?sideBar():""}<main class="${full?"full ":""}${key!==lastView?"enter":""}">${body}</main>${tabs?tabBar():""}${sheet}`;
   lastView=key;
@@ -483,7 +483,7 @@ function vHeute(){
   const i=weekInfo(), t=weeksTotal(), cw=IK.currentCourseWeek(VID.VIDEOS,S,t), vp=IK.weekVideoProgress(VID.VIDEOS,S,cw), nx=IK.nextVideo(VID.VIDEOS,S,t);
   const f=focusOf(i,nx), n=openNotices().length, day=new Date().toLocaleDateString("de-DE",{weekday:"long"});
   return `${brandBar(`<button class="iconbtn bell" data-a="sheet" aria-label="${n?`${n} neue Freischaltungen`:"Neu für dich"}">${ICON.bell}${n?`<span class="badge">${n}</span>`:""}</button>`)}
-  <div class="top withstat"><div class="t"><small>${day} · ${esc(i.label)}</small><b>${greet().replace(/(\S+)$/,'<span class="acc">$1</span>')}</b></div>${S.onboardingCompletedAt?ciStatus(i):""}</div>
+  <div class="top withstat"><div class="t"><small>${day} · ${esc(i.label)}</small><div class="hirow"><b>${greet().replace(/(\S+)$/,'<span class="acc">$1</span>')}</b>${loopBadge()}</div></div>${S.onboardingCompletedAt?ciStatus(i):""}</div>
   ${flash&&!reminderSheet?`<div class="card soft"><p class="okmsg">${flash}</p></div>`:""}
   ${setupCard()}
   ${lay(`${focusCard(f)}${routinesCard()}${f.id!=="video"&&nx?learnCard(nx):""}${starterRow()}${weekMini(i,cw,vp)}`, weekCard(i,cw,vp))}
@@ -634,6 +634,72 @@ function loopExample(withStart){
     <p class="note">Werte von 1 bis 5: dein Startpunkt aus dem Onboarding gegen den Durchschnitt deiner letzten Woche.</p>`:""}</div>`;
 }
 const scoreWord = s => s>=75 ? "Läuft sehr rund" : s>=60 ? "Läuft rund" : s>=45 ? "Kommt in Schwung" : "Am Anfang";
+/* ---------- Loop-Score auf Heute und der Tages-Check ---------- */
+// Aktueller Score der laufenden Tracker-Woche (am Wochenanfang noch die Vorwoche) und Veränderung zum Stand vor dem letzten Check-in.
+function loopNow(){
+  const w=IK.currentWeek(S); if(!w) return null;
+  let wk=w, cis=IK.checkinsOf(S,w.id);
+  if(!cis.length){ wk=S.weeks.filter(x=>x.index<w.index).slice(-1)[0]; if(!wk) return null; cis=IK.checkinsOf(S,wk.id); if(!cis.length) return null; }
+  const act=IK.activeBausteine(wk), score=IK.loopScore(cis,act).score; if(score==null) return null;
+  const sorted=cis.slice().sort((a,b)=>a.forDate<b.forDate?-1:1), last=sorted[sorted.length-1], before=sorted.slice(0,-1);
+  const pb=before.length?IK.loopScore(before,act).score:null, delta=pb==null?null:score-pb;
+  const today=IK.localDay(), since=last.forDate===today?"heute":last.forDate===IK.addDays(today,-1)?"seit gestern":"seit dem letzten Check-in";
+  return {score, delta, since, wk, cis:sorted};
+}
+const loopWord = s => s>=75 ? "läuft sehr rund" : s>=60 ? "läuft rund" : s>=45 ? "kommt in Schwung" : "da geht noch was";
+const fmtDelta = d => d>0 ? "+"+d : d<0 ? "−"+Math.abs(d) : "±0";
+// Logo als Loop-Score: Form dreht sich langsam, der Kreis füllt sich bis zum Wert, der Punkt sitzt am Ende des Bogens.
+function loopMark(score,size,cls){
+  const r=24, L=2*Math.PI*r, f=Math.max(0,Math.min(100,score||0))/100, off=L*(1-f), a=(-90+360*f)*Math.PI/180;
+  return `<svg class="lmark${cls?" "+cls:""}" width="${size}" height="${size}" viewBox="0 0 100 100" aria-hidden="true"><g class="lm-blob"><path d="${BLOBPATH}"/></g>
+    <circle cx="50" cy="50" r="${r}" class="lm-tr"/><circle cx="50" cy="50" r="${r}" class="lm-arc" stroke-dasharray="${L.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 50 50)" style="--len:${L.toFixed(1)};--off:${off.toFixed(1)}"/>
+    ${score!=null?`<circle class="lm-dot" cx="${(50+r*Math.cos(a)).toFixed(1)}" cy="${(50+r*Math.sin(a)).toFixed(1)}" r="5.6"/>`:""}</svg>`;
+}
+function loopBadge(){
+  const L=loopNow();
+  if(!L) return `<button class="lbadge" data-a="go" data-v="fortschritt" aria-label="Loop-Score: noch kein Wert. Zum Fortschritt">${loopMark(null,48)}<span class="lbv"><span class="n">–</span><span class="d">Loop-Score</span></span></button>`;
+  return `<button class="lbadge" data-a="go" data-v="fortschritt" aria-label="Loop-Score ${L.score} von 100, ${loopWord(L.score)}${L.delta!=null?`, ${fmtDelta(L.delta)} ${L.since}`:""}. Zum Fortschritt">${loopMark(L.score,48)}<span class="lbv"><span class="n">${L.score}</span>${L.delta!=null?`<span class="d ${L.delta>0?"up":L.delta<0?"down":""}">${fmtDelta(L.delta)}</span>`:`<span class="d">Loop-Score</span>`}</span></button>`;
+}
+const RTIP = {morgenlicht:"10 Minuten raus ins Morgenlicht", bunt:"Eine Mahlzeit nach dem Pflanzen-Teller", bewegt30:"30 Minuten bewegen, gern in Stücken", abend:"Heute Abend die Abendroutine einleiten"};
+let dailyOpen=false;
+function dailyDue(){
+  const h=new Date().getHours();
+  return !!S.onboardingCompletedAt && !!(S.tourDoneAt||S.demo) && !tour && view==="heute" && h>=4 && h<18 && S.dailyCheckDay!==IK.localDay() && !!loopNow();
+}
+function maybeDaily(){ if(dailyDue()){ dailyOpen=true; S.dailyCheckDay=IK.localDay(); save(); render(); } }
+function dailyHTML(){
+  const L=loopNow(); if(!L){ dailyOpen=false; return ""; }
+  const s=L.score, N=L.cis.length, low=s<50;
+  const un=IK.BASIS.filter(b=>IK.basisUnlocked(S,b.key)), cnt=un.map(b=>({b, n:L.cis.filter(c=>IK.routineDone(c,b.key)).length}));
+  const best=cnt.slice().sort((a,b)=>b.n-a.n)[0], weak=cnt.slice().sort((a,b)=>a.n-b.n)[0];
+  const tile=(k,v,l,p)=>`<div class="dc-t" style="${pvars(p)}"><span class="k">${k}</span><b>${v}</b><span>${l}</span></div>`;
+  const cwk=IK.currentCourseWeek(VID.VIDEOS,S,weeksTotal()), vp=IK.weekVideoProgress(VID.VIDEOS,S,cwk);
+  const t1 = starterActive() ? (()=>{ const st=weekTodos(1); return tile("To-dos",`${st.filter(t=>t.done).length} von ${st.length}`,"diese Woche","darm"); })()
+    : tile("Kurs",`${vp.seen}/${vp.total}`,`Videos Woche ${cwk}`,"darm");
+  const t2 = tile("Check-ins",`${N} von 7`,"Tage eingetragen","recap");
+  const t3 = best&&best.n ? tile("Stärkste",esc(best.b.label.replace("30 Min bewegt","Bewegung").replace("Bunt gegessen","Bunt").replace("Abendroutine","Abend")),`${best.n} von ${N} Tagen`,best.b.pillar)
+    : tile("Befinden",fmt1(IK.mean(L.cis.map(c=>c.energie))),"Energie von 5","beweg");
+  // Tipp: was gerade am meisten bringt
+  let tk, tt, tp, tpil;
+  const open=un.find(b=>!basisState(b.key)&&b.key!=="abend") || un.find(b=>!basisState(b.key));
+  if(low){ tk="Ein kleiner Schritt reicht"; tpil="beweg"; tt=open?RTIP[open.key]:"Heute Abend einchecken"; tp="Kein Neustart nötig. Eine Routine heute hebt deinen Score schon wieder an."; }
+  else {
+    tk="So bleibt's rund"; tpil="schlaf";
+    const det=L.cis.map(c=>IK.cleanAbend(c.abendD)).filter(Boolean);
+    const hw=det.length?IK.ABEND.hard.map(h=>({h,n:det.filter(d=>d.hard[h.key]).length})).sort((a,b)=>a.n-b.n)[0]:null;
+    if(hw && hw.n<det.length*0.6){ tt=`Heute Abend: ${hw.h.label}`; tp=ABTIP[hw.h.key](); }
+    else if(weak && weak.n<N){ tt=RTIP[weak.b.key]; tpil=weak.b.pillar; tp=`Das hat diese Woche erst ${weak.n}-mal geklappt und bringt dir gerade am meisten Punkte.`; }
+    else { tt="Bleib bei deinem Rhythmus"; tp="Dein Check-in heute Abend hält den Score oben."; }
+  }
+  const day=new Date().toLocaleDateString("de-DE",{weekday:"long"});
+  return `<div class="dc-bg" data-a="daily-close"><section class="dcheck" role="dialog" aria-modal="true" aria-labelledby="dc-t" data-a="noop">
+    <div class="dc-h"><span class="eyebrow">Dein Tages-Check · ${esc(day)}</span><button class="iconbtn" data-a="daily-close" aria-label="Schließen" style="background:var(--btn2-bg);box-shadow:none">${ICON.close}</button></div>
+    <div class="dc-score">${loopMark(s,124,"big")}<div><span class="dc-n" id="dc-t"><b>${s}</b><span>/ 100</span></span><b class="acc">${loopWord(s)}</b>${L.delta!=null?`<span class="dc-d ${L.delta>0?"up":L.delta<0?"down":""}">${fmtDelta(L.delta)} ${L.since}</span>`:""}</div></div>
+    <div class="dc-tiles">${t1}${t2}${t3}</div>
+    <div class="dc-tip" style="${pvars(tpil)}"><span class="eyebrow">${tk}</span><b>${esc(tt)}</b><p>${esc(tp)}</p></div>
+    <div class="dc-btns"><button class="btn ghost" data-a="daily-go">Fortschritt</button><button class="btn" data-a="daily-close">${low?"Mach ich":"Los geht's"}</button></div></section></div>`;
+}
+
 function vFortschritt(){
   const weeks=S.weeks.map(w=>{ const c=IK.checkinsOf(S,w.id), act=IK.activeBausteine(w); return {w, c, ls:IK.loopScore(c,act), st:IK.weekStats(c,act)}; });
   const cur=weeks[weeks.length-1];
@@ -1372,6 +1438,8 @@ document.addEventListener("click", e=>{
   if(a==="sheet-item"){ sheetItem = sheetItem===v ? "" : v; return render(); }
   if(a==="notice-all"){ openNotices().forEach(x=>markNotice(x.id)); sheetOpen=false; return render(); }
   if(a==="tick"){ if(v==="abend") return openAbend("heute"); toggleTick(v); haptic("tap"); return render(); }
+  if(a==="daily-close"){ dailyOpen=false; return render(); }
+  if(a==="daily-go"){ dailyOpen=false; return go("fortschritt"); }
   if(a==="what-open"){ whatOpen=true; haptic("tap"); return render(); }
   if(a==="what-close"){ whatOpen=false; return render(); }
   if(a==="abend-open"){ return openAbend(v||"heute", e && el && el.dataset.bed==="1"); }
@@ -1466,7 +1534,7 @@ document.addEventListener("click", e=>{
   if(a==="wipe-no"){ confirmWipe=false; return render(); }
   if(a==="wipe-yes"){ S=blank(); save(); confirmWipe=false; view="heute"; ob="welcome"; obD=null; flash=""; render(); return window.scrollTo(0,0); }
 });
-document.addEventListener("keydown", e=>{ if(tour&&e.key==="Escape"){ endTour(); return go("heute"); } if((sheetOpen||lockFor||installSheet||reminderSheet)&&e.key==="Escape"){ sheetOpen=false; lockFor=null; installSheet=false; reminderSheet=false; return render(); } if(e.key!=="Enter") return; const t=e.target; if(t&&t.id&&t.id.startsWith("f-")){ e.preventDefault(); if(view==="todo") todoSave(focusTodo); else saveField(t.id.slice(2)); } });
+document.addEventListener("keydown", e=>{ if(tour&&e.key==="Escape"){ endTour(); return go("heute"); } if((sheetOpen||lockFor||installSheet||reminderSheet||dailyOpen||whatOpen||abendEd)&&e.key==="Escape"){ dailyOpen=false; whatOpen=false; abendEd=null; sheetOpen=false; lockFor=null; installSheet=false; reminderSheet=false; return render(); } if(e.key!=="Enter") return; const t=e.target; if(t&&t.id&&t.id.startsWith("f-")){ e.preventDefault(); if(view==="todo") todoSave(focusTodo); else saveField(t.id.slice(2)); } });
 // iPhone: Bei offener Tastatur verschiebt Safari fixierte Elemente. Das Menü verschwindet so lange, danach wird die Lage neu berechnet.
 const isField = el => el && (el.tagName==="INPUT"&&!["button","checkbox","radio","file"].includes(el.type) || el.tagName==="TEXTAREA" || el.tagName==="SELECT");
 document.addEventListener("focusin", e=>{ if(isField(e.target)) document.body.classList.add("kb"); });
@@ -1492,6 +1560,7 @@ async function fromLink(){
 }
 // Wer schon vor diesem Update dabei war, bekommt keine Flut alter Hinweise.
 if(migrateNotices && S.onboardingCompletedAt){ IK.unlockEvents(S,uctx()).forEach(x=>{ S.noticesSeen[x.id]="update"; }); save(); }
-fromLink().then(()=>{ if(location.hash==="#checkin"&&S.onboardingCompletedAt){ history.replaceState(null,"",location.pathname); view="checkin"; draft=null; ciStep=1; } render(); scheduleReminder(); });
+fromLink().then(()=>{ if(location.hash==="#checkin"&&S.onboardingCompletedAt){ history.replaceState(null,"",location.pathname); view="checkin"; draft=null; ciStep=1; } render(); scheduleReminder(); setTimeout(maybeDaily,600); });
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") setTimeout(maybeDaily,400); });
 if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 })();
