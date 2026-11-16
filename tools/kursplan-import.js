@@ -33,9 +33,43 @@ const MACH_JETZT = {
   "10 Minuten Morgen-Mobility": "Leg dir für morgen früh eine Matte oder ein Handtuch sichtbar hin.",
   "Detox & Darmreinigung im Check": "Such dir eine Portion Gemüse oder Hülsenfrüchte für morgen aus, statt Geld für ein Detox-Produkt auszugeben.",
   "Lifespan vs. Healthspan: wie alles zusammenhängt": "Schreib einen Satz: Wofür willst du mit 80 noch fit sein?",
-  // ab Woche 2
+  // Woche 2, freigegeben am 13.11.2026
   "Die Abendroutine Schritt für Schritt": "Stell dir eine Erinnerung 30 Minuten vor deiner Schlafenszeit. Ab dann bleibt das Handy weg.",
-  "Fermentiertes & Probiotika: die Studienlage": "Schau in deinen Kühlschrank: Was davon ist fermentiert? Schreib dir eine Sache auf die Einkaufsliste."
+  "Ballaststoffe & Präbiotika": "Stell deinen Booster jetzt sichtbar neben Müsli oder Brotkorb.",
+  "Warum Muskelkraft zählt": "Mach jetzt 10 Kniebeugen zum Stuhl.",
+  "15 Minuten Kraft": "Leg dir Matte und Wasser für deine erste Einheit bereit.",
+  "30 Pflanzen pro Woche ohne Mehraufwand": "Schreib 3 Pflanzen auf, die du diese Woche zum ersten Mal isst.",
+  "Hülsenfrüchte ohne Blähungen": "Weich heute Abend eine Tasse Kichererbsen oder Bohnen ein.",
+  "Schlafumgebung-Check": "Schau dich im Schlafzimmer um: Was leuchtet dort nachts?",
+  "Schlaf & Hunger: warum Müdigkeit Heißhunger macht": "Leg dir für morgen einen Snack mit Eiweiß bereit, z. B. Nüsse oder Joghurt.",
+  "Bildschirm & Blaulicht: was wirklich stimmt": "Stell an deinem Handy die Ruhezeit für den Abend ein.",
+  "Die größten Darm-Killer im Alltag": "Schau in deinen Vorratsschrank: Welches Produkt willst du ersetzen?",
+  "Protein & Muskel": "Plan für morgen in jede Mahlzeit eine Eiweißquelle ein.",
+  "Gewohnheiten, die bleiben": "Schreib deinen Wenn-dann-Satz jetzt auf.",
+  // Woche 3, freigegeben am 13.11.2026
+  "Fermentiertes & Probiotika: die Studienlage": "Schau in deinen Kühlschrank: Was davon ist fermentiert? Schreib dir eine Sache auf die Einkaufsliste.",
+  "Essenszeiten für besseren Schlaf": "Rechne nach: Bis wann isst du heute spätestens zu Abend?",
+  "Sanfte Ausdauer (Zone 2)": "Sag beim nächsten Gehen einen Satz laut. Klappt er ohne Luftholen?",
+  "10 Minuten gehen nach dem Essen": "Stell dir einen Wecker für 10 Minuten nach dem nächsten Essen.",
+  "Sauerkraut selbst machen": "Schreib Weißkohl und Salz auf deine Einkaufsliste.",
+  "Fermentiertes aus dem Supermarkt im Check": "Dreh beim nächsten Einkauf ein Glas um und such nach „pasteurisiert“.",
+  "Meal-Prep: eine Woche Pflanzenvielfalt in 60 Minuten": "Wähl einen Tag dieser Woche für 60 Minuten Meal-Prep.",
+  "Sozialer Jetlag: Wochenende & Ausschlafen": "Stell den Wecker fürs Wochenende auf höchstens eine Stunde später.",
+  "Wie dein Darm deinen Schlaf beeinflusst": "Achte heute darauf, wie spät und wie schwer du zu Abend isst.",
+  "Schlafzyklen, Tiefschlaf, REM": "Merk dir heute Abend, wann du müde wirst, und geh dann ins Bett.",
+  "Blutzucker & Stoffwechsel": "Iss bei der nächsten Mahlzeit das Gemüse zuerst.",
+  "Schlechte Woche? So steigst du wieder ein": "Schreib dir deinen ersten Schritt für schlechte Tage auf.",
+  // Woche 4, freigegeben am 13.11.2026
+  "Die Darm-Hirn-Achse": "Leg beim nächsten Essen das Handy in einen anderen Raum.",
+  "Koffein & Alkohol": "Schau nach, wann du heute deinen letzten Kaffee hattest.",
+  "15 Minuten abends runterfahren": "Trag dir für heute Abend 15 Minuten zum Runterfahren in den Kalender ein.",
+  "Stress, Cortisol & Einschlafen": "Schreib vor dem Schlafen 3 Dinge auf, die morgen anstehen.",
+  "Atemübung zum Einschlafen": "Probier jetzt 3 Atemzüge: 4 Sekunden ein, 6 Sekunden aus.",
+  "Stress & Verdauung": "Atme vor der nächsten Mahlzeit dreimal langsam aus.",
+  "Selbsttests: Griffkraft, Aufstehen, Treppe": "Mach jetzt den Aufsteh-Test und vergleich mit Woche 1.",
+  "Stress im Alltag: 3 Werkzeuge für zwischendurch": "Wähl das Werkzeug, das am besten in deinen Alltag passt.",
+  "Entzündung & Inflammaging": "Pack heute eine Handvoll Beeren oder Nüsse in deinen Tag.",
+  "Dein Loop-Plan: welche Bausteine bleiben": "Schreib die 3 Bausteine auf, die du behältst."
 };
 
 const PILLAR = {"Intro & Rahmen":"intro", "Ernährung & Darm":"darm", "Schlaf":"schlaf", "Bewegung":"beweg", "Recap · Healthspan":"recap"};
