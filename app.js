@@ -47,7 +47,9 @@ const brandBar = extra => `<div class="brandbar"><span class="bmark">${mark(30)}
 function blank(){ return {v:2, code:"", product:null, demo:false, goals:[], reminderTime:"21:00",
   onboardingCompletedAt:null, consentHealthDataAt:null, baselines:[], weeks:[], checkins:[], videoProgress:{},
   pausedBausteinIds:[], queuedBausteinIds:[], lastBackup:null,
-  wakeTime:null, lightSpot:null, why:null, standTest:null, standTestAt:null, plantCount:null, topGoal:null, textSize:"normal", installSnooze:null, reminderSetupAt:null, notify:false, backupSnooze:null, todosDone:{}, noticesSeen:{},
+  wakeTime:null, lightSpot:null, why:null, standTest:null, standTestAt:null, plantCount:null,
+  booster:null, screenStop:null, strengthDays:null, bedroomFix:null, ifThen:null, fermentPick:null, kitchenClose:null, zone2Min:null,
+  prepChoice:null, weekendWake:null, restartStep:null, lastCaffeine:null, standTest4:null, stressTool:null, loopPlan:null, topGoal:null, textSize:"normal", installSnooze:null, reminderSetupAt:null, notify:false, backupSnooze:null, todosDone:{}, noticesSeen:{},
   dayTicks:{}, focusSnooze:{}, eveningMode:"auto", haptics:true, bedTime:"22:30"}; }
 function load(){
   try{ const r=localStorage.getItem(KEY); if(r){ const o=JSON.parse(r); if(!("noticesSeen" in o)) migrateNotices=true;
@@ -428,12 +430,15 @@ const WHAT = {
   bewegt30:["Zusammen mindestens 30 Minuten, bei denen du etwas schneller atmest: zügig gehen, Rad, Sport, Garten. Darf in Stücken sein.","Zählt nicht: normales Herumlaufen in der Wohnung."],
   abend:["Drei Grundpfeiler am Vorabend: Routine eingeleitet, Bildschirm aus, feste Bettgehzeit. Dazu Extras, die gut tun. Jeder Grundpfeiler zählt 25 %, die Extras zusammen 25 %.","Wird für gestern Abend eingetragen, weil der Check-in vor dem Schlafen liegt."]
 };
-let whatOpen=false, abendEd=null;
+let whatOpen=false, whatFocus=null, abendEd=null;
 function whatHTML(){
   return `<div class="sheet-bg" data-a="what-close"><section class="sheet what" role="dialog" aria-modal="true" aria-labelledby="wz-t" data-a="noop"><span class="grab" aria-hidden="true"></span>
     <div class="sh"><div><span class="eyebrow">Deine Routinen</span><h2 id="wz-t">Was zählt?</h2></div><button class="iconbtn" data-a="what-close" aria-label="Schließen" style="background:var(--btn2-bg);box-shadow:none">${ICON.close}</button></div>
     <p class="note">So weißt du genau, wann du abhaken darfst.</p>
     <ul class="wz">${IK.BASIS.map(b=>`<li style="${pvars(b.pillar)}"><span class="ic">${ICON[BICON[b.key]]}</span><span><b>${b.label}</b><span>${esc(WHAT[b.key][0])}</span><small>${esc(WHAT[b.key][1])}</small></span></li>`).join("")}</ul>
+    ${(()=>{ const un=IK.unlockedBausteine(S).filter(b=>IN.BAUSTEIN_INFO[b.id]); if(!un.length) return "";
+      return `<h3 class="wzh">Deine Bausteine</h3><ul class="wz">${un.map(b=>{ const i=IN.BAUSTEIN_INFO[b.id];
+        return `<li style="${pvars(b.pillar)}"${whatFocus===b.id?' class="on" id="wz-f"':""}><span class="ic">${ICON[b.pillar]}</span><span><b>${esc(b.label)}</b><span>${esc(i.yes)}</span><small>Zählt nicht: ${esc(i.no)}</small><small>Beispiel: ${esc(i.bsp)} · Video ${i.video}</small></span></li>`; }).join("")}</ul>`; })()}
     <button class="btn" data-a="what-close">Verstanden</button></section></div>`;
 }
 function openAbend(src,bed){
@@ -487,7 +492,7 @@ function starterRow(){
 }
 // Heute: To-dos im Stil der Routinen – was offen ist, was per Video frei wird, was erledigt ist, was morgen kommt
 function todoCard(){
-  const st=weekTodos(1), d=st.filter(t=>t.done).length;
+  const st=weekTodos(todoWeek()), d=st.filter(t=>t.done).length;
   const isToday=t=>t.day===t.trackerDay;
   const vid=st.filter(t=>t.status==="locked"&&t.dayOk), open=st.filter(t=>t.status==="today"||t.status==="open");
   const done=st.filter(t=>t.done), next=st.find(t=>t.status==="locked"&&!t.dayOk);
@@ -579,8 +584,8 @@ function vCheckin(){
         return `<button class="ctile" data-a="basis" data-v="abend" aria-pressed="${done}" aria-label="Abendroutine gestern, ${h} von 3 Grundpfeilern, Liste öffnen" style="${pvars(b.pillar)}"><span class="ic">${ICON[BICON[b.key]]}</span><span class="tx"><b>${b.label}</b><small>${d?`${h} von 3 Grundpfeilern${d.extras.length?` · ${d.extras.length} Extra${d.extras.length>1?"s":""}`:""} · ${Math.round(v*100)} %`:"3 Grundpfeiler und Extras · antippen"}</small></span>${miniRing(v,`${h}/3`,30)}</button>`; }
       const on=!!draft.basis[b.key];
       return `<button class="ctile" data-a="basis" data-v="${b.key}" aria-pressed="${on}" style="${pvars(b.pillar)}"><span class="ic">${ICON[BICON[b.key]]}</span><span class="tx"><b>${b.label}</b><small>${RULE[b.key]}${on&&tk[b.key]?" · tagsüber abgehakt":""}</small></span><span class="mk" aria-hidden="true">${on?CHECK:""}</span></button>`; };
-    const bstTile=id=>{ const b=IK.bausteinById(id), on=draft.bausteine[id]===true;
-      const sub = b.kind==="weeklyCount" ? `${weeklyCountOf(cis,id,t.ex&&t.ex.id)+(on?1:0)} von ${b.weeklyTarget} diese Woche` : isNew.includes(id) ? "neu diese Woche" : "Baustein";
+    const bstTile=id=>{ const b=IK.bausteinById(id), on=draft.bausteine[id]===true, bi=IN.BAUSTEIN_INFO[id];
+      const sub = b.kind==="weeklyCount" ? `${weeklyCountOf(cis,id,t.ex&&t.ex.id)+(on?1:0)} von ${b.weeklyTarget} diese Woche` : isNew.includes(id) ? `neu diese Woche${bi?" · "+bi.sub:""}` : bi ? bi.sub : "Baustein";
       return `<button class="ctile" data-a="bst" data-v="${id}" aria-pressed="${on}" style="${pvars(b.pillar)}"><span class="ic">${ICON[b.pillar]}</span><span class="tx"><b>${esc(b.label)}${b.kind==="weeklyCount"?" heute":""}</b><small>${sub}</small></span><span class="mk" aria-hidden="true">${on?CHECK:""}</span></button>`; };
     const chooser = t.choose ? `<div class="card soft"><b>Neue Woche: Wähle bis zu ${IK.MAX_NEW_PER_WEEK} neue Bausteine</b>
       <p class="note">Du hast mehr freigeschaltet, als in eine Woche passen. Die übrigen kommen in einer der nächsten Wochen dran.</p>
@@ -829,7 +834,7 @@ function dailyHTML(){
   const best=cnt.slice().sort((a,b)=>b.n-a.n)[0], weak=cnt.slice().sort((a,b)=>a.n-b.n)[0];
   const tile=(k,v,l,p)=>`<div class="dc-t" style="${pvars(p)}"><span class="k">${k}</span><b>${v}</b><span>${l}</span></div>`;
   const cwk=IK.currentCourseWeek(VID.VIDEOS,S,weeksTotal()), vp=IK.weekVideoProgress(VID.VIDEOS,S,cwk);
-  const t1 = starterActive() ? (()=>{ const st=weekTodos(1); return tile("To-dos",`${st.filter(t=>t.done).length} von ${st.length}`,"diese Woche","darm"); })()
+  const t1 = starterActive() ? (()=>{ const st=weekTodos(todoWeek()); return tile("To-dos",`${st.filter(t=>t.done).length} von ${st.length}`,"diese Woche","darm"); })()
     : tile("Kurs",`${vp.seen}/${vp.total}`,`Videos Woche ${cwk}`,"darm");
   const t2 = tile("Check-ins",`${N} von 7`,"Tage eingetragen","recap");
   const t3 = best&&best.n ? tile("Stärkste",esc(best.b.label.replace("30 Min bewegt","Bewegung").replace("Bunt gegessen","Bunt").replace("Abendroutine","Abend")),`${best.n} von ${N} Tagen`,best.b.pillar)
@@ -986,11 +991,12 @@ function noticeOf(e){
   if(e.type==="material"){ const m=matById(e.ref);
     return {pillar:"recap", kicker:"Neu freigeschaltet · "+m.kind, title:m.title, why:m.why, when:m.when,
       where:"Bibliothek · "+(m.tab==="rezepte"?"Rezepte":"Handouts"), go:{kind:"material", id:m.id, label:m.kind+" öffnen"}}; }
-  if(e.type==="baustein"){ const b=IK.bausteinById(e.ref), st=IK.activationState(S,b.id);
+  if(e.type==="baustein"){ const b=IK.bausteinById(e.ref), st=IK.activationState(S,b.id), n=IN.BAUSTEIN_NOTICE[b.id];
     const when = st==="active" ? "Ab deinem nächsten Check-in dabei." : st==="queued" ? "Kommt mit deiner nächsten Tracker-Woche in den Check-in."
       : st==="full" ? `Diese Woche sind schon ${IK.MAX_NEW_PER_WEEK} neue Bausteine dabei. Er kommt mit der nächsten Tracker-Woche.` : "Mit deiner nächsten Tracker-Woche, oder ab heute, wenn du willst.";
-    return {pillar:b.pillar, kicker:"Neuer Baustein", title:b.label, why:`Du hast Video ${b.videoId} gesehen, das ihn erklärt.`, when, where:"Abend-Check-in · Bausteine",
-      go: st==="ok" ? {kind:"activate", id:b.id, label:"Ab heute mittracken"} : {kind:"checkin", label:"Zum Check-in"}}; }
+    return {pillar:b.pillar, kicker:"Neuer Baustein", title:n?n.title:b.label, why:n?n.why:`Du hast Video ${b.videoId} gesehen, das ihn erklärt.`,
+      when:(n?n.when+" ":"")+when, where:"Abend-Check-in · Bausteine",
+      go: st==="ok" ? {kind:"activate", id:b.id, label:"Ab heute mittracken"} : n ? n.go : {kind:"checkin", label:"Zum Check-in"}}; }
   if(e.type==="weekcheck"){ const w=IK.currentWeek(S), n=w?IK.checkinsOf(S,w.id).length:0;
     return {pillar:"recap", kicker:"Wochen-Check", title:`Woche ${w.index} ist bereit für deinen Wochen-Check`, why:`Du hast ${n} Tage eingetragen.`+(w.index===1?" Mit dem Check schaltest du dein Goodie frei.":""),
       when:"Jetzt, er dauert 1 Minute.", where:"Heute · Wochen-Check", go:{kind:"weekcheck", label:"Wochen-Check öffnen"}}; }
@@ -1019,6 +1025,7 @@ const openNotices = (filter) => IK.newUnlocks(S, uctx()).filter(e=>!filter||filt
 // Führt zur passenden Stelle: Video, Check-in, Wissenskarte, To-do, Material, Wochen-Check, Profil.
 function goTo(g){
   if(!g) return;
+  if(g.kind==="baustein-info"){ whatOpen=true; whatFocus=g.id; render(); return; }
   if(g.kind!=="activate") pushNav();
   if(g.kind==="video"){ const ids=g.ids||[g.id]; const open=ids.find(id=>!IK.isSeen(S,id));
     if(!open && g.then==="checkin") return go("checkin");
@@ -1037,7 +1044,7 @@ let lockFor=null; // "mat:<id>" oder "ho:<woche>"
 function lockItem(key){
   const [t,id]=String(key).split(":");
   if(t==="mat") return matById(id);
-  if(t==="todo"){ const x=weekTodos(1).find(y=>y.id===id); return x?Object.assign({}, x, {kind:"To-do", sub:x.title, todo:true}):null; }
+  if(t==="todo"){ const x=IK.todoStatus(S,IN.TODOS).find(y=>y.id===id); return x?Object.assign({}, x, {kind:"To-do", sub:x.title, todo:true}):null; }
   const w=+id; return hoOf(w) || {title:`Handout Woche ${w}`, kind:"Handout", week:w, unlock:{kernOfWeek:w}};
 }
 function lockInfo(it){
@@ -1086,11 +1093,15 @@ function lockHTML(){
       : `<div class="ldone">${mark(40)}<p>${esc(L.doneMsg)}</p></div><button class="btn ghost" data-a="lock-close">Verstanden</button>`}</section></div>`;
 }
 
-/* ---------- To-dos: eins pro Tracker-Tag (Woche 1) ---------- */
+/* ---------- To-dos: eins pro Tracker-Tag, Woche 1 bis 4 ---------- */
 const AREA={darm:"Ernährung & Darm", schlaf:"Schlaf", beweg:"Bewegung", recap:"Recap"};
-const starterActive = () => !IK.weekCompleted(S,1);
+const TODO_WEEKS = IN.TODOS.reduce((m,t)=>Math.max(m,t.week||1),1);
+// Die Woche, deren To-dos gerade dran sind: die laufende Tracker-Woche, höchstens die letzte mit To-dos.
+const todoWeek = () => Math.min(Math.max(IK.trackerDay(S).week,1), TODO_WEEKS);
+const starterActive = () => IK.trackerDay(S).week <= TODO_WEEKS;
 const weekTodos = w => IK.todoStatus(S,IN.TODOS).filter(t=>(t.week||1)===w);
-const UNIT = {wakeTime:" Uhr", standTest:" Wiederholungen", plantCount:" Pflanzen"};
+const UNIT = {wakeTime:" Uhr", standTest:" Wiederholungen", plantCount:" Pflanzen", screenStop:" Uhr", kitchenClose:" Uhr",
+  weekendWake:" Uhr", lastCaffeine:" Uhr", zone2Min:" Minuten", standTest4:" Wiederholungen"};
 const todoResult = t => t.input&&S[t.input.field]!=null&&String(S[t.input.field]).trim()!=="" ? esc(String(S[t.input.field]))+(UNIT[t.input.field]||"") : "";
 function fieldInput(inp){
   const v=S[inp.field]; const val=v==null?"":String(v);
@@ -1099,7 +1110,7 @@ function fieldInput(inp){
     <button class="btn small" data-a="field" data-v="${inp.field}">Speichern</button></div></div>`;
 }
 function vTodos(){
-  const st=weekTodos(1), d=st.filter(t=>t.done).length;
+  const wk=todoWeek(), st=weekTodos(wk), d=st.filter(t=>t.done).length;
   const cur=st.find(t=>t.status==="today")||st.find(t=>t.status==="open"), vidLock=!cur&&st.find(t=>t.status==="locked"&&t.dayOk);
   const n={alle:st.length, offen:st.length-d, erledigt:d}, L={alle:"Alle", offen:"Offen", erledigt:"Erledigt"};
   const shown=st.filter(t=>todoFilter==="alle"||(todoFilter==="erledigt")===t.done);
@@ -1108,18 +1119,18 @@ function vTodos(){
     const mk = t.done ? `<span class="st on">${CHECK}</span>` : t.status==="locked" ? `<span class="st lk">${LOCK}</span>` : `<span class="st nx">▶</span>`;
     const attr = t.status==="locked" ? `data-a="lock" data-v="todo:${t.id}"` : gAttr({kind:"todo", id:t.id});
     return `<button class="tdrow${t.status==="locked"?" locked":""}${t.done?" is-done":""}" ${attr} style="${pvars(t.pillar)}"><span class="dn"><small>Tag</small><b>${t.day}</b></span><span class="tx"><b>${esc(t.title)}</b><span class="note">${sub}</span></span>${mk}<span class="sr">${t.done?"erledigt":t.status==="locked"?"gesperrt":"offen"}</span></button>`; };
-  const hero = !starterActive() ? `<div class="card soft"><b>Woche 1 ist abgeschlossen</b><p class="note" style="color:var(--ink)">Alles, was du geschafft hast, findest du im Fortschritt.</p><button class="btn small" data-a="erfolge" data-v="1">Deine Erfolge ansehen</button></div>`
+  const hero = !starterActive() ? `<div class="card soft"><b>Alle To-dos sind geschafft</b><p class="note" style="color:var(--ink)">Woche 1 bis ${TODO_WEEKS} liegen hinter dir. Alles, was du geschafft hast, findest du im Fortschritt.</p><button class="btn small" data-a="erfolge" data-v="${TODO_WEEKS}">Deine Erfolge ansehen</button></div>`
     : cur ? tcard(cur.pillar, `<span class="k">${cur.status==="today"?"Heute":"Noch offen"} · Tag ${cur.day}</span><b class="tt">${esc(cur.title)}</b><div class="btns"><button class="btn small" ${gAttr({kind:"todo", id:cur.id})}>${cur.input?"Jetzt eintragen":"Ansehen"}</button></div>`)
     : vidLock ? tcard(vidLock.pillar, `<span class="k">Heute · Tag ${vidLock.day}</span><b class="tt">${esc(vidLock.title)}</b><p>Das To-do wird frei, sobald du Video ${vidLock.after} gesehen hast. Es erklärt, worum es geht.</p><div class="btns"><button class="btn small" data-a="video" data-v="${vidLock.after}">Video ${vidLock.after} ansehen</button></div>`)
     : `<div class="ldone">${mark(36)}<p>${d===st.length?"Alle 7 To-dos geschafft. Dein Rückblick kommt nach dem 7. Check-in.":"Für heute ist alles erledigt. Morgen wartet das nächste To-do."}</p></div>`;
-  return `<div class="tdwrap"><div class="top"><div class="t"><small>Woche 1 · ${d} von ${st.length} erledigt</small><b>Deine To-dos</b></div><button class="iconbtn" data-a="back" data-v="heute" aria-label="Schließen">${ICON.close}</button></div>
+  return `<div class="tdwrap"><div class="top"><div class="t"><small>Woche ${wk} · ${d} von ${st.length} erledigt</small><b>Deine To-dos</b></div><button class="iconbtn" data-a="back" data-v="heute" aria-label="Schließen">${ICON.close}</button></div>
   <div class="tseg" role="img" aria-label="${d} von ${st.length} erledigt">${st.map(t=>`<i class="${t.done?"on":t.status==="today"?"now":""}" style="${pvars(t.pillar)}"></i>`).join("")}</div>
   ${lay(hero, `<div class="tdhd"><b>Diese Woche</b>${sel}</div>
   <div class="card tdlist">${shown.map(row).join("")||`<p class="note" style="padding:12px 0">${todoFilter==="erledigt"?"Noch nichts erledigt. Das erste To-do wartet schon.":"Alles erledigt."}</p>`}</div>`)}</div>`;
 }
 // Ein To-do allein: eine Frage, ein Feld, ein Knopf. Feld steht oben, damit es über der Tastatur bleibt.
 function vTodo(){
-  const st=weekTodos(1), t=st.find(x=>x.id===focusTodo);
+  const st=weekTodos(todoWeek()), t=st.find(x=>x.id===focusTodo) || IK.todoStatus(S,IN.TODOS).find(x=>x.id===focusTodo);
   if(!t){ view="starter"; return vTodos(); }
   if(!t.unlocked&&!t.done){ view="starter"; lockFor="todo:"+t.id; return vTodos(); }
   const inp=t.input, ciToday=IK.checkinFor(S,IK.localDay());
@@ -1131,7 +1142,7 @@ function vTodo(){
   const acts = t.done
     ? `<button class="btn" data-a="back" data-v="heute">Fertig</button>${inp?`<button class="btn ghost" data-a="todo-save" data-v="${t.id}">Änderung speichern</button>`:`<button class="btn ghost" data-a="todo-tick" data-v="${t.id}">Doch nicht erledigt</button>`}`
     : `<button class="btn" data-a="${inp?"todo-save":"todo-tick"}" data-v="${t.id}">${inp?"Speichern und abhaken":"Erledigt"}</button>`;
-  return `<div class="tfocus"><div class="tf-top"><button class="iconbtn" data-a="back" data-v="heute" aria-label="Zurück">${ICON.back}</button><span class="lk-pill">Tag ${t.day} von 7</span></div>
+  return `<div class="tfocus"><div class="tf-top"><button class="iconbtn" data-a="back" data-v="heute" aria-label="Zurück">${ICON.back}</button><span class="lk-pill">Woche ${t.week||1} · Tag ${t.day} von 7</span></div>
     <div class="lk-cover" style="${pvars(t.pillar)}"><svg class="bl" viewBox="0 0 100 100" aria-hidden="true">${BLOB}</svg><span class="k">To-do · Tag ${t.day}</span><b class="s">${esc(t.short)}</b></div>
     <h1 class="tq">${esc(t.q)}</h1><p class="lwhy">${esc(t.why)}</p>${t.how?`<p class="note">${esc(t.how)}</p>`:""}
     ${flash?`<p class="err" role="alert">${flash}</p>`:""}
@@ -1254,30 +1265,66 @@ function libHead(closeAct, kicker, short, title, lead, p){
 }
 // Inhaltskarten unter dem farbigen Kopf: weiß, Etikett in Themenfarbe, Akzent in Koralle
 const infoCard=(p,kicker,inner,cls)=>`<div class="card linfo${cls?" "+cls:""}" style="${pvars(p)}"><span class="eyebrow" style="color:var(--t)">${kicker}</span>${inner}</div>`;
-const PDF_FILE = {handout1:"innen-kultur-handout-woche-1.pdf", pflanzen:"innen-kultur-pflanzen-teller.pdf", morgen:"innen-kultur-morgen-karte.pdf", abend:"innen-kultur-abend-karte.pdf", aktiv:"innen-kultur-aktivitaets-karte.pdf", ferment:"innen-kultur-fermentiert-karte.pdf"};
-const PERSONAL = {handout1:1, morgen:1, abend:1}; // Vorlagen mit eigenen Angaben aus der App
+// Dateinamen der fertigen PDFs: aus den Materialien, über die Material-id und die Druckvorlage (card).
+const PDF_FILE = (()=>{ const o={}; IN.MATERIALS.forEach(m=>{ if(!m.pdf) return; o[m.id]=m.pdf; if(m.card) o[m.card]=m.pdf; }); return o; })();
+const PERSONAL = {handout1:1, morgen:1, abend:1}; // drei Vorlagen druckt die App mit deinen Angaben, der Rest kommt als fertige PDF
 // Sofort-Download der fertigen PDF (Ordner pdf/), Drucken mit eigenen Angaben als zweite Möglichkeit
-const printTile=(p,title,sub,label,card)=>{ const f=PDF_FILE[card];
+const printTile=(p,title,sub,label,card,file)=>{ const f=file||PDF_FILE[card];
   return `<div class="card lprint" style="${pvars(p)}"><span class="lpic">${ICON.doc}</span><span class="lptx"><b>${esc(title)}</b>${f?`<small>PDF · lädt sofort</small>`:""}</span>
-    <span class="lpbtns">${f?`<a class="btn small" href="pdf/${f}" download="${f}" data-a="pdf-dl">${ICON.dl}PDF laden</a>`:""}<button class="btn small ${f?"ghost":""}" data-a="print" data-v="${card}">${f?(PERSONAL[card]?"Mit deinen Angaben drucken":"Drucken"):esc(label)}</button></span></div>`; };
+    <span class="lpbtns">${f?`<a class="btn small" href="pdf/${f}" download="${f}" data-a="pdf-dl">${ICON.dl}PDF laden</a>`:""}${card?`<button class="btn small ${f?"ghost":""}" data-a="print" data-v="${card}">${f?(PERSONAL[card]?"Mit deinen Angaben drucken":"Drucken"):esc(label)}</button>`:""}</span></div>`; };
+// Goodie in der App lesbar: Einleitung, Einkaufsliste und alle Rezepte mit Zutaten und Schritten
+function goodieHTML(g,p){
+  const shop = `<details class="card rez shop"><summary><b>Einkaufsliste</b><span class="note">für alle Rezepte</span></summary>
+    ${g.shop.map(x=>`<div class="shg"><span class="eyebrow" style="color:var(--t)">${esc(x.group)}</span><p class="note" style="color:var(--ink)">${x.items.map(esc).join(" · ")}</p></div>`).join("")}</details>`;
+  const rec = r => `<details class="card rez" style="${pvars(p)}"><summary><b class="rt-t">${esc(r.title)}</b>
+      <span class="rmeta"><span style="${pvars(p)}">${r.minutes} Min. aktiv</span><span style="${pvars("darm")}">${r.plants} Pflanzen</span>${r.kcal?`<span style="${pvars("recap")}">${r.kcal} kcal</span>`:""}</span></summary>
+    <p class="note" style="color:var(--ink)">${esc(r.intro)}</p>
+    ${r.kcal?`<p class="note">Je Portion: ${r.kcal} kcal · ${r.protein} g Eiweiß · ${r.fiber} g Ballaststoffe${r.serves?` · ${esc(r.serves)}`:""}</p>`:r.serves?`<p class="note">${esc(r.serves)}</p>`:""}
+    <span class="eyebrow" style="color:var(--t)">Zutaten</span><p class="note" style="color:var(--ink)">${r.ingredients.map(esc).join(" · ")}</p>
+    <span class="eyebrow" style="color:var(--t)">Zubereitung</span><ol>${r.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
+    <p class="note"><b>Tipp.</b> ${esc(r.tip)}</p><p class="note"><b>Aufbewahren.</b> ${esc(r.keep)}</p><p class="note"><b>Abwandeln.</b> ${esc(r.swap)}</p></details>`;
+  return infoCard(p,"Darum geht es",`<p style="margin:0;font-size:16px;line-height:1.5">${esc(g.intro)}</p>
+      <ul class="gu">${g.use.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`)
+    + shop + g.recipes.map(rec).join("");
+}
 function vMaterial(){
   const m=matById(mat); if(!m||!IK.materialUnlocked(S,m,VID.VIDEOS)){ mat=null; return vBibliothek(); }
   markNotice("mat-"+m.id);
   const p=m.pillar||"recap";
-  const body = m.card ? printTile(p, m.kind==="Handout"?"Zwei Seiten A4":"Karte A6", `Zum Ausdrucken oder im Druck-Dialog „Als PDF sichern“ wählen.${m.card==="handout1"||m.card==="morgen"?" Deine Angaben aus den To-dos stehen schon drin.":""}`, `${m.kind} als PDF speichern`, m.card)
-    : m.recipes&&m.recipes.length ? m.recipes.map(r=>`<div class="card recipe"><b class="rt-t">${esc(r.title)}</b><span class="rmeta"><span style="${pvars(p)}">${r.minutes} Min.</span><span style="${pvars("darm")}">${r.plants} Pflanzen</span></span><p class="note" style="color:var(--ink)">${(r.ingredients||[]).map(esc).join(" · ")}</p><ol>${(r.steps||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ol></div>`).join("")
-    : infoCard(p,"Freigeschaltet",`<b style="font-size:18px">Die Rezepte sind unterwegs</b><p class="note" style="color:var(--ink)">Sie kommen mit dem nächsten Update der App automatisch hier rein.</p>`);
+  const g = typeof IK_REZEPTE!=="undefined" ? IK_REZEPTE.REZEPTE[m.id] : null;
+  const seiten = m.kind==="Handout" ? "Zwei Seiten A4" : m.kind==="Wochenplan" ? "Fünf Seiten A4" : m.kind==="Goodie" ? "Acht Seiten A4" : "Karte A6, Vorder- und Rückseite";
+  const pdfTile = m.pdf ? printTile(p, seiten, "", `${m.kind} als PDF speichern`, m.card||null, m.pdf) : "";
+  const body = pdfTile + (g ? goodieHTML(g,p) : m.card||m.pdf ? "" :
+    infoCard(p,"Freigeschaltet",`<b style="font-size:18px">Das Material ist unterwegs</b><p class="note" style="color:var(--ink)">Es kommt mit dem nächsten Update der App automatisch hier rein.</p>`));
   return libHead("mat-close", `${m.kind} · Woche ${m.week}`, m.short||m.title, (m.sub||m.title).replace(/^[^:]+: /,""), esc(m.why), p)
     + `<div class="libbody">${infoCard(p,"Wann",`<p style="margin:0;font-size:16px;line-height:1.5">${esc(m.when)}</p>`)}${body}</div></div>`;
 }
 
 /* ---------- Profilfelder aus den To-dos ---------- */
+const TIME = v => /^([01]\d|2[0-3]):[0-5]\d$/.test(v) ? v : null;
+const TXT = v => v.trim().slice(0,140) || null;
 const FIELDS = {
   wakeTime:{label:"Meine Aufstehzeit", type:"time", check:v=>/^([01]\d|2[0-3]):[0-5]\d$/.test(v)?v:null, err:"Bitte eine Uhrzeit wie 06:45 eingeben."},
   lightSpot:{label:"Mein Morgenlicht-Ort", type:"text", check:v=>v.trim().slice(0,140)||null, err:"Bitte einen Ort eingeben."},
   why:{label:"Mein Warum", type:"text", check:v=>v.trim().slice(0,140)||null, err:"Bitte einen Satz eingeben."},
   standTest:{label:"Aufsteh-Test (Wiederholungen in 30 Sek.)", type:"number", check:v=>{ const n=parseInt(v,10); return n>=0&&n<=60?n:null; }, err:"Bitte eine Zahl zwischen 0 und 60 eingeben."},
-  plantCount:{label:"Verschiedene Pflanzen an einem Tag", type:"number", check:v=>{ const n=parseInt(v,10); return n>=0&&n<=80?n:null; }, err:"Bitte eine Zahl zwischen 0 und 80 eingeben."}
+  plantCount:{label:"Verschiedene Pflanzen an einem Tag", type:"number", check:v=>{ const n=parseInt(v,10); return n>=0&&n<=80?n:null; }, err:"Bitte eine Zahl zwischen 0 und 80 eingeben."},
+  // Woche 2 bis 4, aus den To-dos
+  booster:{label:"Mein Ballaststoff-Booster", type:"text", check:TXT, err:"Bitte einen Booster eingeben."},
+  screenStop:{label:"Bildschirm aus ab", type:"time", check:TIME, err:"Bitte eine Uhrzeit wie 21:30 eingeben."},
+  strengthDays:{label:"Meine zwei Krafttage", type:"text", check:TXT, err:"Bitte zwei Tage eingeben."},
+  bedroomFix:{label:"Das ändere ich im Schlafzimmer", type:"text", check:TXT, err:"Bitte etwas eingeben."},
+  ifThen:{label:"Mein Wenn-dann-Satz", type:"text", check:TXT, err:"Bitte einen Satz eingeben."},
+  fermentPick:{label:"Mein Fermentiertes", type:"text", check:TXT, err:"Bitte ein Lebensmittel eingeben."},
+  kitchenClose:{label:"Küche zu ab", type:"time", check:TIME, err:"Bitte eine Uhrzeit wie 19:30 eingeben."},
+  zone2Min:{label:"Minuten im Zone-2-Tempo", type:"number", check:v=>{ const n=parseInt(v,10); return n>=0&&n<=300?n:null; }, err:"Bitte eine Zahl zwischen 0 und 300 eingeben."},
+  prepChoice:{label:"Sauerkraut oder Meal-Prep", type:"text", check:TXT, err:"Bitte eine Entscheidung eingeben."},
+  weekendWake:{label:"Aufstehzeit am Wochenende", type:"time", check:TIME, err:"Bitte eine Uhrzeit wie 08:00 eingeben."},
+  restartStep:{label:"Mein erster Schritt nach einem schlechten Tag", type:"text", check:TXT, err:"Bitte einen Schritt eingeben."},
+  lastCaffeine:{label:"Letztes Koffein bis", type:"time", check:TIME, err:"Bitte eine Uhrzeit wie 12:00 eingeben."},
+  standTest4:{label:"Aufsteh-Test in Woche 4", type:"number", check:v=>{ const n=parseInt(v,10); return n>=0&&n<=60?n:null; }, err:"Bitte eine Zahl zwischen 0 und 60 eingeben."},
+  stressTool:{label:"Mein Stress-Werkzeug", type:"text", check:TXT, err:"Bitte ein Werkzeug eingeben."},
+  loopPlan:{label:"Meine drei Bausteine", type:"text", check:TXT, err:"Bitte deine Bausteine eingeben."}
 };
 function saveField(k){
   const el=document.getElementById("f-"+k), f=FIELDS[k]; if(!el||!f) return;
@@ -1286,46 +1333,124 @@ function saveField(k){
   S[k]=v; if(k==="standTest") S.standTestAt=new Date().toISOString(); save();
   flash=`${f.label} gespeichert.`; render();
 }
-function basisFieldsCard(){
-  const st=IK.todoStatus(S,IN.TODOS), byField=k=>st.find(t=>t.input&&t.input.field===k);
-  return `<div class="card"><h2>Deine Basis</h2><p class="note">Aus deinen To-dos. Sie stehen auch auf deinem Handout und deiner Morgen-Karte.</p>
-    ${Object.keys(FIELDS).filter(k=>k!=="plantCount").map(k=>{ const t=byField(k), open=!t||t.unlocked||!starterActive(), vid=t&&!t.videoOk?t.after:null;
-      return open||filledField(k) ? fieldInput({field:k, type:FIELDS[k].type, label:FIELDS[k].label})
-        : `<div class="kv" style="align-items:center"><span class="note" style="font-weight:600">${esc(FIELDS[k].label)}</span>${vid?`<button class="btn link small" data-a="video" data-v="${vid}" style="min-height:0;padding:0">frei mit Video ${vid}</button>`:`<span class="note">kommt als To-do an Tag ${t.day}</span>`}</div>`; }).join("")}</div>`;
-}
 const filledField = k => S[k]!=null && String(S[k]).trim()!=="";
 
-/* ---------- Druckvorlagen: Morgen-Karte (A6) und Handout Woche 1 (A4, 2 Seiten) ---------- */
+/* ---------- Druckvorlagen im Design der PDFs: Mini-Karten (A6) und Handout Woche 1 (A4) ----------
+   Gleicher Aufbau wie die Dateien im Ordner pdf/, nur mit deinen Angaben aus den To-dos. */
+// Feste Farben für den Druck: im dunklen Modus wären die App-Variablen dunkel, das Blatt bleibt aber weiß.
+const PPC = {darm:["#5E8C72","#E8F1EB","#2F5A42"], schlaf:["#4F78A8","#E7EEF7","#2E5582"], beweg:["#C0583E","#F9E9E4","#8E3A26"],
+  recap:["#A87A2C","#F6EFDF","#6B4A10"], navy:["#2D5F93","#EAF1F8","#1E3A5A"]};
+const PV = p => `--c:${PPC[p][0]};--s:${PPC[p][1]};--t:${PPC[p][2]}`;
+const PBULB = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M9 18h6M10 21h4M8.5 14.5A6 6 0 1 1 15.5 14.5c-.6.6-1 1.4-1 2.2V17h-5v-.3c0-.8-.4-1.6-1-2.2Z"/></svg>';
+const pacc = (t,a) => `${t} <span class="pacc">${a}</span>`;
+const pLogo = () => logo("#FFFFFF").replace('width="34" height="34"','width="17" height="17"');
+const pTop = label => `<div class="p-top"><span class="p-brand">${pLogo()}innen kultur</span><span class="pmono">${esc(label)}</span></div>`;
+const pFoot = (left,right) => `<div class="p-foot"><span class="pmono">innen-kultur.de · ${esc(left)}</span><span class="pmono">${esc(right)}</span></div>`;
+const pHead = (t,a,sub) => `<div class="p-hd"><h1>${pacc(t,a)}</h1><p>${esc(sub)}</p></div>`;
+const pBack = (t,a,right) => `<div class="p-bk"><h1>${pacc(t,a)}</h1><span class="pmono">${esc(right)}</span></div>`;
+const pLb = (t,r) => `<div class="p-lb">${esc(t)}${r?`<span>${esc(r)}</span>`:""}</div>`;
+const pNote = (html,soft) => `<div class="p-note${soft?"":" c"}">${html}</div>`;
+const pLi = items => items.map(x=>`<div class="p-li"><span>${CHECK}</span><span>${x}</span></div>`).join("");
+const pTm = rows => `<table>${rows.map(([a,b])=>`<tr><td class="tm">${esc(a)}</td><td>${b}</td></tr>`).join("")}</table>`;
+const pKv = rows => `<table>${rows.map(([a,b])=>`<tr><td class="k">${esc(a)}</td><td>${esc(b)}</td></tr>`).join("")}</table>`;
+const PDAYS = ["Mo","Di","Mi","Do","Fr","Sa","So"];
+const pWeek = (cols,lineIdx) => `<table class="pwk"><tr><th></th>${cols.map(c=>`<th class="c" style="text-align:center">${esc(c)}</th>`).join("")}</tr>`
+  + PDAYS.map(d=>`<tr><td>${d}</td>${cols.map((c,i)=>`<td class="c">${(lineIdx||[]).includes(i)?"<u></u>":"<i></i>"}</td>`).join("")}</tr>`).join("") + "</table>";
+const pFill = (label,val,unit) => `<div class="p-fl"><span>${esc(label)}</span><u>${val?esc(val):""}</u>${unit?`<span>${esc(unit)}</span>`:""}</div>`;
+const pCard = (pillar,label,head,body,videoLine,side) =>
+  `<section class="pk" style="${PV(pillar)}">${pTop(label)}${head}<div class="p-bd">${body}</div>${pFoot(videoLine,side)}</section>`;
+
+// Mini-Karte „Dein Morgen“ (Video 1.7 und 1.9)
 function morgenCard(){
-  const days=["Mo","Di","Mi","Do","Fr","Sa","So"];
-  return `<div class="fc" style="--c:var(--schlaf)"><div class="hd"><span style="display:flex;align-items:center;gap:2mm;font-family:var(--f-head);font-size:11pt;letter-spacing:0;text-transform:none;color:var(--ink)">${logo("#FFFFFF").replace('width="34" height="34"','width="18" height="18"')}innen kultur</span><span>Mini-Karte</span></div>
-    <div><h1>Mein <em>Morgen</em></h1><p class="sub">Aufstehen zur festen Zeit, 10 Minuten raus ins Tageslicht, wer mag: 10 Minuten Mobility.</p></div>
-    <div class="tip"><span><b>Aufstehzeit:</b> ${S.wakeTime?esc(S.wakeTime)+" Uhr":"______"} &nbsp;·&nbsp; <b>Mein Ort:</b> ${S.lightSpot?esc(S.lightSpot):"________________"}</span></div>
-    <table class="wp"><thead><tr><th></th><th>Aufgestanden</th><th>Licht</th><th>Mobility</th></tr></thead><tbody>${days.map(d=>`<tr><td><b>${d}</b></td><td><i></i></td><td><i></i></td><td><i></i></td></tr>`).join("")}</tbody></table>
-    <span class="ft">innen-kultur.de · Schlaf · Video 1.2, 1.7 und 1.9</span></div>`;
+  const w=S.wakeTime, t=m=>w?addMinutes(w,m)+" Uhr":"";
+  const ort=S.lightSpot?` Dein Ort: ${esc(S.lightSpot)}.`:"";
+  const front = pTm([
+    ["0", `<b>Aufstehen.</b> Zur festen Zeit, ohne Schlummertaste.${w?` <b>${esc(w)} Uhr.</b>`:""}`],
+    ["+ 2", "<b>Wasser.</b> Ein großes Glas. Es steht schon am Bett."],
+    ["+ 5", `<b>Tageslicht.</b> 10 Minuten draußen.${ort}${w&&!S.lightSpot?` Bis ${t(60)} bist du draußen gewesen.`:""}`],
+    ["+ 15", "<b>Mobility.</b> Wer mag: 10 Minuten mit Video 1.9."],
+    ["+ 30", "<b>Start.</b> Frühstück, oder du gehst los."]]);
+  const f = pLb("Dein Ablauf","Minuten nach dem Aufstehen") + front
+    + pLb("So zählt es") + pLi(["<b>Licht:</b> 10 Minuten draußen, in der ersten Stunde nach dem Aufstehen.","<b>Aufstehzeit:</b> jeden Tag gleich, ±&nbsp;30 Minuten."])
+    + pLb("Am Abend vorbereiten") + pLi(["Wecker stellen, bevor du das Handy weglegst.","Wasserglas ans Bett, Jacke und Schuhe an die Tür."])
+    + pNote("<b>Gut zu wissen.</b> Auch bei bewölktem Himmel ist es draußen deutlich heller als drinnen am Fenster.");
+  const r = `<div class="p-box">${pFill("Meine Aufstehzeit",w,"Uhr")}${pFill("Mein Morgenlicht-Ort",S.lightSpot)}</div>`
+    + pLb("Meine Woche") + pWeek(["Aufgestanden","Licht","Mobility"])
+    + pLb("Wenn es hakt") + pKv([["Noch dunkel","Mach drinnen helles Licht an und geh raus, sobald es hell wird."],
+        ["Keine Zeit","Verbinde das Licht mit einem Weg, etwa zu Fuß zur Bahn."],
+        ["Kurze Nacht","Steh trotzdem zur festen Zeit auf."]]);
+  return pCard("schlaf","Mini-Karte 02 · Woche 1", pHead("Dein","Morgen","Die ersten 30 Minuten stellen deine innere Uhr."), f, "Video 1.7 und 1.9", "Vorderseite")
+       + pCard("schlaf","Mini-Karte 02 · Woche 1", pBack("Dein","Morgen","Zum Abhaken"), r, "Video 1.7 und 1.9", "Rückseite");
 }
+
+// Mini-Karte „Dein Abend“ (Video 1.2, vertieft in 2.2)
+function abendCard(){
+  const bed=S.bedTime||null, scr=S.screenStop||(bed?addMinutes(bed,-60):null), ein=bed?addMinutes(bed,-30):null;
+  const ex=["Glas Wasser","Gelesen","Kräutertee","Dehnen oder Atmen","3 gute Dinge","Gelüftet","Ohne Alkohol"];
+  const f = pLb("Die drei Grundpfeiler","Minuten vor dem Schlafen")
+    + pTm([["− 60", `<b>Bildschirm aus.</b> Die letzte Stunde ohne Handy, Laptop und Fernseher.${scr?`<small style="display:block;color:var(--pmut)">Bei dir: ab ${esc(scr)} Uhr</small>`:""}`],
+           ["− 30", `<b>Routine einleiten.</b> Licht dimmen, runterfahren.${ein?`<small style="display:block;color:var(--pmut)">Bei dir: ab ${esc(ein)} Uhr</small>`:""}`],
+           ["0", `<b>Feste Bettgehzeit.</b> Im Bett zu deiner Zeit, ±&nbsp;30 Minuten.${bed?`<small style="display:block;color:var(--pmut)">Bei dir: ${esc(bed)} Uhr</small>`:""}`]])
+    + pLb("Extras") + `<div class="p-pills">${ex.map(x=>`<span>${x}</span>`).join("")}</div>`
+    + pLb("So rechnet die App")
+    + `<div class="p-quart"><div><small>25 %</small>Eingeleitet</div><div><small>25 %</small>Bildschirm aus</div><div><small>25 %</small>Bettgehzeit</div><div><small>25 %</small>Extras, voll ab zwei</div></div>`
+    + pNote("<b>Im Check-in.</b> Den Abend hakst du am nächsten Tag unter „Gestern Abend“ ab. Ausführlich erklärt ihn Video 2.2.");
+  const r = `<div class="p-box">${pFill("Meine Bettgehzeit",bed,"Uhr")}${pFill("Bildschirm aus ab",scr,"Uhr")}${pFill("Zubett-Wecker",ein,"Uhr")}</div>`
+    + pLb("Meine Woche") + pWeek(["Eingeleitet","Bildschirm aus","Im Bett","Extras"],[3])
+    + pLb("Das hilft") + pLi(["Stell einen Zubett-Wecker, 30 Minuten vor deiner Zeit.","Das Handy lädt außerhalb des Schlafzimmers.","Buch und Wasserglas liegen schon am Bett."]);
+  return pCard("schlaf","Mini-Karte 03 · Woche 1", pHead("Dein","Abend","Drei Grundpfeiler und ein paar Extras bringen dich zur Ruhe."), f, "Video 1.2 und 2.2", "Vorderseite")
+       + pCard("schlaf","Mini-Karte 03 · Woche 1", pBack("Dein","Abend","Zum Abhaken"), r, "Video 1.2 und 2.2", "Rückseite");
+}
+
+// Handout Woche 1 „Deine Basis“, zwei Seiten A4
 function handout1(){
-  const hd=`<div class="hd"><span style="display:flex;align-items:center;gap:2mm;font-family:var(--f-head);font-size:12pt;letter-spacing:0;text-transform:none;color:var(--ink)">${logo("#FFFFFF").replace('width="34" height="34"','width="22" height="22"')}innen kultur</span><span>Handout Woche 1</span></div>`;
-  const R=[["var(--darm)","Bunt gegessen","Mindestens 1 Mahlzeit am Tag zur Hälfte aus Pflanzen. Ein Viertel Eiweiß, ein Viertel Vollkorn oder Hülsenfrüchte.","Video 1.1 und 1.6"],
-    ["var(--schlaf)","Morgenlicht + feste Aufstehzeit","Innerhalb von 60 Minuten nach dem Aufstehen 10 Minuten bei Tageslicht draußen. Aufstehen zur festen Zeit ± 30 Minuten, auch am Wochenende.","Video 1.2 und 1.7"],
-    ["var(--beweg)","30 Min bewegt","Zusammen 30 Minuten, bei denen du etwas schneller atmest. Aufgeteilt zählt, z. B. 3 × 10 Minuten.","Video 1.3, 1.8 und 1.9"],
-    ["var(--schlaf)","Abendroutine","Drei Grundpfeiler: 30 Minuten vorher einleiten, die letzte Stunde ohne Bildschirm, zur festen Zeit ins Bett ± 30 Minuten. Dazu Extras wie Wasser oder Lesen. Im Check-in am nächsten Abend.","Video 1.2, vertieft in 2.2"]];
-  const days=["Mo","Di","Mi","Do","Fr","Sa","So"], W=IN.WARNZEICHEN;
-  return `<div class="ho">${hd}<h1>Deine <em>Basis</em> auf zwei Seiten</h1><p class="sub">Vier Routinen, jeden Abend im Check-in abhaken. Klein anfangen zählt.</p>
-    ${R.map(([c,t,r,v])=>`<div class="ho-r" style="--c:${c}"><b>${t}</b><span>${r}</span><small>${v}</small></div>`).join("")}
-    <div class="ho-plate"><svg viewBox="0 0 120 120" width="42mm" height="42mm" role="img" aria-label="Pflanzen-Teller: halb Pflanzen, ein Viertel Eiweiß, ein Viertel Vollkorn oder Hülsenfrüchte"><circle cx="60" cy="60" r="56" fill="#fff" stroke="var(--line)" stroke-width="3"/><path d="M60 10 A50 50 0 0 0 60 110 Z" fill="var(--darm)"/><path d="M60 10 A50 50 0 0 1 110 60 L60 60 Z" fill="var(--recap)"/><path d="M110 60 A50 50 0 0 1 60 110 L60 60 Z" fill="var(--schlaf)"/></svg>
-      <div><b>Der Pflanzen-Teller</b><span class="lg"><i style="--c:var(--darm)"></i>Hälfte: Gemüse, Salat, Obst</span><span class="lg"><i style="--c:var(--recap)"></i>Viertel: Eiweiß, z. B. Ei, Fisch, Tofu, Joghurt</span><span class="lg"><i style="--c:var(--schlaf)"></i>Viertel: Vollkorn oder Hülsenfrüchte</span>
-      <small>Beispiele: Linsen-Bowl mit Ofengemüse · Vollkornbrot mit Hummus und Gurke · Haferflocken mit Beeren und Nüssen</small></div></div>
-    <div class="ho-2"><div class="tip"><b>Morgen in 30 Minuten</b><br>Aufstehen zur festen Zeit · ein Glas Wasser · 10 Minuten raus ins Tageslicht · wer mag: 10 Minuten Mobility</div>
-    <div class="tip"><b>Bewegungssnacks im Büro</b><br>Nach jeder Stunde Sitzen 2 Minuten gehen · Treppe statt Aufzug · Telefonate im Stehen · Weg zur Mittagspause zu Fuß · eine Haltestelle früher aussteigen</div></div>
-    <span class="ft">innen-kultur.de · Seite 1 von 2</span></div>
-  <div class="ho">${hd}<h1>Deine <em>Woche</em></h1>
-    <table class="wp"><thead><tr><th></th><th>Aufgestanden um</th><th>Bunt gegessen</th><th>Morgenlicht</th><th>30 Min bewegt</th><th>Abend</th></tr></thead><tbody>${days.map(d=>`<tr><td><b>${d}</b></td><td></td><td><i></i></td><td><i></i></td><td><i></i></td><td><i></i></td></tr>`).join("")}</tbody></table>
-    <div class="ho-2"><div class="tip"><b>Mein Warum</b><br>${S.why?esc(S.why):"<span class='ln'></span><span class='ln'></span>"}</div>
-    <div class="tip"><b>Mein Morgenlicht-Ort</b><br>${S.lightSpot?esc(S.lightSpot):"<span class='ln'></span>"}<br><b>Meine Aufstehzeit</b><br>${S.wakeTime?esc(S.wakeTime)+" Uhr":"<span class='ln'></span>"}</div></div>
-    <div class="tip warn"><b>Wann zum Arzt?</b><br>${W.length?W.map(esc).join(" · "):"Die Warnzeichen erklären wir in Video 1.5. Bei Beschwerden, die neu sind, stark sind oder nicht weggehen, warte nicht ab und hol dir ärztlichen Rat."}</div>
-    <div class="tip"><b>Dein Abend-Check-in</b><br>Jeden Abend ${S.reminderTime?"um "+esc(S.reminderTime)+" Uhr":"zu deiner Zeit"} in der App, ca. 1 Minute. Nach 7 Tagen kommt dein Wochen-Check.</div>
-    <span class="ft">innen-kultur.de · Seite 2 von 2 · Ersetzt keine ärztliche Beratung.</span></div>`;
+  const page=(inner,n)=>`<section class="pa" style="${PV("navy")}">${pTop("Handout · Woche 1")}${inner}${pFoot("Handout Woche 1",`${String(n).padStart(2,"0")} / 02`)}</section>`;
+  const sec=(n,title,right,p)=>`<div class="p-sec"${p?` style="${PV(p)}"`:""}><span class="n">${n}</span><h2>${title}</h2>${right?`<span class="pmono r">${right}</span>`:""}</div>`;
+  const R=[["darm","Bunt gegessen","1.1 und 1.6","Mindestens eine Mahlzeit am Tag, bei der die Hälfte des Tellers aus Pflanzen besteht.","Ein Salatblatt als Beilage oder ein Glas Saft."],
+    ["schlaf","Morgenlicht + feste Aufstehzeit","1.2 und 1.7","In den ersten 60 Minuten nach dem Aufstehen 10 Minuten draußen im Tageslicht. Aufstehen zur festen Zeit, ± 30 Minuten.","Drinnen am Fenster sitzen. Am Wochenende lange ausschlafen."],
+    ["beweg","30 Min bewegt","1.3, 1.8 und 1.9","Zusammen 30 Minuten, bei denen du etwas schneller atmest. Aufgeteilt zählt, etwa 3 × 10 Minuten.","Schlendern, bei dem dein Atem ganz ruhig bleibt."],
+    ["schlaf","Abendroutine","1.2, vertieft in 2.2","30 Minuten vorher einleiten, die letzte Stunde ohne Bildschirm, zur festen Zeit ins Bett. Dazu Extras.","Im Bett noch „kurz“ aufs Handy schauen."]];
+  const rc=R.map(([p,t,v,y,n])=>`<div class="p-rc" style="${PV(p)}"><div class="hd"><span class="ic">${ICON[p]}</span><span><span class="pmono v">Video ${v}</span><b class="n">${t}</b></span></div>
+    <div class="g"><p><span class="lb">Zählt</span>${y}</p><p class="no"><span class="lb" style="color:var(--pmut)">Zählt nicht</span>${n}</p></div></div>`).join("");
+  const plate=`<svg viewBox="0 0 120 120" style="width:42mm;height:42mm;display:block"><circle cx="60" cy="60" r="58" fill="#fff" stroke="#E4E9EF" stroke-width="2.5"/>
+    <path d="M60 9 A51 51 0 0 0 60 111 Z" fill="#5E8C72"/><path d="M60 9 A51 51 0 0 1 111 60 L60 60 Z" fill="#A87A2C"/><path d="M111 60 A51 51 0 0 1 60 111 L60 60 Z" fill="#4F78A8"/>
+    <path d="M60 7V113M60 60H113" stroke="#fff" stroke-width="2.6"/><text x="34" y="64" text-anchor="middle" font-family="Inter" font-weight="800" font-size="12" fill="#fff">½</text>
+    <text x="84" y="40" text-anchor="middle" font-family="Inter" font-weight="800" font-size="11" fill="#fff">¼</text><text x="84" y="90" text-anchor="middle" font-family="Inter" font-weight="800" font-size="11" fill="#fff">¼</text></svg>`;
+  const lg=[["darm","Die Hälfte: Pflanzen","Gemüse, Salat, Obst. Auch aus dem Tiefkühlfach."],["recap","Ein Viertel: Eiweiß","Ei, Fisch, Tofu, Joghurt, Quark oder Käse."],["schlaf","Ein Viertel: Vollkorn, Hülsenfrüchte","Vollkornbrot, Naturreis, Linsen, Bohnen."]]
+    .map(([p,a,b])=>`<div style="${PV(p)}"><i></i><span><b>${a}</b><span>${b}</span></span></div>`).join("");
+  const ex=[["Frühstück","Haferflocken, Beeren, Nüsse"],["Mittag","Linsen-Bowl mit Ofengemüse"],["Abend","Vollkornbrot, Hummus, Gurke, Ei"]]
+    .map(([a,b])=>`<div class="r"><span><small>${a}</small>${b}</span></div>`).join("");
+  const p1 = `<div class="p-hero"><span class="pmono">Handout · Woche 1 von 8</span><h1>Deine<br><span class="pacc">Basis</span></h1>
+      <p>Vier Routinen tragen den ganzen Kurs. Hier steht, was genau zählt und wie sie in deinen Tag passen.</p></div>
+    <div class="p-body" style="gap:4.2mm;margin-top:6mm">${sec("01","Deine vier Routinen","jeden Abend im Check-in abhaken")}<div class="p-r4">${rc}</div>
+      ${sec("02","Der Pflanzen-Teller","einmal am Tag reicht für den Haken","darm")}
+      <div class="p-plate" style="${PV("darm")}">${plate}<div class="lg">${lg}</div><div class="p-day"><h3>Drei Teller als Beispiel</h3>${ex}</div></div>
+      <div class="p-strip" style="${PV("darm")}"><span>${PBULB}</span><span><b>Klein anfangen zählt.</b> Welche Lebensmittel als Pflanze zählen, steht auf der Mini-Karte „Der Pflanzen-Teller“. Jede Sorte zählt einmal, auch Kräuter.</span></div></div>`;
+  const w=S.wakeTime, bed=S.bedTime||null, scr=S.screenStop||(bed?addMinutes(bed,-60):null), ein=bed?addMinutes(bed,-30):null;
+  const tl=[["0","Aufstehen",`Zur festen Zeit, ohne Schlummertaste.${w?` Bei dir: ${esc(w)} Uhr.`:""}`],["+2","Wasser","Ein großes Glas. Es steht schon am Bett."],
+    ["+5","Tageslicht",`10 Minuten draußen.${S.lightSpot?` Bei dir: ${esc(S.lightSpot)}.`:" Balkon, Bäcker, Hunderunde."}`],["+15","Mobility","Wer mag: 10 Minuten mit Video 1.9."],["+30","Start","Frühstück, oder du gehst los."]]
+    .map(([a,b,c])=>`<div><i>${a}</i><b>${b}</b><span>${c}</span></div>`).join("");
+  const q4=[["Routine eingeleitet","30 Minuten vor dem Schlafen: Licht dimmen, runterfahren."],["Bildschirm aus","Die letzten 60 Minuten ohne Handy, Laptop und Fernseher."],
+    ["Feste Bettgehzeit","Im Bett zu deiner Zeit, ± 30 Minuten."],["Extras","Voll ab zwei: Wasser, Lesen, Kräutertee, Dehnen oder Atmen, 3 gute Dinge, Lüften, ohne Alkohol."]]
+    .map(([a,b])=>`<div><span class="nr">25 %</span><b>${a}</b><p>${b}</p></div>`).join("");
+  const d30=[["Morgens","Zu Fuß zur Bahn oder zum Bäcker","10 Min."],["Mittags","Eine Runde nach dem Essen","10 Min."],["Abends","Spaziergang oder Rad","10 Min."]]
+    .map(([a,b,c])=>`<div style="grid-template-columns:17mm 1fr auto;gap:2mm"><b>${a}</b><span>${b}</span><b style="color:var(--t)">${c}</b></div>`).join("");
+  const sn=pLi(["Nach jeder Stunde Sitzen 2 Minuten gehen.","Treppe statt Aufzug.","Telefonate im Stehen oder Gehen.","Eine Haltestelle früher aussteigen."]);
+  const head="<tr><th>Routine</th>"+PDAYS.map(d=>`<th class="c" style="text-align:center">${d}</th>`).join("")+"</tr>";
+  const rows=`<tr><td><b>Aufgestanden um</b></td>${PDAYS.map(()=>'<td class="c"><u></u></td>').join("")}</tr>`
+    + ["Bunt gegessen","Morgenlicht","30 Min bewegt","Abendroutine"].map(r=>`<tr><td><b>${r}</b></td>${PDAYS.map(()=>'<td class="c"><i></i></td>').join("")}</tr>`).join("");
+  const p2 = `<div class="p-body" style="gap:3.1mm;margin-top:7mm">
+      ${sec("03","Dein Morgen in 30 Minuten","Minuten nach dem Aufstehen","schlaf")}<div class="p-tl" style="${PV("schlaf")}">${tl}</div>
+      <div class="p-fill" style="margin-top:.5mm">Ich stehe um <u>${w?esc(w):""}</u> Uhr auf. Mein Morgenlicht-Ort: <u class="w">${S.lightSpot?esc(S.lightSpot):""}</u></div>
+      ${sec("04","Dein Abend","so rechnet die App","schlaf")}<div class="p-q4" style="${PV("schlaf")}">${q4}</div>
+      <div class="p-fill" style="margin-top:.5mm">Ich gehe um <u>${bed?esc(bed):""}</u> Uhr ins Bett. Mein Zubett-Wecker klingelt um <u>${ein?esc(ein):""}</u> Uhr.</div>
+      ${sec("05","30 Minuten in deinem Tag","aufgeteilt zählt","beweg")}
+      <div class="p-two" style="${PV("beweg")}"><div class="p-lst" style="background:var(--s)"><h3 style="color:var(--t)">So kommst du auf 30 Minuten</h3>${d30}</div>
+        <div class="p-lst" style="background:var(--pbg)"><h3>Bewegungssnacks im Büro</h3>${sn}</div></div>
+      ${sec("06","Deine Woche","zum Abhaken")}<table class="pt">${head}${rows}</table>
+      <div class="p-fill">Mein Warum: <u class="w">${S.why?esc(S.why):""}</u></div>
+      <div class="p-warn"><b>Wann zum Arzt?</b> Die Warnzeichen erklären wir in Video 1.5. Sind Beschwerden neu, stark oder gehen sie nicht weg, holst du dir ärztlichen Rat.${IN.WARNZEICHEN.length?" "+IN.WARNZEICHEN.map(esc).join(" · "):""}</div></div>`;
+  return page(p1,1)+page(p2,2);
 }
 
 /* ---------- Willkommen und App-Tour (nach dem Onboarding, jederzeit unter Profil) ----------
@@ -1420,6 +1545,8 @@ document.addEventListener("touchmove",e=>{ if(tour && !e.target.closest(".tour-s
 document.addEventListener("wheel",e=>{ if(tour && !e.target.closest(".tour-sheet")) e.preventDefault(); },{passive:false});
 
 /* ---------- Bibliothek (Screens 11 und 14) ---------- */
+// Wissens-Seite → passende Mini-Karte in der Bibliothek
+const WISSEN_MAT = {pflanzen:"teller", licht:"morgen", abend:"abend_k", aktiv:"bewegt_k", ferment:"ferment_k"};
 const EX={
   pflanzen:{p:"darm",title:"Der Pflanzen-Teller",short:"Bunt gegessen: der Pflanzen-Teller",check:"Im Check-in ab Tag 1 als „Bunt gegessen“.",
     rule:"Eine Mahlzeit, bei der mindestens die <b>Hälfte des Tellers</b> aus Pflanzen besteht. Einmal am Tag reicht für den Haken.",
@@ -1452,43 +1579,15 @@ function vBibliothek(){
   <div class="segc" role="group" aria-label="Bereich">${T.map(([k,l])=>`<button data-a="libtab" data-v="${k}" aria-pressed="${libTab===k}">${l}</button>`).join("")}</div>${body}`;
 }
 function vWissen(){
-  const e=EX[wissen], p=e.p, cardName=e.card==="aktiv"?"Aktivitäts-Karte":e.card==="morgen"?"Morgen-Karte":e.card==="abend"?"Abend-Karte":"Kühlschrank-Karte";
+  const e=EX[wissen], p=e.p, m=matById(WISSEN_MAT[wissen]);
   return libHead("wissen-close", `Wissen · ${AREA[p]}`, WISSEN_COVER[wissen]||e.short, e.title, "", p)
     + `<div class="libbody">`
     + infoCard(p,"So zählt es",`<p class="lrule">${e.rule}</p>`)
     + infoCard(p,esc(e.groupsLabel),`<div class="mini">${e.mini.map(([a,b])=>`<div><b>${esc(a)}</b><span>${esc(b)}</span></div>`).join("")}</div>
       ${e.examples?`<div class="libex"><span class="lhd">Beispiel-Teller</span><p>${e.examples}</p></div>`:""}${e.tip?`<p class="ltip">${e.tip}</p>`:""}`,"libmini")
-    + printTile(p, `${cardName} (A6)`, "Zum Ausdrucken oder im Druck-Dialog „Als PDF sichern“ wählen.", "Karte als PDF speichern", e.card) + `</div></div>`;
+    + ((m&&m.pdf) ? printTile(p, "Karte A6, Vorder- und Rückseite", "", "Karte als PDF speichern", PERSONAL[e.card]?e.card:null, m.pdf) : "") + `</div></div>`;
 }
-function cardHTML(k){
-  const hd=t=>`<div class="hd"><span style="display:flex;align-items:center;gap:2mm;font-family:var(--f-head);font-size:11pt;letter-spacing:0;text-transform:none;color:var(--ink)">${logo("#FFFFFF").replace('width="34" height="34"','width="18" height="18"')}innen kultur</span><span>${t}</span></div>`;
-  if(k==="abend"){ const days=["Mo","Di","Mi","Do","Fr","Sa","So"];
-    return `<div class="fc" style="--c:var(--schlaf)">${hd("Abend-Karte")}
-    <div><h1>Mein <em>Abend</em></h1><p class="sub">Drei Grundpfeiler je 25 %, Extras zusammen 25 %: eingeleitet, Bildschirm aus, pünktlich ins Bett.</p></div>
-    <div class="tip"><span><b>Meine Bettgehzeit:</b> ${S.bedTime?esc(S.bedTime):"______"} Uhr &nbsp;·&nbsp; <b>Extras:</b> Wasser, Lesen, Tee, Dehnen</span></div>
-    <table class="wp"><thead><tr><th></th><th>Eingeleitet</th><th>Bildschirm aus</th><th>Im Bett</th><th>Extras</th></tr></thead><tbody>${days.map(d=>`<tr><td><b>${d}</b></td><td><i></i></td><td><i></i></td><td><i></i></td><td></td></tr>`).join("")}</tbody></table>
-    <span class="ft">innen-kultur.de · Schlaf · Video 1.2</span></div>`; }
-  if(k==="aktiv"){ const days=["Mo","Di","Mi","Do","Fr","Sa","So"];
-    return `<div class="fc" style="--c:var(--beweg)">${hd("Aktivitäts-Karte")}
-    <div><h1>Meine <em>Bewegungswoche</em></h1><p class="sub">Plane 30 Minuten am Tag. Aufgeteilt zählt auch. Hak ab, was geklappt hat.</p></div>
-    <table class="wp"><thead><tr><th></th><th>Was?</th><th>Wann?</th><th>Min.</th><th>✓</th></tr></thead><tbody>${days.map(d=>`<tr><td><b>${d}</b></td><td></td><td></td><td></td><td><i></i></td></tr>`).join("")}</tbody></table>
-    <div class="tip"><b>Ideen:</b> Spazieren · Rad · Laufen · Schwimmen · Kraft · Yoga · Treppe statt Aufzug</div>
-    <span class="ft">innen-kultur.de · Bewegung</span></div>`; }
-  if(k==="pflanzen"){ const rows=[["Gemüse","Brokkoli, Paprika, Spinat"],["Obst","Beeren, Äpfel, Bananen"],["Hülsenfrüchte","Linsen, Kichererbsen"],["Vollkorn","Haferflocken, Quinoa"],["Nüsse & Samen","Walnüsse, Leinsamen"],["Kräuter","Petersilie, Basilikum"]];
-    return `<div class="fc" style="--c:var(--darm)">${hd("Kühlschrank-Karte")}
-    <div><h1>Meine <em>Pflanzen-Basics</em></h1><p class="sub">Einmal am Tag: die Hälfte des Tellers aus Pflanzen. Trag ein, was bei dir immer da sein soll.</p></div>
-    <div class="rows">${rows.map(([a,b])=>`<div class="rw"><span><b>${esc(a)}</b><small>${esc(b)}</small></span><span class="ln"></span></div>`).join("")}</div>
-    <div class="shop"><span class="k">Diese Woche einkaufen</span><span class="ln"></span><span class="ln"></span></div>
-    <span class="ft">innen-kultur.de · Ernährung &amp; Darm</span></div>`; }
-  const g=[["Milchprodukte",["Naturjoghurt","Kefir","Skyr"]],["Gemüse",["Sauerkraut (Kühlregal)","Kimchi","Milchsaure Gurken"]],["Soja & Co.",["Miso","Tempeh"]],["Getränke & Brot",["Kombucha","Echter Sauerteig"]]];
-  return `<div class="fc" style="--c:var(--darm)">${hd("Kühlschrank-Karte")}
-    <div><h1>Mein <em>Fermentiertes</em></h1><p class="sub">Eine kleine Portion am Tag reicht. Hak ab, was du magst, und ergänze deine Favoriten.</p></div>
-    <div class="grid2">${g.map(([a,l])=>`<div><span class="k">${esc(a)}</span>${l.map(x=>`<span class="ck"><i></i>${esc(x)}</span>`).join("")}</div>`).join("")}</div>
-    <div class="tip"><b>Beim Einkauf:</b> Kühlregal und „nicht pasteurisiert“ wählen. Erhitzte Konserven zählen meist nicht.</div>
-    <div class="rows" style="gap:1.5mm"><span class="k">Meine Favoriten · einkaufen</span><span class="ln" style="height:5mm"></span><span class="ln" style="height:5mm"></span><span class="ln" style="height:5mm"></span></div>
-    <span class="ft">innen-kultur.de · Ernährung &amp; Darm</span></div>`;
-}
-const printHTML = k => k==="morgen"?morgenCard():k==="handout1"?handout1():cardHTML(k);
+const printHTML = k => k==="morgen"?morgenCard():k==="abend"?abendCard():handout1();
 window.ikPrintHTML = printHTML; // für tools/pdf-export.js
 function printCard(k){ const el=document.getElementById("print"); el.innerHTML=printHTML(k); el.className=k==="handout1"?"a4":""; setTimeout(()=>window.print(),150); }
 
@@ -1503,7 +1602,13 @@ function vProfil(){
   const tg=IK.GOALS.find(g=>g.id===S.topGoal), cw=IK.currentWeek(S), st=IK.todoStatus(S,IN.TODOS), tf=k=>st.find(t=>t.input&&t.input.field===k);
   const fieldRow=(k,label)=>{ const t=tf(k), v=S[k]!=null&&String(S[k]).trim()!==""?esc(String(S[k]))+(UNIT[k]||""):"";
     const attrs = t ? (t.unlocked||t.done||!starterActive() ? gAttr({kind:"todo", id:t.id}) : `data-a="lock" data-v="todo:${t.id}"`) : `data-a="noop"`;
-    return prow(attrs, label, v||(t&&!t.unlocked&&starterActive()?`Tag ${t.day}`:"eintragen")); };
+    return prow(attrs, label, v||(t&&!t.unlocked&&starterActive()?((t.week||1)>1?`W${t.week} · Tag ${t.day}`:`Tag ${t.day}`):"eintragen")); };
+  // Angaben aus den To-dos der Wochen 2 bis 4, sobald das To-do offen ist oder etwas drinsteht
+  const BASE_FIELDS=["wakeTime","lightSpot","standTest","why","plantCount"];
+  const moreRows = Object.keys(FIELDS).filter(k=>!BASE_FIELDS.includes(k)).map(k=>({k, t:tf(k)}))
+    .filter(x=>x.t && (x.t.unlocked || filledField(x.k)))
+    .sort((x,y)=>(x.t.week||1)-(y.t.week||1)||x.t.day-y.t.day)
+    .map(x=>fieldRow(x.k, x.t.short)).join("");
   const hero = tcard("recap",`<span class="k">Dein Warum</span>${S.why?`<b class="pwhy">„${esc(S.why)}“</b>`:`<b class="tt">Noch nicht notiert</b><p>Das kommt als To-do an Tag 7, nach Video 1.11.</p>`}
     <p>${tg?`Wichtigstes Ziel: ${esc(tg.label)} · `:""}${S.product==="komplett"?"Komplett":"Basis"}, Woche ${cw?cw.index:1} von ${weeksTotal()}</p>`,"phero");
   const un=IK.unlockedBausteine(S), paused=S.pausedBausteinIds||[];
@@ -1514,6 +1619,7 @@ function vProfil(){
   ${flash?`<div class="card soft"><p class="okmsg">${flash}</p></div>`:""}
   ${lay(`${hero}
   ${pgroup("Deine Basis", fieldRow("wakeTime","Aufstehzeit")+prow('data-a="abend-open" data-v="profil" data-bed="1"',"Bettgehzeit",esc(S.bedTime||"22:30")+" Uhr")+fieldRow("lightSpot","Morgenlicht-Ort")+fieldRow("standTest","Aufsteh-Test")+fieldRow("why","Dein Warum"))}
+  ${moreRows?pgroup("Aus deinen To-dos", moreRows):""}
   ${pgroup("Dein Startpunkt", (b?`<div class="pbase">${IK.BASELINE.map(x=>`<span><b>${b[x.key]}</b><small>${x.short}</small></span>`).join("")}</div>`:"")+prow(`data-a="rebase"`, b?"Neu erfassen":"Jetzt erfassen", b?`erfasst am ${new Date(b.createdAt).toLocaleDateString("de-DE")}`:""))}
   ${bst}
   ${pgroup("Darstellung", pseg("Abendmodus","set-theme",[["auto","Ab 18 Uhr"],["off","Immer hell"]],S.eveningMode==="off"?"off":"auto")+pseg("Schriftgröße","set-text",[["normal","Normal"],["gross","Größer"]],S.textSize==="gross"?"gross":"normal")+pseg("Haptik","set-haptic",[["on","An"],["off","Aus"]],S.haptics===false?"off":"on"))}`,
@@ -1624,8 +1730,8 @@ document.addEventListener("click", e=>{
   if(a==="paused"){ gapOpen = IK.jokersLeft(S)?"info":"watch"; return render(); }
   if(a==="daily-close"){ dailyOpen=false; return render(); }
   if(a==="daily-go"){ dailyOpen=false; return go("fortschritt"); }
-  if(a==="what-open"){ whatOpen=true; haptic("tap"); return render(); }
-  if(a==="what-close"){ whatOpen=false; return render(); }
+  if(a==="what-open"){ whatOpen=true; whatFocus=v||null; haptic("tap"); return render(); }
+  if(a==="what-close"){ whatOpen=false; whatFocus=null; return render(); }
   if(a==="abend-open"){ return openAbend(v||"heute", e && el && el.dataset.bed==="1"); }
   if(a==="ab-close"){ abendEd=null; return render(); }
   if(a==="ab-hard"){ abendEd.d.hard[v]=!abendEd.d.hard[v]; haptic("tap"); return render(); }

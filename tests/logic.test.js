@@ -162,9 +162,28 @@ test("Inhalte: jedes Video, auf das ein To-do, eine Routine oder ein Material ze
   IK.BASIS.forEach(b => assert.ok(ids.has(b.videoId), b.videoId));
   IN.TODOS.forEach(t => assert.ok(ids.has(t.after), t.id + " " + t.after));
   IN.MATERIALS.forEach(m => { if(m.unlock.video) assert.ok(ids.has(m.unlock.video), m.id); });
-  assert.equal(IN.TODOS.length, 7);
-  assert.equal(new Set(IN.TODOS.map(t => t.id)).size, 7);
+  assert.equal(IN.TODOS.length, 28); // 4 Wochen mit je 7 To-dos
+  assert.equal(new Set(IN.TODOS.map(t => t.id)).size, 28);
   Object.keys(IN.BASIS_NOTICE).forEach(k => assert.ok(IK.BASIS.find(b => b.key === k), k));
+  // Bausteine: zu jedem gibt es einen Hinweis und ein „Was zählt?“
+  IK.BAUSTEINE.forEach(b => { assert.ok(IN.BAUSTEIN_NOTICE[b.id], "Hinweis fehlt: " + b.id); assert.ok(IN.BAUSTEIN_INFO[b.id], "Was zählt fehlt: " + b.id);
+    assert.equal(IN.BAUSTEIN_INFO[b.id].video, b.videoId, b.id); });
+  // To-dos und Materialien zeigen nur auf Material, das es gibt
+  const mids = new Set(IN.MATERIALS.map(m => m.id));
+  IN.TODOS.forEach(t => { if(t.link && t.link.kind === "material") assert.ok(mids.has(t.link.id), t.id + " → " + t.link.id); });
+  Object.keys(IN.MACH_JETZT_GO).forEach(k => { const g = IN.MACH_JETZT_GO[k]; assert.ok(ids.has(k), "Video " + k);
+    if(g.kind === "material") assert.ok(mids.has(g.id), k + " → " + g.id);
+    if(g.kind === "todo") assert.ok(IN.TODOS.find(t => t.id === g.id), k + " → " + g.id); });
+});
+
+test("Materialien: jede PDF liegt im Ordner pdf/, jedes Goodie hat seine Rezepte", () => {
+  const fs = require("fs"), path = require("path"), REZ = require("../rezepte.js").REZEPTE;
+  IN.MATERIALS.forEach(m => { if(!m.pdf) return;
+    assert.ok(fs.existsSync(path.join(__dirname, "..", "pdf", m.pdf)), "fehlt: pdf/" + m.pdf); });
+  IN.MATERIALS.filter(m => m.kind === "Goodie").forEach(m => {
+    const g = REZ[m.id]; assert.ok(g, "keine Rezepte: " + m.id);
+    assert.ok(g.recipes.length >= 5, m.id);
+    g.recipes.forEach(r => { assert.ok(r.title && r.ingredients.length && r.steps.length, m.id + " · " + r.title); }); });
 });
 
 test("Basis-Routine: erst nach ihrem Video im Check-in, ältere Haken bleiben", () => {
@@ -179,8 +198,7 @@ test("Basis-Routine: erst nach ihrem Video im Check-in, ältere Haken bleiben", 
 
 test("To-dos: eins pro Tracker-Tag, frei mit Tag und Video, Profilfelder haken ab", () => {
   const s = empty(), st = id => IK.todoStatus(s, IN.TODOS, "2026-10-01").find(t => t.id === id);
-  assert.equal(IN.TODOS.length, 7);
-  assert.deepEqual(IN.TODOS.map(t => t.day), [1, 2, 3, 4, 5, 6, 7]);
+  [1, 2, 3, 4].forEach(w => assert.deepEqual(IN.TODOS.filter(t => t.week === w).map(t => t.day), [1, 2, 3, 4, 5, 6, 7], "Woche " + w));
   IN.TODOS.forEach(t => { assert.ok(["darm", "schlaf", "beweg", "recap"].includes(t.pillar), t.id); assert.ok(VIDEOS.find(v => v.id === t.after), t.id + " braucht ein Video"); });
   assert.equal(st("d1").status, "locked"); assert.equal(st("d1").dayOk, true); assert.equal(st("d1").videoOk, false);
   IK.markSeen(s, "1.2"); assert.equal(st("d1").status, "today");
@@ -237,7 +255,8 @@ test("Hinweise: jede Freischaltung einmal, gesehene verschwinden", () => {
 test("To-dos: nach 7 Tagen ist alles frei, nach Woche 1 beginnt Woche 2 bei Tag 1", () => {
   const s = fresh(); VIDEOS.filter(v => v.week === 1).forEach(v => IK.markSeen(s, v.id));
   for(let d = 1; d <= 7; d++) IK.saveCheckIn(s, {}, `2026-10-0${d}`, at(`2026-10-0${d}`));
-  assert.ok(IK.todoStatus(s, IN.TODOS, "2026-10-08").every(t => t.unlocked));
+  assert.ok(IK.todoStatus(s, IN.TODOS, "2026-10-08").filter(t => t.week === 1).every(t => t.unlocked));
+  assert.ok(IK.todoStatus(s, IN.TODOS, "2026-10-08").filter(t => t.week === 2).every(t => !t.unlocked)); // Woche 2 erst in Woche 2
   assert.equal(IK.trackerDay(s, "2026-10-08").day, 7);
   IK.completeWeek(s); assert.deepEqual(IK.trackerDay(s, "2026-10-08"), {week: 2, day: 1});
 });

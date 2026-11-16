@@ -1,11 +1,12 @@
 // Offline-Betrieb: App-Dateien werden auf dem Gerät zwischengespeichert.
 // Nutzerdaten liegen im Browser-Speicher (localStorage) und werden nie an den Server geschickt.
-const VERSION="ik-v41";
-const CORE = ["./", "index.html", "app.js", "logic.js", "videos.js", "inhalte.js", "manifest.webmanifest", "fonts/inter.woff", "fonts/instrument-serif-italic.woff", "fonts/geist-mono.woff",
+const VERSION="ik-v42";
+// Vorab geladen wird nur, was die App zum Starten braucht. Die PDFs im Ordner pdf/ sind zusammen rund 14 MB;
+// sie landen erst im Cache, wenn man sie öffnet, und sind danach offline da (siehe fetch unten).
+const CORE = ["./", "index.html", "app.js", "logic.js", "videos.js", "inhalte.js", "rezepte.js", "manifest.webmanifest",
+  "fonts/inter.woff", "fonts/instrument-serif-italic.woff", "fonts/geist-mono.woff",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png", "icons/favicon.png",
-  "reminders/abend-20.ics", "reminders/abend-21.ics", "reminders/abend-22.ics",
-  "pdf/innen-kultur-handout-woche-1.pdf", "pdf/innen-kultur-pflanzen-teller.pdf", "pdf/innen-kultur-morgen-karte.pdf",
-  "pdf/innen-kultur-abend-karte.pdf", "pdf/innen-kultur-aktivitaets-karte.pdf", "pdf/innen-kultur-fermentiert-karte.pdf"];
+  "reminders/abend-20.ics", "reminders/abend-21.ics", "reminders/abend-22.ics"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));

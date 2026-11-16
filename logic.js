@@ -47,9 +47,9 @@ const BASELINE = [
 const BAUSTEINE = [
   {id:"ballaststoff", pillar:"darm",   label:"Ballaststoff-Booster",  courseWeek:2, videoId:"2.1",  kind:"daily"},
   {id:"bildschirm",   pillar:"schlaf", label:"60 Min. bildschirmfrei", courseWeek:2, videoId:"2.2",  kind:"daily"},
-  {id:"kraft",        pillar:"beweg",  label:"Krafteinheit",          courseWeek:2, videoId:"2.3",  kind:"weeklyCount", weeklyTarget:2},
+  {id:"kraft",        pillar:"beweg",  label:"Krafteinheit (2 pro Woche)", courseWeek:2, videoId:"2.3",  kind:"weeklyCount", weeklyTarget:2},
   {id:"fermentiert",  pillar:"darm",   label:"Fermentiertes",         courseWeek:3, videoId:"3.1",  kind:"daily"},
-  {id:"letzte_mz",    pillar:"schlaf", label:"Letzte Mahlzeit 3 Std. vor dem Schlafen", courseWeek:3, videoId:"3.2", kind:"daily"},
+  {id:"letzte_mz",    pillar:"schlaf", label:"Letzte Mahlzeit 3 Std. vorher", courseWeek:3, videoId:"3.2", kind:"daily"},
   {id:"zone2",        pillar:"beweg",  label:"Zone-2-Minuten",        courseWeek:3, videoId:"3.3",  kind:"daily"},
   {id:"in_ruhe",      pillar:"darm",   label:"In Ruhe gegessen",      courseWeek:4, videoId:"4.1",  kind:"daily"},
   {id:"koffein",      pillar:"schlaf", label:"Kein Koffein nach dem Mittag", courseWeek:4, videoId:"4.2",  kind:"daily"},

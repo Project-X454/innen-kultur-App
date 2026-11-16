@@ -1,16 +1,15 @@
-/* Erzeugt die Download-PDFs (Ordner pdf/) direkt aus den Druckvorlagen der App.
-   Ausführen im Projektordner:  node tools/pdf-export.js
-   Braucht Playwright mit Chromium. Persönliche Angaben bleiben leer (Linien zum Ausfüllen). */
+/* Erzeugt die drei PDFs, die die App auch selbst drucken kann (Handout Woche 1, Mini-Karte Morgen, Mini-Karte Abend),
+   direkt aus den Druckvorlagen in app.js. Ausführen im Projektordner:  node tools/pdf-export.js
+   Braucht Playwright mit Chromium. Persönliche Angaben bleiben leer (Linien zum Ausfüllen).
+   Alle übrigen PDFs im Ordner pdf/ (Wochenpläne, Handouts 2–4, die anderen Mini-Karten, Goodies) kommen aus dem
+   Material-Satz und werden nicht von diesem Skript erzeugt. */
 const { chromium } = require("playwright");
 const http = require("http"), fs = require("fs"), path = require("path");
 const root = path.join(__dirname, "..");
 const FILES = {  // Vorlage → Dateiname
-  handout1: "innen-kultur-handout-woche-1.pdf",
-  pflanzen: "innen-kultur-pflanzen-teller.pdf",
-  morgen:   "innen-kultur-morgen-karte.pdf",
-  abend:    "innen-kultur-abend-karte.pdf",
-  aktiv:    "innen-kultur-aktivitaets-karte.pdf",
-  ferment:  "innen-kultur-fermentiert-karte.pdf"
+  handout1: "innen-kultur-handout-woche-1-deine-basis.pdf",
+  morgen:   "innen-kultur-mini-02-dein-morgen.pdf",
+  abend:    "innen-kultur-mini-03-dein-abend.pdf"
 };
 const TYPES = {".js":"text/javascript", ".html":"text/html", ".css":"text/css", ".woff":"font/woff", ".png":"image/png", ".svg":"image/svg+xml", ".json":"application/json"};
 const srv = http.createServer((q, r) => {
