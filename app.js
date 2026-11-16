@@ -426,7 +426,7 @@ function routinesCard(){
 /* ---------- „Was zählt?“ und die Abendroutine als eigene Karte ---------- */
 const WHAT = {
   bunt:["Mindestens eine Mahlzeit nach dem Pflanzen-Teller: die Hälfte Gemüse, Obst oder Hülsenfrüchte, dabei mindestens 3 verschiedene Pflanzen.","Zählt nicht: ein Apfel nebenbei, Saft, Pommes."],
-  morgenlicht:["Mindestens 10 Minuten draußen bei Tageslicht, in den ersten 2 Stunden nach dem Aufstehen. Bewölkt zählt.","Zählt nicht: durchs Fenster oder mit Sonnenbrille."],
+  morgenlicht:["Mindestens 10 Minuten draußen bei Tageslicht, in der ersten Stunde nach dem Aufstehen. Bewölkt zählt.","Zählt nicht: durchs Fenster oder mit Sonnenbrille."],
   bewegt30:["Zusammen mindestens 30 Minuten, bei denen du etwas schneller atmest: zügig gehen, Rad, Sport, Garten. Darf in Stücken sein.","Zählt nicht: normales Herumlaufen in der Wohnung."],
   abend:["Drei Grundpfeiler am Vorabend: Routine eingeleitet, Bildschirm aus, feste Bettgehzeit. Dazu Extras, die gut tun. Jeder Grundpfeiler zählt 25 %, die Extras zusammen 25 %.","Wird für gestern Abend eingetragen, weil der Check-in vor dem Schlafen liegt."]
 };
