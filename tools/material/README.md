@@ -3,6 +3,13 @@
 Hier entstehen die PDFs im Ordner `pdf/`, die die App zum Laden anbietet. Texte ändern,
 neu bauen, fertig — die App selbst muss dafür nicht angefasst werden.
 
+## Grundsatz: informativ, nicht zum Ausfüllen
+
+Die Materialien werden gelesen, nicht ausgedruckt und ausgefüllt. Keine Kästchen zum
+Ankreuzen, keine Tracker zum Abhaken, keine Linien zum Beschriften. Eingetragen wird in
+der App; das Material erklärt, was die App fragt, und zeigt Beispielwerte. Wo früher eine
+leere Zeile stand, steht jetzt eine Erklärung oder ein Beispiel.
+
 ## Neu bauen
 
 ```

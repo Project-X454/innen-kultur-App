@@ -37,6 +37,7 @@ XCSS = """
 .shop{display:grid;grid-template-columns:1fr 1fr;gap:0 12mm}.shop .col{display:flex;flex-direction:column;gap:7mm}
 .shop h3{font-size:11pt;display:flex;align-items:center;gap:2mm;color:var(--t);padding-bottom:1.6mm;border-bottom:.35mm solid var(--c);margin-bottom:1mm}
 .shop .r{display:flex;gap:2.6mm;align-items:center;padding:1.3mm 0;font-size:10.2pt;border-bottom:.25mm solid var(--line)}
+.shop .r .dot{flex:none;width:1.6mm;height:1.6mm;border-radius:50%;background:var(--c);opacity:.55}
 .shop .g.base .r{border:0;padding:.9mm 0}
 .shop .g.base .rows{display:flex;flex-wrap:wrap;gap:1.6mm 2mm;padding-top:1.5mm}.basewrap{margin-top:7mm}
 .note{font-size:9pt;color:var(--muted);line-height:1.5}
@@ -97,7 +98,7 @@ def overview(g, n, N):
 SHOPIC = {"Gemüse & Obst": "darm", "Kühlregal": "box", "Vorrat": "cart", "Meist im Haus": "pot"}
 def shopping(g, n, N):
     def block(name, items):
-        rows = "".join(f'<div class="r"><span class="chk"></span>{x}</div>' for x in items)
+        rows = "".join(f'<div class="r"><span class="dot"></span>{x}</div>' for x in items)
         return f'<div class="g"><h3>{ico(SHOPIC[name],15)}{name}</h3><div class="rows">{rows}</div></div>'
     sh = dict(g["shop"])
     base = "".join(f'<span class="pill o">{x}</span>' for x in sh["Meist im Haus"])
@@ -105,7 +106,7 @@ def shopping(g, n, N):
     return f'''<section class="pg" style="{pv(g["pillar"])}">{top(f"Goodie · Woche {g['week']}")}<div class="pad" style="display:flex;flex-direction:column;gap:6mm;margin-top:9mm">
 <h1 style="font-size:26pt">{acc("Deine", "Einkaufsliste")}</h1><p class="lead" style="font-size:11pt;color:var(--muted)">Mengen für alle fünf Rezepte mit je 2 Portionen. Kochst du nur einzelne Gerichte, schau in die Zutatenliste des Rezepts.</p>
 <div class="shop"><div class="col">{block("Gemüse & Obst", sh["Gemüse & Obst"])}</div><div class="col">{block("Kühlregal", sh["Kühlregal"])}{block("Vorrat", sh["Vorrat"])}</div></div>
-<div class="shop" style="display:block"><div class="g base"><h3>{ico("pot",15)}Meist im Haus</h3><div class="rows">{base}</div></div></div><div style="margin-top:2mm"><div class="lbl" style="border-color:var(--line);color:var(--muted)">Notizen</div><span class="ln"></span><span class="ln"></span></div></div>
+<div class="shop" style="display:block"><div class="g base"><h3>{ico("pot",15)}Meist im Haus</h3><div class="rows">{base}</div></div></div>
 <p class="note pad" style="margin-top:auto;padding-bottom:4mm;font-size:7.4pt;color:var(--soft)">Fotos: Unsplash, als Serviervorschlag. {creds}</p>
 <div class="foot" style="margin-top:0"><span class="mono">innen-kultur.de · Goodie Woche {g["week"]}</span><span class="mono"></span><span class="mono">{n:02d} / {N:02d}</span></div></section>'''
 

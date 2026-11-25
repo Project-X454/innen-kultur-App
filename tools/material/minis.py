@@ -34,11 +34,6 @@ XCSS = """
 .mk td.tm{font-family:"Geist Mono",monospace;font-weight:600;color:var(--t);width:12.5mm;white-space:nowrap;font-size:7.6pt;padding-top:1.3mm}
 .mk td.k{font-weight:600;color:var(--t);white-space:nowrap;width:1%;padding-right:3mm}
 .mk td.r,.mk th.r{text-align:right;padding-right:0;white-space:nowrap}
-.mk td.c,.mk th.c{text-align:center;padding-right:0}
-.mk td.c i{display:inline-block;width:4.2mm;height:4.2mm;border-radius:50%;border:.35mm solid var(--c);vertical-align:middle}
-.mk td.c u{display:inline-block;width:100%;height:4.2mm;border-bottom:.3mm solid #A9B4C0;text-decoration:none}
-.mk table.wk td{padding:.95mm 0;vertical-align:middle}
-.mk table.wk td:first-child{width:9mm;font-weight:700}
 .mk .sp{display:grid;grid-template-columns:6mm 1fr;padding:.7mm 0;font-size:8.4pt;line-height:1.36}
 .mk .sp i{font-style:normal;width:4.4mm;height:4.4mm;border-radius:50%;background:var(--c);color:#fff;font-size:6.4pt;font-weight:800;display:grid;place-items:center;margin-top:.1mm}
 .mk .note{border-radius:3mm;background:var(--bg);padding:2.2mm 3mm;font-size:8pt;line-height:1.38}
@@ -60,21 +55,12 @@ XCSS = """
 .breath .in{background:var(--s);color:var(--t);border-radius:3mm 0 0 3mm}
 .breath .out{background:var(--c);color:#fff;border-radius:0 3mm 3mm 0}
 .breath b{font-size:15pt;line-height:1}.breath span{font-size:7.5pt}
-.week7{display:grid;grid-template-columns:repeat(7,1fr);gap:1.4mm;text-align:center}
-.week7 div{display:flex;flex-direction:column;align-items:center;gap:.8mm;font-family:"Geist Mono",monospace;font-size:6pt;color:var(--soft);text-transform:uppercase}
-.week7 i{width:7mm;height:7mm;border-radius:50%;border:.4mm solid var(--c);display:block}
-.wline{display:inline-block;border-bottom:.3mm solid #A9B4C0;width:15mm;height:4.6mm}
 .plt{display:grid;grid-template-columns:25mm 1fr;gap:4mm;align-items:center}
 .plt .lg{display:flex;flex-direction:column;gap:1.3mm}
 .plt .lg div{display:grid;grid-template-columns:4mm 1fr;font-size:8.1pt;line-height:1.3}
 .plt .lg i{width:2.8mm;height:2.8mm;border-radius:.8mm;background:var(--c);margin-top:.7mm}
 .plt .lg b{font-weight:600}
 .plt .lg span span{color:var(--muted)}
-.fl{display:flex;align-items:flex-end;gap:1.5mm;font-size:8.3pt;font-weight:600;white-space:nowrap}
-.fl u{flex:1;border-bottom:.3mm solid #A9B4C0;height:4.6mm;text-decoration:none;min-width:8mm}
-.fbox{border-radius:3mm;background:var(--s);color:var(--t);padding:2.4mm 3mm;display:flex;flex-direction:column;gap:1.4mm}
-.fbox .fl u{border-color:var(--c)}
-.wl{display:block;border-bottom:.3mm solid #A9B4C0;height:4.9mm}
 .pls{display:flex;flex-wrap:wrap;gap:1.1mm}
 .pls span{font-size:7.5pt;font-weight:600;padding:.7mm 2.2mm;border-radius:10mm;background:var(--s);color:var(--t)}
 .qb{display:grid;grid-template-columns:repeat(4,1fr);gap:.8mm}
@@ -83,8 +69,7 @@ XCSS = """
 .qb div:first-child{border-radius:2.5mm 0 0 2.5mm}.qb div:last-child{border-radius:0 2.5mm 2.5mm 0;background:var(--s);color:var(--t)}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:1.6mm 4mm}
 .g2 .k{font-size:7.6pt;font-weight:700;color:var(--t);margin-bottom:.5mm}
-.g2 .ck{display:grid;grid-template-columns:4.4mm 1fr;font-size:8.1pt;line-height:1.3;padding:.35mm 0;align-items:start}
-.g2 .ck i,.cb{display:inline-block;width:2.9mm;height:2.9mm;border:.3mm solid #8C99A6;border-radius:.8mm;background:#fff;margin-top:.5mm}
+.g2 .ck{display:block;font-size:8.1pt;line-height:1.35;padding:.35mm 0;color:var(--muted)}
 .fb{display:grid;grid-template-columns:27mm 1fr 9mm;gap:2mm;align-items:center;font-size:8.1pt;padding:.5mm 0}
 .fb .tr{height:3mm;border-radius:1.5mm;background:var(--bg);overflow:hidden}
 .fb .tr i{display:block;height:100%;border-radius:1.5mm;background:var(--c)}
@@ -107,10 +92,6 @@ note = lambda t, c=True, end=False: f'<div class="note{" c" if c else ""}{" end"
 kv = lambda rows: "<table>" + "".join(f"<tr><td class='k'>{a}</td><td>{b}</td></tr>" for a, b in rows) + "</table>"
 tm = lambda rows: "<table>" + "".join(f"<tr><td class='tm'>{a}</td><td>{b}</td></tr>" for a, b in rows) + "</table>"
 DAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
-def week(cols, line=()):
-    th = "<tr><th></th>" + "".join(f"<th class='c'>{c}</th>" for c in cols) + "</tr>"
-    return "<table class='wk h'>" + th + "".join(f"<tr><td>{d}</td>" + "".join(f"<td class='c'>{'<u></u>' if k in line else '<i></i>'}</td>" for k in range(len(cols))) + "</tr>" for d in DAYS) + "</table>"
-fl = lambda *parts: '<div class="fl">' + "".join("<u></u>" if x is None else f"<span>{x}</span>" for x in parts) + "</div>"
 
 def build():
     o = ""
@@ -124,9 +105,11 @@ def build():
         headph("g1r4", "Der Pflanzen-", "Teller", "Einmal am Tag reicht für den Haken „Bunt gegessen“.", "center 45%"))
     grp = [("Gemüse", "Brokkoli, Paprika, Spinat, Möhren, Tomaten"), ("Obst", "Beeren, Äpfel, Bananen, Orangen, Kiwi"), ("Hülsenfrüchte", "Linsen, Kichererbsen, Bohnen, Erbsen"),
            ("Vollkorn", "Haferflocken, Vollkornbrot, Naturreis"), ("Nüsse, Samen", "Walnüsse, Mandeln, Leinsamen"), ("Kräuter, Pilze", "Petersilie, Basilikum, Champignons")]
-    o += card("darm", 1, 1, lb("Das zählt als Pflanze") + kv(grp) + lb("Das habe ich immer zu Hause") + '<span class="wl"></span><span class="wl"></span><span class="wl"></span>' +
-        lb("Diese Woche probiere ich neu") + '<span class="wl"></span><span class="wl"></span>' +
-        note("<b>Mitzählen.</b> Jede Sorte zählt einmal, auch Kräuter und Gewürze. Die Zahl trägst du abends im Check-in unter „Mehr eintragen“ ein.", end=True), "1.6", "Rückseite", back("Der Pflanzen-", "Teller", "Für den Kühlschrank"))
+    o += card("darm", 1, 1, lb("Das zählt als Pflanze") + kv(grp) + lb("Immer im Haus") +
+        '<div class="pls">' + "".join(f"<span>{x}</span>" for x in ["Haferflocken", "Linsen im Glas", "Kichererbsen", "Tiefkühl-Erbsen", "Walnüsse", "Tiefkühl-Beeren"]) + "</div>" +
+        lb("So werden mehr Sorten daraus") +
+        li(["Tiefkühlmischungen zählen als mehrere Sorten.", "Kräuter und Gewürze zählen mit, auch getrocknete.", "Nüsse und Samen über den Teller."]) +
+        note("<b>Mitzählen.</b> Jede Sorte zählt einmal. Die Zahl trägst du abends im Check-in ein.", end=True), "1.6", "Rückseite", back("Der Pflanzen-", "Teller", "Für den Kühlschrank"))
 
     # ---------- 02 Dein Morgen (Woche 1) ----------
     o += card("schlaf", 1, 2, lb("Dein Ablauf", "Minuten nach dem Aufstehen") +
@@ -136,11 +119,14 @@ def build():
         lb("Am Abend vorbereiten") + li(["Wecker stellen, bevor du das Handy weglegst.", "Wasserglas ans Bett, Jacke und Schuhe an die Tür."]) +
         note("<b>Gut zu wissen.</b> Auch bei bewölktem Himmel ist es draußen deutlich heller als drinnen am Fenster.", end=True), "1.7 und 1.9", "Vorderseite",
         head("Dein", "Morgen", "Die ersten 30 Minuten stellen deine innere Uhr."))
-    o += card("schlaf", 1, 2, f'<div class="fbox">{fl("Meine Aufstehzeit", None, "Uhr")}{fl("Mein Morgenlicht-Ort", None)}</div>' +
-        lb("Meine Woche") + week(["Aufgestanden", "Licht", "Mobility"]) + lb("Wenn es hakt") +
+    o += card("schlaf", 1, 2, lb("Warum ausgerechnet morgens") +
+        note("Licht am Morgen stoppt das Melatonin vom Vorabend und stellt damit deine innere Uhr. Es legt fest, wann du abends wieder müde wirst: meist 14 bis 16 Stunden später.", False) +
+        lb("Draußen ist heller, als es aussieht", "ungefähre Werte") +
+        kv([("Heller Raum", "300 bis 500 Lux"), ("Fenster von innen", "etwa 1.000 Lux"), ("Draußen, bedeckt", "1.000 bis 10.000 Lux"), ("Draußen, sonnig", "bis 100.000 Lux")]) +
+        lb("Wenn es hakt") +
         kv([("Noch dunkel", "Mach drinnen helles Licht an und geh raus, sobald es hell ist."), ("Keine Zeit", "Verbinde das Licht mit einem Weg, etwa zu Fuß zur Bahn."),
             ("Kurze Nacht", "Steh trotzdem zur festen Zeit auf. Abends schläfst du dann leichter ein.")]),
-        "1.7 und 1.9", "Rückseite", back("Dein", "Morgen", "Zum Abhaken"))
+        "1.7 und 1.9", "Rückseite", back("Dein", "Morgen", "Gut zu wissen"))
 
     # ---------- 03 Dein Abend (Woche 1) ----------
     ext = ["Glas Wasser", "Gelesen", "Kräutertee", "Dehnen oder Atmen", "3 gute Dinge", "Gelüftet", "Ohne Alkohol"]
@@ -150,10 +136,12 @@ def build():
         lb("Extras") + '<div class="pls">' + "".join(f"<span>{x}</span>" for x in ext) + "</div>" + lb("So rechnet die App") + qb +
         note("<b>Im Check-in.</b> Den Abend hakst du am nächsten Tag unter „Gestern Abend“ ab. Ausführlich erklärt ihn Video 2.2.", end=True), "1.2 und 2.2", "Vorderseite",
         head("Dein", "Abend", "Drei Grundpfeiler und ein paar Extras bringen dich zur Ruhe."))
-    o += card("schlaf", 1, 3, f'<div class="fbox">{fl("Meine Bettgehzeit", None, "Uhr")}{fl("Bildschirm aus ab", None, "Uhr", "Zubett-Wecker", None, "Uhr")}</div>' +
-        lb("Meine Woche") + week(["Eingeleitet", "Bildschirm aus", "Im Bett", "Extras"], line=(3,)) + lb("Das hilft") +
+    o += card("schlaf", 1, 3, lb("Ein Abend als Beispiel") +
+        tm([("21:30", "<b>Bildschirm aus.</b> Handy lädt außerhalb des Schlafzimmers."), ("22:00", "<b>Routine eingeleitet.</b> Licht dimmen, Tasche für morgen packen."), ("22:30", "<b>Im Bett.</b> Zur festen Zeit, auch am Wochenende.")]) +
+        note("<b>In der App.</b> Du legst deine Bettgehzeit fest, den Rest rechnet sie daraus: Bildschirm aus 60 Minuten vorher, Zubett-Wecker 30 Minuten vorher.") +
+        lb("Das hilft") +
         li(["Stell einen Zubett-Wecker, 30 Minuten vor deiner Zeit.", "Das Handy lädt außerhalb des Schlafzimmers.", "Buch und Wasserglas liegen schon am Bett."]),
-        "1.2 und 2.2", "Rückseite", back("Dein", "Abend", "Zum Abhaken"))
+        "1.2 und 2.2", "Rückseite", back("Dein", "Abend", "Gut zu wissen"))
 
     # ---------- 04 30 Minuten bewegt (Woche 1) ----------
     fl3 = '<div class="flow" style="grid-template-columns:repeat(3,1fr)"><div><small>Morgens · 10 Min.</small>Zu Fuß zur Bahn</div><div><small>Mittags · 10 Min.</small>Nach dem Essen</div><div><small>Abends · 10 Min.</small>Um den Block</div></div>'
@@ -165,8 +153,11 @@ def build():
     wk = "<table class='wk h'><tr><th></th><th>Was?</th><th class='c' style='width:13mm'>Min.</th><th class='c' style='width:9mm'>✓</th></tr>" + "".join(f"<tr><td>{d}</td><td><u style='display:block;height:4.2mm;border-bottom:.3mm solid #A9B4C0;margin-right:3mm'></u></td><td class='c'><u></u></td><td class='c'><i></i></td></tr>" for d in DAYS) + "</table>"
     o += card("beweg", 1, 4, lb("Bewegungssnacks im Büro") +
         li(["Nach jeder Stunde Sitzen 2 Minuten gehen.", "Treppe statt Aufzug.", "Telefonate im Stehen oder Gehen.", "Eine Haltestelle früher aussteigen."]) +
-        lb("Meine Bewegungswoche") + wk +
-        note("<b>Timer.</b> Stell dir eine Erinnerung nach 60 Minuten Sitzen.", False, True), "1.3 und 1.8", "Rückseite", back("30 Minuten", "bewegt", "Zum Planen"))
+        lb("Wie viel ist genug?") +
+        note("Die Weltgesundheitsorganisation empfiehlt 150 Minuten pro Woche, in denen du etwas schneller atmest. Das sind 30 Minuten an fünf Tagen. Der größte Unterschied liegt dabei zwischen gar nichts und ein bisschen.", False) +
+        lb("So verteilt sich eine Woche", "ein Beispiel") +
+        kv([("Mo, Mi, Fr", "je 10 Minuten hin und zurück zur Bahn, dazu eine Runde mittags"), ("Di", "30 Minuten Rad"), ("Sa", "ein langer Spaziergang"), ("Do, So", "Pause")]) +
+        note("<b>Timer.</b> Stell dir eine Erinnerung nach 60 Minuten Sitzen.", False, True), "1.3 und 1.8", "Rückseite", back("30 Minuten", "bewegt", "Was alles zählt"))
 
     # ---------- 05 Kraft (Woche 2) ----------
     ex = [("Kniebeuge zum Stuhl", "Po nach hinten, den Stuhl nur antippen.", "10"), ("Liegestütz am Tisch", "Der Körper bleibt eine gerade Linie.", "8"), ("Ausfallschritt rückwärts", "Das vordere Knie bleibt über dem Fuß.", "6 je Seite"),
@@ -181,7 +172,7 @@ def build():
     t2 = "<table class='h'><tr><th>Übung</th><th>Leichter</th><th>Schwerer</th></tr>" + "".join(f"<tr><td><b>{a}</b></td><td>{b}</td><td>{c}</td></tr>" for a, b, c in var) + "</table>"
     o += card("beweg", 2, 5, lb("Leichter oder schwerer") + t2 + lb("Dein Plan") +
         kv([("Woche 2", "2 Runden mit den Werten von der Vorderseite"), ("Woche 3", "2 Runden, je 2 Wiederholungen mehr"), ("Ab Woche 4", "3 Runden")]) +
-        lb("Meine Termine") + f'<div class="fbox">{fl("Tag 1", None, "Tag 2", None)}</div>' +
+        note("<b>Zwei feste Tage.</b> Zum Beispiel Dienstag und Freitag, mit mindestens einem Tag Pause dazwischen. Die Termine trägst du in der App ein.") +
         note("<b>Achte auf:</b> Rücken gerade, Bauch leicht angespannt, weiteratmen. <b>Stopp</b> bei Schmerz im Gelenk oder Schwindel.", False, True), "2.4", "Rückseite", back("15 Minuten", "Kraft", "Für neben die Matte"))
 
     # ---------- 06 Bohnen & Linsen (Woche 2) ----------
@@ -204,10 +195,10 @@ def build():
         xl(["Sauerkraut aus Dose, Glas oder Beutel, ungekühlt", "Joghurt mit dem Hinweis „wärmebehandelt“", "Essiggurken und Mixed Pickles", "Alles, was du mitkochst oder überbackst"]), "3.1 und 3.6", "Vorderseite",
         headph("g3r1", "Dein", "Fermentiertes", "Eine Portion mit lebenden Kulturen am Tag.", "center 40%", 21))
     g = [("Milchprodukte", ["Naturjoghurt", "Kefir", "Skyr"]), ("Gemüse", ["Frisches Sauerkraut", "Kimchi", "Milchsaure Gurken"]), ("Zum Würzen", ["Miso, hell oder dunkel"]), ("Getränke", ["Kombucha, gekühlt", "Wasserkefir"])]
-    g2 = '<div class="g2">' + "".join(f'<div><div class="k">{a}</div>' + "".join(f'<span class="ck"><i></i>{x}</span>' for x in l) + "</div>" for a, l in g) + "</div>"
+    g2 = '<div class="g2">' + "".join(f'<div><div class="k">{a}</div>' + "".join(f'<span class="ck">{x}</span>' for x in l) + "</div>" for a, l in g) + "</div>"
     o += card("darm", 3, 7, lb("Am Kühlregal") +
         sp(["Such im Kühlregal. Was ungekühlt im Regal steht, ist fast immer erhitzt.", "Lies das Etikett: „pasteurisiert“ oder „wärmebehandelt“ heißt, die Kulturen leben nicht mehr.", "Kurze Zutatenliste: Milch und Kulturen, oder Kohl und Salz."]) +
-        lb("Das mag ich", "ankreuzen") + g2 + lb("Meine Favoriten") + '<span class="wl"></span>' +
+        lb("Wo du es findest", "im Kühlregal") + g2 +
         note("<b>Sanft starten.</b> Fang mit 1 EL Sauerkraut oder einem halben Becher Joghurt an und steigere über eine Woche.", end=True), "3.1 und 3.6", "Rückseite", back("Dein", "Fermentiertes", "Für den Einkauf"))
 
     # ---------- 08 Sauerkraut (Woche 3) ----------
@@ -227,8 +218,8 @@ def build():
     res = '<div class="lad top3" style="align-items:stretch"><div><b>4</b><span>Boxen für vier Tage</span></div><div><b>11</b><span>verschiedene Pflanzen</span></div><div><b>60</b><span>Minuten, einmal pro Woche</span></div></div>'
     o += card("darm", 3, 9, lb("Dein Ablauf", "Minute") + tm(plan) + lb("Das Ergebnis") + res +
         note("<b>Du brauchst:</b> 1 Backblech · 2 Töpfe · 4 Boxen mit Deckel", end=True), "3.7", "Vorderseite", headph("mk_prep", "Meal-Prep", "in 60 Minuten", "Einmal kochen, viermal essen.", "center", 22))
-    shop = ["250 g Vollkornreis oder Quinoa", "200 g Berglinsen", "1 kg Ofengemüse: Paprika, Zucchini, Möhren, Brokkoli", "1 Dose Mais oder Kichererbsen", "2 Zitronen, 4 EL Olivenöl, 1 TL Senf", "Zum Auffrischen: Kirschtomaten, Gurke, Kräuter"]
-    shl = "".join(f'<div class="li"><span><i class="cb"></i></span><span>{x}</span></div>' for x in shop)
+    shop = ["250 g Vollkornreis oder Quinoa", "200 g Berglinsen", "1 kg Ofengemüse: Paprika, Zucchini, Möhren", "1 Dose Mais oder Kichererbsen", "2 Zitronen, Olivenöl, Senf, Kirschtomaten, Gurke, Kräuter"]
+    shl = "".join(f'<div class="li"><span style="color:var(--c)">·</span><span>{x}</span></div>' for x in shop)
     box = '<div class="flow" style="grid-template-columns:1fr 1fr 2fr"><div><small>ein Viertel</small>Getreide</div><div><small>ein Viertel</small>Linsen</div><div><small>die Hälfte</small>Gemüse</div></div>'
     o += card("darm", 3, 9, lb("Einkauf für vier Boxen") + shl + lb("So füllst du eine Box") + box + lb("Drei Richtungen", "kurz vor dem Essen dazu") +
         kv([("Mediterran", "Zitronen-Dressing, Feta, Oliven"), ("Orientalisch", "Joghurt mit Kreuzkümmel, Minze"), ("Asiatisch", "Sojasauce, Limette, Sesam")]) +
@@ -240,13 +231,12 @@ def build():
         sp(["Rückenlage, Licht aus, eine Hand auf den Bauch.", "4 Sekunden durch die Nase einatmen. Die Hand hebt sich.", "6 Sekunden langsam ausatmen. Die Hand senkt sich.", "10 Runden wiederholen und mitzählen. Das dauert knapp 2 Minuten.", "Noch wach? Häng 10 Runden an. Danach normal weiteratmen."]) +
         note("<b>Warum es wirkt.</b> Langes Ausatmen bremst den Puls und signalisiert dem Körper: Ruhe.", end=True), "4.5", "Vorderseite",
         head("Atemübung", "zum Einschlafen", "Wenige Minuten im Bett. Für den Nachttisch."))
-    w7 = '<div class="week7">' + "".join(f"<div><i></i>{d}</div>" for d in DAYS) + "</div>"
     o += card("schlaf", 4, 10, lb("Wenn es nicht klappt") +
         kv([("Die Gedanken kreisen", "Fang wieder bei 1 an. Das Zurückkommen ist die Übung."), ("Das Zählen stresst", "Nimm 3 Sekunden ein und 5 Sekunden aus."), ("Zu wenig Luft", "Atme normal weiter. Nichts erzwingen."), ("Du wirst wacher", "Hör auf zu zählen und atme nur noch lang aus.")]) +
         lb("Auch am Tag") +
         kv([("Vor einem Termin", "6 Atemzüge im Sitzen, das ist eine Minute."), ("Vor dem Essen", "3 Atemzüge, dann der erste Bissen (Video 4.6)."), ("Nach Ärger", "Erst ausatmen, dann antworten.")]) +
-        lb("Sieben Abende", "ausmalen") + w7 +
-        note("<b>Dranbleiben.</b> Die Übung fällt mit jedem Abend leichter. Gib ihr eine Woche.", end=True), "4.5", "Rückseite", back("Atemübung", "zum Einschlafen", "Zum Abhaken"))
+        note("<b>Warum 4 zu 6.</b> Beim Ausatmen wird der Puls langsamer, beim Einatmen schneller. Dauert das Ausatmen länger, überwiegt der ruhige Teil.", False) +
+        note("<b>Dranbleiben.</b> Die Übung fällt mit jedem Abend leichter. Gib ihr eine Woche.", end=True), "4.5", "Rückseite", back("Atemübung", "zum Einschlafen", "Für den Nachttisch"))
 
     # ---------- 11 Selbsttests (Woche 4) ----------
     ts = [("Aufsteh-Test", "Stabiler Stuhl ohne Rollen, mit der Lehne an der Wand. Arme vor der Brust kreuzen. 30 Sekunden so oft wie möglich ganz aufstehen und wieder hinsetzen.", "Du zählst jedes vollständige Aufstehen."),
@@ -256,12 +246,14 @@ def build():
     o += card("beweg", 4, 11, lb("Drei Tests für zu Hause") + t8 + lb("Vorher") + li(["2 Minuten locker gehen.", "Timer oder Stoppuhr bereitlegen."]) +
         note("<b>Nur ohne Beschwerden.</b> Bei Schwindel, Schmerzen oder Atemnot brichst du ab.", end=True), "4.7", "Vorderseite",
         head("Deine", "Selbsttests", "Einfach messen, was sich in vier Wochen verändert."))
-    rows = [("Aufsteh-Test", "Wiederholungen"), ("Treppe", "Sekunden"), ("Griffkraft", "Kilogramm")]
-    t9 = "<table class='h'><tr><th>Test</th><th>Woche 1</th><th>Woche 4</th><th>Woche 8</th></tr>" + "".join(f"<tr><td><b>{a}</b><small>{b}</small></td>" + "<td><span class='wline'></span></td>" * 3 + "</tr>" for a, b in rows) + "</table>"
-    o += card("beweg", 4, 11, lb("Deine Werte") + t9 + lb("So misst du fair") +
-        li(["Immer zur gleichen Tageszeit.", "Gleicher Stuhl, gleiche Treppe, gleiche Schuhe.", "Ein Versuch zählt. Kein Üben direkt davor."]) +
-        lb("Mein Fortschritt nach vier Wochen") + f'<div class="fbox">{fl("Aufsteh-Test:", None, "Wiederholungen mehr")}{fl("Treppe:", None, "Sekunden schneller")}</div>' +
-        note("<b>Zur Einordnung.</b> Es zählt dein Vergleich mit dir selbst. Schon zwei Wiederholungen mehr sind ein echter Fortschritt.", False, True), "4.7", "Rückseite", back("Deine", "Selbsttests", "Zum Eintragen"))
+    o += card("beweg", 4, 11, lb("Wann du misst") +
+        kv([("Woche 1", "Startwert, direkt nach Video 1.3"), ("Woche 4", "jetzt, zum Vergleich"), ("Woche 8", "am Ende des Kurses")]) +
+        note("<b>In der App.</b> Die Werte stehen bei deinen Angaben. Die App zeigt dir den Startwert, wenn du den zweiten einträgst.") +
+        lb("So misst du fair") +
+        li(["Immer zur gleichen Tageszeit.", "Gleicher Stuhl, gleiche Treppe, gleiche Schuhe.", "Ein Versuch zählt. Kein Üben direkt davor.", "Nach einer kurzen Nacht lieber einen Tag später messen."]) +
+        note("<b>Zur Einordnung.</b> Es zählt nur dein Vergleich mit dir selbst. Schon zwei Wiederholungen mehr sind ein echter Fortschritt. Weniger als beim ersten Mal heißt meist: schlecht geschlafen oder ein langer Tag.", False, True),
+        "4.7", "Rückseite", back("Deine", "Selbsttests", "Was die Zahlen sagen"))
+
     return doc(o, "Mini-Karten Woche 1–4", XCSS)
 
 SLUGS = ["01-pflanzen-teller", "02-dein-morgen", "03-dein-abend", "04-30-minuten-bewegt", "05-15-minuten-kraft", "06-bohnen-und-linsen",
