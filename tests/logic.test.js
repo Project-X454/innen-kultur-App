@@ -176,14 +176,10 @@ test("Inhalte: jedes Video, auf das ein To-do, eine Routine oder ein Material ze
     if(g.kind === "todo") assert.ok(IN.TODOS.find(t => t.id === g.id), k + " → " + g.id); });
 });
 
-test("Materialien: jede PDF liegt im Ordner pdf/, jedes Goodie hat seine Rezepte", () => {
-  const fs = require("fs"), path = require("path"), REZ = require("../rezepte.js").REZEPTE;
-  IN.MATERIALS.forEach(m => { if(!m.pdf) return;
+test("Materialien: jede PDF liegt im Ordner pdf/, jedes Material hat eine", () => {
+  const fs = require("fs"), path = require("path");
+  IN.MATERIALS.forEach(m => { assert.ok(m.pdf, "keine PDF hinterlegt: " + m.id);
     assert.ok(fs.existsSync(path.join(__dirname, "..", "pdf", m.pdf)), "fehlt: pdf/" + m.pdf); });
-  IN.MATERIALS.filter(m => m.kind === "Goodie").forEach(m => {
-    const g = REZ[m.id]; assert.ok(g, "keine Rezepte: " + m.id);
-    assert.ok(g.recipes.length >= 5, m.id);
-    g.recipes.forEach(r => { assert.ok(r.title && r.ingredients.length && r.steps.length, m.id + " · " + r.title); }); });
 });
 
 test("Basis-Routine: erst nach ihrem Video im Check-in, ältere Haken bleiben", () => {

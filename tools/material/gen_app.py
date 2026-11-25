@@ -1,4 +1,5 @@
-# Erzeugt die JS-Blöcke für inhalte.js und rezepte.js aus den freigegebenen Material-Daten.
+# Erzeugt die JS-Blöcke für inhalte.js aus den freigegebenen Material-Daten.
+# Die Rezepte stehen nur in den Goodie-PDFs (rezepte.py → goodies.py), nicht in der App.
 import json, os, re
 D = os.path.dirname(os.path.abspath(__file__))
 from todos_data import TODOS
@@ -160,30 +161,6 @@ for vid in sorted(set(list(MJ_MAP) + list(TODO_GO)), key=lambda x: (int(x.split(
         w, d, lab = TODO_GO[vid]
         rows.append(f'  {J(vid)}: {{kind:"todo", id:"w{w}d{d}", label:{J(lab)}}}')
 OUT["machjetzt"] = ",\n".join(rows)
-
-# ---------------------------------------------------------------- Rezepte
-def recipe_js(r):
-    nut = R.nutrition(r)
-    ing = []
-    for name, items in r["groups"]:
-        for z in items:
-            ing.append((z[0] + " " + z[1]).strip())
-    steps = [(lead + " " + text).strip() for lead, text in r["steps"]]
-    o = [f'title:{J(r["t"] + " " + r["a"])}', f'minutes:{r["aktiv"]}', f'plants:{len(r["plants"])}']
-    if nut: o += [f'kcal:{nut[0]}', f'protein:{nut[1]}', f'fiber:{nut[2]}']
-    if r.get("serves"): o.append(f'serves:{J(r["serves"])}')
-    o += [f'intro:{J(r["intro"])}',
-         "ingredients:[" + ", ".join(J(x) for x in ing) + "]",
-         "steps:[" + ", ".join(J(x) for x in steps) + "]",
-         f'tip:{J(r["tip"])}', f'keep:{J(r["keep"])}', f'swap:{J(r["swap"])}']
-    return "    {" + ", ".join(o) + "}"
-
-blocks = []
-for g in R.GOODIES:
-    gid = GOOD[g["week"]][0]
-    shop = ", ".join("{group:" + J(name) + ", items:[" + ", ".join(J(i) for i in items) + "]}" for name, items in g["shop"])
-    blocks.append(f'  {gid}:{{intro:{J(g["intro"])}, use:[' + ", ".join(J(u) for u in g["use"]) + "], shop:[" + shop + "],\n   recipes:[\n" + ",\n".join(recipe_js(r) for r in g["recipes"]) + "\n  ]}")
-OUT["rezepte"] = ",\n".join(blocks)
 
 os.makedirs(os.path.join(D, "out"), exist_ok=True)
 for k, v in OUT.items():

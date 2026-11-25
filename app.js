@@ -1272,30 +1272,13 @@ const PERSONAL = {handout1:1, morgen:1, abend:1}; // drei Vorlagen druckt die Ap
 const printTile=(p,title,sub,label,card,file)=>{ const f=file||PDF_FILE[card];
   return `<div class="card lprint" style="${pvars(p)}"><span class="lpic">${ICON.doc}</span><span class="lptx"><b>${esc(title)}</b>${f?`<small>PDF · lädt sofort</small>`:""}</span>
     <span class="lpbtns">${f?`<a class="btn small" href="pdf/${f}" download="${f}" data-a="pdf-dl">${ICON.dl}PDF laden</a>`:""}${card?`<button class="btn small ${f?"ghost":""}" data-a="print" data-v="${card}">${f?(PERSONAL[card]?"Mit deinen Angaben drucken":"Drucken"):esc(label)}</button>`:""}</span></div>`; };
-// Goodie in der App lesbar: Einleitung, Einkaufsliste und alle Rezepte mit Zutaten und Schritten
-function goodieHTML(g,p){
-  const shop = `<details class="card rez shop"><summary><b>Einkaufsliste</b><span class="note">für alle Rezepte</span></summary>
-    ${g.shop.map(x=>`<div class="shg"><span class="eyebrow" style="color:var(--t)">${esc(x.group)}</span><p class="note" style="color:var(--ink)">${x.items.map(esc).join(" · ")}</p></div>`).join("")}</details>`;
-  const rec = r => `<details class="card rez" style="${pvars(p)}"><summary><b class="rt-t">${esc(r.title)}</b>
-      <span class="rmeta"><span style="${pvars(p)}">${r.minutes} Min. aktiv</span><span style="${pvars("darm")}">${r.plants} Pflanzen</span>${r.kcal?`<span style="${pvars("recap")}">${r.kcal} kcal</span>`:""}</span></summary>
-    <p class="note" style="color:var(--ink)">${esc(r.intro)}</p>
-    ${r.kcal?`<p class="note">Je Portion: ${r.kcal} kcal · ${r.protein} g Eiweiß · ${r.fiber} g Ballaststoffe${r.serves?` · ${esc(r.serves)}`:""}</p>`:r.serves?`<p class="note">${esc(r.serves)}</p>`:""}
-    <span class="eyebrow" style="color:var(--t)">Zutaten</span><p class="note" style="color:var(--ink)">${r.ingredients.map(esc).join(" · ")}</p>
-    <span class="eyebrow" style="color:var(--t)">Zubereitung</span><ol>${r.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
-    <p class="note"><b>Tipp.</b> ${esc(r.tip)}</p><p class="note"><b>Aufbewahren.</b> ${esc(r.keep)}</p><p class="note"><b>Abwandeln.</b> ${esc(r.swap)}</p></details>`;
-  return infoCard(p,"Darum geht es",`<p style="margin:0;font-size:16px;line-height:1.5">${esc(g.intro)}</p>
-      <ul class="gu">${g.use.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`)
-    + shop + g.recipes.map(rec).join("");
-}
 function vMaterial(){
   const m=matById(mat); if(!m||!IK.materialUnlocked(S,m,VID.VIDEOS)){ mat=null; return vBibliothek(); }
   markNotice("mat-"+m.id);
   const p=m.pillar||"recap";
-  const g = typeof IK_REZEPTE!=="undefined" ? IK_REZEPTE.REZEPTE[m.id] : null;
   const seiten = m.kind==="Handout" ? "Zwei Seiten A4" : m.kind==="Wochenplan" ? "Fünf Seiten A4" : m.kind==="Goodie" ? "Acht Seiten A4" : "Karte A6, Vorder- und Rückseite";
-  const pdfTile = m.pdf ? printTile(p, seiten, "", `${m.kind} als PDF speichern`, m.card||null, m.pdf) : "";
-  const body = pdfTile + (g ? goodieHTML(g,p) : m.card||m.pdf ? "" :
-    infoCard(p,"Freigeschaltet",`<b style="font-size:18px">Das Material ist unterwegs</b><p class="note" style="color:var(--ink)">Es kommt mit dem nächsten Update der App automatisch hier rein.</p>`));
+  const body = m.pdf ? printTile(p, seiten, "", `${m.kind} als PDF speichern`, m.card||null, m.pdf)
+    : infoCard(p,"Freigeschaltet",`<b style="font-size:18px">Das Material ist unterwegs</b><p class="note" style="color:var(--ink)">Es kommt mit dem nächsten Update der App automatisch hier rein.</p>`);
   return libHead("mat-close", `${m.kind} · Woche ${m.week}`, m.short||m.title, (m.sub||m.title).replace(/^[^:]+: /,""), esc(m.why), p)
     + `<div class="libbody">${infoCard(p,"Wann",`<p style="margin:0;font-size:16px;line-height:1.5">${esc(m.when)}</p>`)}${body}</div></div>`;
 }
