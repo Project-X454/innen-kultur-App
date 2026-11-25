@@ -1,7 +1,7 @@
 /* innen kultur · Inhalte für To-dos, Freischaltungen und Materialien
    Hier stehen nur Texte und Regeln, kein Ablauf. Änderungen an Texten sind hier sicher möglich.
    Freigegeben im Dokument „Woche 1: Handouts, Goodies, Routinen & To-dos“ (25.10.2026), To-dos am 25.10.2026 auf eins pro Tag umgestellt.
-   Woche 2 bis 4 ergänzt am 13.11.2026 (Wochenpläne, Handouts, Mini-Karten, Goodies, Baustein-Texte). Die Rezepte stehen in rezepte.js.
+   Woche 2 bis 4 ergänzt am 13.11.2026 (Wochenpläne, Handouts, Mini-Karten, Goodies, Baustein-Texte). Die Rezepte stehen nur in den Goodie-PDFs, nicht in der App.
 
    Ein To-do pro Tracker-Tag (Tag 1 bis 7), jeweils einem Bereich zugeordnet:
      id        feste Kennung, nie ändern (daran hängt der Haken auf dem Gerät)

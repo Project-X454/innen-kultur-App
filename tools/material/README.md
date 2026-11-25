@@ -37,15 +37,18 @@ Die vier Bauskripte dazu: `todos.py` (Wochenpläne), `handouts.py`, `minis.py`,
 
 ## Von hier in die App
 
-`gen_app.py` erzeugt aus denselben Daten die Blöcke für `inhalte.js` und `rezepte.js`:
+`gen_app.py` erzeugt aus denselben Daten die Blöcke für `inhalte.js`:
 
 ```
 python3 tools/material/gen_app.py
 ```
 
 Die Dateien landen in `tools/material/out/js_*.txt` und werden von Hand in `inhalte.js`
-beziehungsweise `rezepte.js` übernommen. Wer hier Texte ändert, sollte also auch dort
-nachziehen, sonst sagen PDF und App Unterschiedliches.
+übernommen. Wer hier Texte ändert, sollte also auch dort nachziehen, sonst sagen PDF und
+App Unterschiedliches.
+
+Die Rezepte sind davon ausgenommen: Sie stehen nur in den Goodie-PDFs. In der App gibt es
+zu einem Goodie den Titel, das „Wieso“ und den Knopf zum Laden.
 
 Drei Druckvorlagen laufen nicht über diesen Ordner, weil die App sie mit den eigenen
 Angaben füllt: Handout Woche 1, Mini-Karte Morgen und Mini-Karte Abend stehen in
