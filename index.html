@@ -1011,17 +1011,10 @@ body.kb .tabs{display:none}
 #print td.tm{font-family:var(--f-mono);font-weight:600;color:var(--t);width:12.5mm;white-space:nowrap;font-size:7.6pt;padding-top:1.3mm}
 #print td.k{font-weight:600;color:var(--t);white-space:nowrap;width:1%;padding-right:3mm}
 #print td.c{text-align:center;padding-right:0}
-#print td.c i{display:inline-block;width:4.2mm;height:4.2mm;border-radius:50%;border:.35mm solid var(--c)}
-#print td.c u{display:inline-block;width:100%;height:4.2mm;border-bottom:.3mm solid #A9B4C0;text-decoration:none}
-#print table.pwk td{padding:.95mm 0;vertical-align:middle}
-#print table.pwk td:first-child{width:9mm;font-weight:700}
 .p-li{display:grid;grid-template-columns:4.5mm 1fr;font-size:8.3pt;line-height:1.34;padding:.25mm 0}
 .p-li span:first-child{color:var(--t);display:flex;padding-top:.5mm}
 .p-note{border-radius:3mm;background:var(--pbg);padding:2.2mm 3mm;font-size:8pt;line-height:1.38}
 .p-note.c{background:var(--s);color:var(--t)}
-.p-box{border-radius:3mm;background:var(--s);color:var(--t);padding:2.4mm 3mm;display:flex;flex-direction:column;gap:1.4mm}
-.p-fl{display:flex;align-items:flex-end;gap:1.5mm;font-size:8.3pt;font-weight:600;white-space:nowrap}
-.p-fl u{flex:1;border-bottom:.3mm solid var(--c);height:4.6mm;text-decoration:none;min-width:8mm;font-weight:700;text-align:center}
 .p-pills{display:flex;flex-wrap:wrap;gap:1.1mm}
 .p-pills span{font-size:7.5pt;font-weight:600;padding:.7mm 2.2mm;border-radius:10mm;background:var(--s);color:var(--t)}
 .p-quart{display:grid;grid-template-columns:repeat(4,1fr);gap:.8mm}
@@ -1080,14 +1073,16 @@ body.kb .tabs{display:none}
 .p-lst{border-radius:5mm;padding:4mm 5mm;display:flex;flex-direction:column;gap:1.2mm;font-size:9.8pt;line-height:1.4}
 .p-lst h3{font-size:11pt;margin-bottom:.6mm}
 .p-lst>div{display:grid;grid-template-columns:6mm 1fr}
-.p-fill{display:flex;align-items:flex-end;gap:2.5mm;font-size:10.2pt;font-weight:600;flex-wrap:wrap}
-.p-fill u{display:inline-block;border-bottom:.35mm solid #A9B4C0;width:24mm;height:6mm;text-decoration:none;text-align:center;font-weight:700}
-.p-fill u.w{flex:1;min-width:60mm}
 .pa table.pt{font-size:9.8pt}
 .pa table.pt th{font-size:6.8pt;padding:0 2mm 1.6mm 0}
 .pa table.pt td{border-top:.3mm solid var(--pline);padding:1.35mm 2mm;font-size:9.8pt}
-.pa table.pt td.c i{width:3.8mm;height:3.8mm;border-radius:1mm;border:.4mm solid #8C99A6}
-.pa table.pt td.c u{display:inline-block;width:11mm;height:4.4mm;border-bottom:.35mm solid #A9B4C0;text-decoration:none}
+.p-bsp{font-size:9.6pt;line-height:1.45;color:var(--pmut)}
+.p-bsp b{color:var(--pink);font-weight:600}
+.p-ci{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm}
+.p-ci.vier{grid-template-columns:repeat(4,1fr)}
+.p-ci div{border-radius:4.5mm;background:var(--s);padding:3.4mm 4.2mm 3.2mm;display:flex;flex-direction:column;gap:.8mm}
+.p-ci b{font-size:10.8pt;line-height:1.15;color:var(--t);letter-spacing:-.015em}
+.p-ci span{font-size:9pt;line-height:1.35;color:var(--pmut)}
 .p-warn{border-radius:4mm;background:#F9E9E4;color:#8E3A26;padding:3.4mm 5mm;font-size:9.6pt;line-height:1.42}
 
 /* Routinen als kompakte Liste (Heute), „Was zählt?“, Abendroutine, Rückblick */

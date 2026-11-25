@@ -1336,10 +1336,6 @@ const pNote = (html,soft) => `<div class="p-note${soft?"":" c"}">${html}</div>`;
 const pLi = items => items.map(x=>`<div class="p-li"><span>${CHECK}</span><span>${x}</span></div>`).join("");
 const pTm = rows => `<table>${rows.map(([a,b])=>`<tr><td class="tm">${esc(a)}</td><td>${b}</td></tr>`).join("")}</table>`;
 const pKv = rows => `<table>${rows.map(([a,b])=>`<tr><td class="k">${esc(a)}</td><td>${esc(b)}</td></tr>`).join("")}</table>`;
-const PDAYS = ["Mo","Di","Mi","Do","Fr","Sa","So"];
-const pWeek = (cols,lineIdx) => `<table class="pwk"><tr><th></th>${cols.map(c=>`<th class="c" style="text-align:center">${esc(c)}</th>`).join("")}</tr>`
-  + PDAYS.map(d=>`<tr><td>${d}</td>${cols.map((c,i)=>`<td class="c">${(lineIdx||[]).includes(i)?"<u></u>":"<i></i>"}</td>`).join("")}</tr>`).join("") + "</table>";
-const pFill = (label,val,unit) => `<div class="p-fl"><span>${esc(label)}</span><u>${val?esc(val):""}</u>${unit?`<span>${esc(unit)}</span>`:""}</div>`;
 const pCard = (pillar,label,head,body,videoLine,side) =>
   `<section class="pk" style="${PV(pillar)}">${pTop(label)}${head}<div class="p-bd">${body}</div>${pFoot(videoLine,side)}</section>`;
 
@@ -1357,13 +1353,15 @@ function morgenCard(){
     + pLb("So zählt es") + pLi(["<b>Licht:</b> 10 Minuten draußen, in der ersten Stunde nach dem Aufstehen.","<b>Aufstehzeit:</b> jeden Tag gleich, ±&nbsp;30 Minuten."])
     + pLb("Am Abend vorbereiten") + pLi(["Wecker stellen, bevor du das Handy weglegst.","Wasserglas ans Bett, Jacke und Schuhe an die Tür."])
     + pNote("<b>Gut zu wissen.</b> Auch bei bewölktem Himmel ist es draußen deutlich heller als drinnen am Fenster.");
-  const r = `<div class="p-box">${pFill("Meine Aufstehzeit",w,"Uhr")}${pFill("Mein Morgenlicht-Ort",S.lightSpot)}</div>`
-    + pLb("Meine Woche") + pWeek(["Aufgestanden","Licht","Mobility"])
+  const r = pLb("Warum ausgerechnet morgens")
+    + pNote("Licht am Morgen stoppt das Melatonin vom Vorabend und stellt damit deine innere Uhr. Es legt fest, wann du abends wieder müde wirst: meist 14 bis 16 Stunden später.", true)
+    + pLb("Draußen ist heller, als es aussieht","ungefähre Werte")
+    + pKv([["Heller Raum","300 bis 500 Lux"],["Fenster von innen","etwa 1.000 Lux"],["Draußen, bedeckt","1.000 bis 10.000 Lux"],["Draußen, sonnig","bis 100.000 Lux"]])
     + pLb("Wenn es hakt") + pKv([["Noch dunkel","Mach drinnen helles Licht an und geh raus, sobald es hell wird."],
         ["Keine Zeit","Verbinde das Licht mit einem Weg, etwa zu Fuß zur Bahn."],
         ["Kurze Nacht","Steh trotzdem zur festen Zeit auf."]]);
   return pCard("schlaf","Mini-Karte 02 · Woche 1", pHead("Dein","Morgen","Die ersten 30 Minuten stellen deine innere Uhr."), f, "Video 1.7 und 1.9", "Vorderseite")
-       + pCard("schlaf","Mini-Karte 02 · Woche 1", pBack("Dein","Morgen","Zum Abhaken"), r, "Video 1.7 und 1.9", "Rückseite");
+       + pCard("schlaf","Mini-Karte 02 · Woche 1", pBack("Dein","Morgen","Gut zu wissen"), r, "Video 1.7 und 1.9", "Rückseite");
 }
 
 // Mini-Karte „Dein Abend“ (Video 1.2, vertieft in 2.2)
@@ -1378,11 +1376,14 @@ function abendCard(){
     + pLb("So rechnet die App")
     + `<div class="p-quart"><div><small>25 %</small>Eingeleitet</div><div><small>25 %</small>Bildschirm aus</div><div><small>25 %</small>Bettgehzeit</div><div><small>25 %</small>Extras, voll ab zwei</div></div>`
     + pNote("<b>Im Check-in.</b> Den Abend hakst du am nächsten Tag unter „Gestern Abend“ ab. Ausführlich erklärt ihn Video 2.2.");
-  const r = `<div class="p-box">${pFill("Meine Bettgehzeit",bed,"Uhr")}${pFill("Bildschirm aus ab",scr,"Uhr")}${pFill("Zubett-Wecker",ein,"Uhr")}</div>`
-    + pLb("Meine Woche") + pWeek(["Eingeleitet","Bildschirm aus","Im Bett","Extras"],[3])
+  const r = pLb(bed?"Dein Abend":"Ein Abend als Beispiel")
+    + pTm([[scr||"21:30", "<b>Bildschirm aus.</b> Handy lädt außerhalb des Schlafzimmers."],
+           [ein||"22:00", "<b>Routine eingeleitet.</b> Licht dimmen, Tasche für morgen packen."],
+           [bed||"22:30", "<b>Im Bett.</b> Zur festen Zeit, auch am Wochenende."]])
+    + pNote(`<b>In der App.</b> ${bed?"Du hast deine Bettgehzeit auf "+esc(bed)+" Uhr gelegt. Daraus":"Du legst deine Bettgehzeit fest, den Rest"} rechnet sie: Bildschirm aus 60 Minuten vorher, Zubett-Wecker 30 Minuten vorher.`)
     + pLb("Das hilft") + pLi(["Stell einen Zubett-Wecker, 30 Minuten vor deiner Zeit.","Das Handy lädt außerhalb des Schlafzimmers.","Buch und Wasserglas liegen schon am Bett."]);
   return pCard("schlaf","Mini-Karte 03 · Woche 1", pHead("Dein","Abend","Drei Grundpfeiler und ein paar Extras bringen dich zur Ruhe."), f, "Video 1.2 und 2.2", "Vorderseite")
-       + pCard("schlaf","Mini-Karte 03 · Woche 1", pBack("Dein","Abend","Zum Abhaken"), r, "Video 1.2 und 2.2", "Rückseite");
+       + pCard("schlaf","Mini-Karte 03 · Woche 1", pBack("Dein","Abend","Gut zu wissen"), r, "Video 1.2 und 2.2", "Rückseite");
 }
 
 // Handout Woche 1 „Deine Basis“, zwei Seiten A4
@@ -1419,19 +1420,20 @@ function handout1(){
   const d30=[["Morgens","Zu Fuß zur Bahn oder zum Bäcker","10 Min."],["Mittags","Eine Runde nach dem Essen","10 Min."],["Abends","Spaziergang oder Rad","10 Min."]]
     .map(([a,b,c])=>`<div style="grid-template-columns:17mm 1fr auto;gap:2mm"><b>${a}</b><span>${b}</span><b style="color:var(--t)">${c}</b></div>`).join("");
   const sn=pLi(["Nach jeder Stunde Sitzen 2 Minuten gehen.","Treppe statt Aufzug.","Telefonate im Stehen oder Gehen.","Eine Haltestelle früher aussteigen."]);
-  const head="<tr><th>Routine</th>"+PDAYS.map(d=>`<th class="c" style="text-align:center">${d}</th>`).join("")+"</tr>";
-  const rows=`<tr><td><b>Aufgestanden um</b></td>${PDAYS.map(()=>'<td class="c"><u></u></td>').join("")}</tr>`
-    + ["Bunt gegessen","Morgenlicht","30 Min bewegt","Abendroutine"].map(r=>`<tr><td><b>${r}</b></td>${PDAYS.map(()=>'<td class="c"><i></i></td>').join("")}</tr>`).join("");
+  const vier=[["darm","Bunt gegessen","Halber Teller Pflanzen"],["schlaf","Morgenlicht","10 Min. draußen, feste Zeit"],
+    ["beweg","30 Min bewegt","Aufgeteilt zählt auch"],["schlaf","Abendroutine","Für den Abend davor"]]
+    .map(([p_,a,b])=>`<div style="${PV(p_)}"><b>${a}</b><span>${b}</span></div>`).join("");
   const p2 = `<div class="p-body" style="gap:3.1mm;margin-top:7mm">
       ${sec("03","Dein Morgen in 30 Minuten","Minuten nach dem Aufstehen","schlaf")}<div class="p-tl" style="${PV("schlaf")}">${tl}</div>
-      <div class="p-fill" style="margin-top:.5mm">Ich stehe um <u>${w?esc(w):""}</u> Uhr auf. Mein Morgenlicht-Ort: <u class="w">${S.lightSpot?esc(S.lightSpot):""}</u></div>
+      <p class="p-bsp"><b>In der App:</b> ${w||S.lightSpot?`Deine Aufstehzeit${w?` steht auf ${esc(w)} Uhr`:" ist noch offen"}${S.lightSpot?`, dein Morgenlicht-Ort ist ${esc(S.lightSpot)}`:""}. Beides`:"Du legst deine Aufstehzeit und deinen Morgenlicht-Ort fest. Beides"} steht danach jeden Morgen auf „Heute“.</p>
       ${sec("04","Dein Abend","so rechnet die App","schlaf")}<div class="p-q4" style="${PV("schlaf")}">${q4}</div>
-      <div class="p-fill" style="margin-top:.5mm">Ich gehe um <u>${bed?esc(bed):""}</u> Uhr ins Bett. Mein Zubett-Wecker klingelt um <u>${ein?esc(ein):""}</u> Uhr.</div>
+      <p class="p-bsp"><b>${bed?"Bei dir:":"Beispiel:"}</b> Bettgehzeit ${esc(bed||"22:30")} Uhr, Bildschirm aus ab ${esc(scr||"21:30")} Uhr, Zubett-Wecker um ${esc(ein||"22:00")} Uhr.${bed?"":" Deine eigene Zeit stellst du in der App ein."}</p>
       ${sec("05","30 Minuten in deinem Tag","aufgeteilt zählt","beweg")}
       <div class="p-two" style="${PV("beweg")}"><div class="p-lst" style="background:var(--s)"><h3 style="color:var(--t)">So kommst du auf 30 Minuten</h3>${d30}</div>
         <div class="p-lst" style="background:var(--pbg)"><h3>Bewegungssnacks im Büro</h3>${sn}</div></div>
-      ${sec("06","Deine Woche","zum Abhaken")}<table class="pt">${head}${rows}</table>
-      <div class="p-fill">Mein Warum: <u class="w">${S.why?esc(S.why):""}</u></div>
+      ${sec("06","Jeden Abend im Check-in","dauert etwa eine Minute")}
+      <p class="p-bsp">Die App fragt am Abend nach diesen vier Routinen. Was du tagsüber schon abgehakt hast, ist vorausgewählt.${S.why?` Dein Warum steht schon drin: „${esc(S.why)}“`:" Am siebten Tag kommt dein Warum dazu: ein Satz, wofür du mit 80 noch fit sein willst."}</p>
+      <div class="p-ci vier">${vier}</div>
       <div class="p-warn"><b>Wann zum Arzt?</b> Die Warnzeichen erklären wir in Video 1.5. Sind Beschwerden neu, stark oder gehen sie nicht weg, holst du dir ärztlichen Rat.${IN.WARNZEICHEN.length?" "+IN.WARNZEICHEN.map(esc).join(" · "):""}</div></div>`;
   return page(p1,1)+page(p2,2);
 }

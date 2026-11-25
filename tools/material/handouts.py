@@ -1,6 +1,7 @@
 import os, math
 from base import *
 from content import BAUSTEINE
+from apptexte_data import BX
 
 XCSS = """
 .b3{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm}
@@ -31,13 +32,17 @@ XCSS = """
 .tl i{font-style:normal;width:9mm;height:9mm;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center;font-size:7pt;font-weight:800;border:.8mm solid #fff;box-sizing:content-box;margin:-.8mm 0 0 -.8mm}
 .tl b{font-size:10pt;line-height:1.2}
 .tl span{font-size:8.8pt;line-height:1.35;color:var(--muted)}
-.fill{display:flex;align-items:flex-end;gap:2.5mm;font-size:10.2pt;font-weight:600;flex-wrap:wrap}
-.fill .l{display:inline-block;border-bottom:.35mm solid #A9B4C0;width:24mm;height:6mm}
-.fill .l.w{flex:1;min-width:60mm}
+.ci{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm}
+.ci.vier{grid-template-columns:repeat(4,1fr)}
+.ci div{border-radius:4.5mm;background:var(--s);padding:3.4mm 4.2mm 3.2mm;display:flex;flex-direction:column;gap:.8mm}
+.ci b{font-size:10.8pt;line-height:1.15;color:var(--t);letter-spacing:-.015em}
+.ci span{font-size:9pt;line-height:1.35;color:var(--muted)}
+.lead{font-size:10.2pt;line-height:1.45}
+.bsp{font-size:9.6pt;line-height:1.45;color:var(--muted)}
+.bsp b{color:var(--ink);font-weight:600}
 table.t{width:100%;border-collapse:collapse;font-size:9.8pt}
 table.t th{font-family:"Geist Mono",monospace;font-size:6.8pt;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--soft);text-align:left;padding:0 2mm 1.6mm 0}
 table.t td{border-top:.3mm solid var(--line);padding:1.75mm 2mm 1.75mm 0;vertical-align:middle}
-table.tw td{padding-top:1.35mm;padding-bottom:1.35mm}
 table.t td.c,table.t th.c{text-align:center;padding-right:0}
 table.t td.r,table.t th.r{text-align:right;padding-right:0}
 table.t td b{font-weight:600}
@@ -99,11 +104,10 @@ table.t td b{font-weight:600}
 .tool .nr{font-family:"Geist Mono",monospace;font-size:8pt;font-weight:600;color:var(--t)}
 .tool b{font-size:12pt;color:var(--t);line-height:1.15}
 .tool p{font-size:9.5pt;line-height:1.42}
-.plan{border-radius:5mm;background:var(--navy);color:#fff;padding:6.5mm 7mm;display:flex;flex-direction:column;gap:2.6mm;position:relative;overflow:hidden}
+.plan{border-radius:5mm;background:var(--navy);color:#fff;padding:6mm 7mm 6.5mm;display:flex;flex-direction:column;gap:2.2mm;position:relative;overflow:hidden}
 .plan::after{content:"";position:absolute;right:-12mm;top:-14mm;width:42mm;height:42mm;border-radius:50%;background:var(--coral);opacity:.9}
 .plan h3{font-size:14pt}
 .plan .q{font-size:9.8pt;font-weight:600;color:#D3DEEA;margin-top:1.2mm}
-.plan .ln{border-color:rgba(255,255,255,.45);height:7.5mm}
 .plan .g{display:grid;grid-template-columns:1fr 1fr;gap:0 8mm}
 """
 WK = {1: dict(p="navy", title="Deine", acc="Basis", sub="Vier Routinen tragen den ganzen Kurs. Hier steht, was genau zählt und wie sie in deinen Tag passen."),
@@ -115,10 +119,13 @@ BW = lambda w: [b for b in BAUSTEINE if b["week"] == w]
 def bausteine(w):
     cards = "".join(f'<div class="bc" style="{pv(b["pillar"])}"><div class="hd"><span class="ic">{ico(b["pillar"],17)}</span><b class="n">{b["label"]}</b></div><p><span class="lb">Zählt</span>{b["yes"]}</p><p class="no"><span class="lb" style="color:var(--muted)">Zählt nicht</span>{b["no"]}</p><span class="mono v">Video {b["video"]}</span></div>' for b in BW(w))
     return f'<div class="b3">{cards}</div>'
-def tracker(rows, extra=""):
-    head = "".join(f'<th class="c">{d}</th>' for d in ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"])
-    body = "".join(f'<tr><td><b>{r}</b></td>' + '<td class="c"><span class="chk"></span></td>' * 7 + "</tr>" for r in rows)
-    return f'<table class="t"><tr><th>Baustein</th>{head}</tr>{body}</table>{extra}'
+def checkin(items, lead):
+    """Was die App am Abend fragt. Abgehakt wird dort, nicht auf dem Blatt."""
+    cards = "".join(f'<div style="{pv(p)}"><b>{name}</b><span>{sub}</span></div>' for p, name, sub in items)
+    return f'<p class="lead">{lead}</p><div class="ci{" vier" if len(items) == 4 else ""}">{cards}</div>'
+
+def ci_bausteine(w):
+    return [(b["pillar"], b["label"], BX[b["id"]]["sub"]) for b in BW(w)]
 def qa(items):
     return '<div class="qa">' + "".join(f'<div><span class="lb">Stolperstein</span><b>{q}</b><p>{a}</p></div>' for q, a in items) + "</div>"
 def page(w, inner, n):
@@ -144,7 +151,7 @@ def h1():
     grp = [("Gemüse", "Brokkoli, Paprika, Spinat, Zucchini, Möhren, Tomaten"), ("Obst", "Beeren, Äpfel, Bananen, Orangen, Kiwi"), ("Hülsenfrüchte", "Linsen, Kichererbsen, Bohnen, Erbsen, Edamame"),
            ("Vollkorn", "Haferflocken, Vollkornbrot, Quinoa, Naturreis"), ("Nüsse und Samen", "Walnüsse, Mandeln, Leinsamen, Kürbiskerne"), ("Kräuter und Pilze", "Petersilie, Basilikum, Schnittlauch, Champignons")]
     g6 = "".join(f'<div><b>{a}</b><span>{b}</span></div>' for a, b in grp)
-    p1 = hero(1) + BODY(sec("01", "Deine vier Routinen", "jeden Abend im Check-in abhaken") + f'<div class="r4">{rc}</div>' +
+    p1 = hero(1) + BODY(sec("01", "Deine vier Routinen", "jeden Abend in der App") + f'<div class="r4">{rc}</div>' +
         sec("02", "Der Pflanzen-Teller", "einmal am Tag reicht für den Haken", "darm") +
         f'<div class="plate" style="{pv("darm")}">{plate}<div class="lg">{lgh}</div><div class="day" style="padding:4.4mm 5.4mm;gap:1.2mm"><h3>Drei Teller als Beispiel</h3>{exh}</div></div>' +
         f'<div class="strip" style="{pv("darm")}"><span>{ico("bulb",15)}</span><span><b>Klein anfangen zählt.</b> Welche Lebensmittel als Pflanze zählen, steht auf der Mini-Karte „Der Pflanzen-Teller“. Jede Sorte zählt einmal, auch Kräuter.</span></div>', gap="4.2mm", mt="6mm")
@@ -157,18 +164,16 @@ def h1():
     d30h = "".join(f'<div style="grid-template-columns:17mm 1fr auto;gap:2mm"><b>{a}</b><span>{b}</span><b style="color:var(--t)">{c}</b></div>' for a, b, c in d30)
     sn = ["Nach jeder Stunde Sitzen 2 Minuten gehen", "Treppe statt Aufzug", "Telefonate im Stehen oder Gehen", "Eine Haltestelle früher aussteigen"]
     snh = "".join(f'<div><span style="color:var(--t);display:flex;padding-top:.7mm">{ico("check",12,2.8)}</span><span>{x}</span></div>' for x in sn)
-    days = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
-    th = "".join(f'<th class="c">{d}</th>' for d in days)
-    r0 = '<tr><td><b>Aufgestanden um</b></td>' + '<td class="c"><span style="display:inline-block;width:11mm;height:4.4mm;border-bottom:.35mm solid #A9B4C0"></span></td>' * 7 + "</tr>"
-    rr = "".join(f'<tr><td><b>{r}</b></td>' + '<td class="c"><span class="chk"></span></td>' * 7 + "</tr>" for r in ["Bunt gegessen", "Morgenlicht", "30 Min bewegt", "Abendroutine"])
+    vier = [("darm", "Bunt gegessen", "Halber Teller Pflanzen"), ("schlaf", "Morgenlicht", "10 Min. draußen, feste Zeit"),
+            ("beweg", "30 Min bewegt", "Aufgeteilt zählt auch"), ("schlaf", "Abendroutine", "Für den Abend davor")]
     p2 = BODY(sec("03", "Dein Morgen in 30 Minuten", "Minuten nach dem Aufstehen", "schlaf") + f'<div class="tl" style="{pv("schlaf")}">{tlh}</div>' +
-        '<div class="fill" style="margin-top:.5mm">Ich stehe um <span class="l"></span> Uhr auf. Mein Morgenlicht-Ort: <span class="l w"></span></div>' +
+        '<p class="bsp"><b>In der App:</b> Du legst deine Aufstehzeit und deinen Morgenlicht-Ort fest. Beides steht danach jeden Morgen auf „Heute“.</p>' +
         sec("04", "Dein Abend", "so rechnet die App", "schlaf") + f'<div class="q4" style="{pv("schlaf")}">{q4h}</div>' +
-        '<div class="fill" style="margin-top:.5mm">Ich gehe um <span class="l"></span> Uhr ins Bett. Mein Zubett-Wecker klingelt um <span class="l"></span> Uhr.</div>' +
+        '<p class="bsp"><b>Beispiel:</b> Bettgehzeit 22:30 Uhr, Bildschirm aus ab 21:30 Uhr, Zubett-Wecker um 22:00 Uhr. Deine eigene Zeit stellst du in der App ein.</p>' +
         sec("05", "30 Minuten in deinem Tag", "aufgeteilt zählt", "beweg") +
         f'<div class="two2" style="{pv("beweg")}"><div class="lst" style="background:var(--s);padding:4mm 5mm;gap:1.2mm"><h3 style="color:var(--t)">So kommst du auf 30 Minuten</h3>{d30h}</div><div class="lst" style="background:var(--bg);padding:4mm 5mm;gap:1.2mm"><h3>Bewegungssnacks im Büro</h3>{snh}</div></div>' +
-        sec("06", "Deine Woche", "zum Abhaken") + f'<table class="t tw"><tr><th>Routine</th>{th}</tr>{r0}{rr}</table>' +
-        '<div class="fill">Mein Warum: <span class="l w"></span></div>' +
+        sec("06", "Jeden Abend im Check-in", "dauert etwa eine Minute") +
+        checkin(vier, "Die App fragt am Abend nach diesen vier Routinen. Was du tagsüber schon abgehakt hast, ist vorausgewählt. Am siebten Tag kommt dein Warum dazu: ein Satz, wofür du mit 80 noch fit sein willst.") +
         '<div class="warn"><b>Wann zum Arzt?</b> Die Warnzeichen erklären wir in Video 1.5. Sind Beschwerden neu, stark oder gehen sie nicht weg, holst du dir ärztlichen Rat.</div>', gap="3.5mm", mt="7mm")
     return page(1, p1, 1) + page(1, p2, 2)
 
@@ -179,7 +184,7 @@ def h2():
     bars = "".join(f'<div class="bar"><span>{a}</span><small>{b}</small><span class="tr"><i style="width:{c/12*100:.0f}%"></i></span><b>{c} g</b></div>' for a, b, c in fib)
     day = [("Frühstück", "50 g Haferflocken, 1 EL Leinsamen", 8), ("Mittag", "Salat mit 150 g Linsen", 12), ("Nachmittag", "30 g Mandeln", 4), ("Abend", "2 Scheiben Vollkornbrot", 8)]
     drows = "".join(f'<div class="r"><span>{a}<small>{b}</small></span><b>{c} g</b></div>' for a, b, c in day)
-    p1 = hero(2) + BODY(sec("01", "Deine drei Bausteine", "im Check-in abhaken") + bausteine(2) +
+    p1 = hero(2) + BODY(sec("01", "Deine drei Bausteine", "ab dieser Woche im Check-in") + bausteine(2) +
         sec("02", "Wo Ballaststoffe stecken", "Richtwert: 30 g am Tag") +
         f'<div class="split" style="{pv("darm")}"><div>{bars}</div><div class="day"><h3>So kommst du auf 30 g</h3>{drows}<div class="sum"><span>Summe</span><span>{sum(x[2] for x in day)} g</span></div><p style="font-size:8.8pt;color:var(--muted);line-height:1.4"><b style="color:var(--ink)">Langsam steigern.</b> Etwa 5 g mehr pro Woche, dazu 1,5 bis 2 Liter trinken. So bleibt der Bauch ruhig.</p></div></div>', gap="4mm", mt="6mm")
     tl = [("−60", "Bildschirm aus", "Handy lädt außerhalb des Schlafzimmers."), ("−45", "Licht dimmen", "Kleidung und Tasche für morgen bereitlegen."), ("−30", "Ruhig werden", "Lesen, dehnen oder eine Tasse Abendtee."), ("−10", "Bad", "Zähne putzen, kurz lüften."), ("0", "Licht aus", "Zur festen Zeit, auch am Wochenende.")]
@@ -191,11 +196,11 @@ def h2():
                ("Abends doch am Handy", "Ladekabel in den Flur legen und einen einfachen Wecker ans Bett stellen. Was nicht greifbar ist, wird nicht benutzt."),
                ("Keine Zeit für Kraft", "Zwei Übungen zählen auch: Kniebeuge und Liegestütz, je zwei Sätze. Das dauert 5 Minuten.")]
     p2 = BODY(sec("03", "Deine Abendroutine", "Minuten vor dem Schlafen", "schlaf") + f'<div class="tl" style="{pv("schlaf")}">{tlh}</div>' +
-        '<div class="fill" style="margin-top:1mm">Ich gehe um <span class="l"></span> Uhr schlafen. Mein Bildschirm ist aus um <span class="l"></span> Uhr.</div>' +
+        '<p class="bsp" style="margin-top:1mm"><b>Beispiel:</b> Wer um 22:30 Uhr schläft, macht den Bildschirm um 21:30 Uhr aus und leitet die Routine um 22:00 Uhr ein. In der App legst du deine eigene Bildschirm-Stopp-Zeit fest.</p>' +
         sec("04", "Dein Kraftplan", "2 Einheiten pro Woche", "beweg") + f'<table class="t"><tr><th>Übung</th><th>Woche 2</th><th>Woche 3</th><th>Ab Woche 4</th></tr>{krt}</table><p style="font-size:9pt;color:var(--muted);margin-top:-2mm">Sätze × Wiederholungen. Zwischen zwei Einheiten liegt mindestens ein Tag Pause. Alle Übungen zeigt Video 2.4.</p>' +
         sec("05", "Wenn es hakt") + qa(stolper) +
-        sec("06", "Deine Woche", "zum Abhaken") + tracker(["Ballaststoff-Booster", "60 Min. bildschirmfrei", "Krafteinheit (2 pro Woche)"]) +
-        '<div class="fill">Mein Wenn-dann-Satz: <span class="l w"></span></div>', gap="4.4mm", mt="9mm")
+        sec("06", "Jeden Abend im Check-in", "dauert etwa eine Minute") +
+        checkin(ci_bausteine(2), "Zu deinen vier Routinen kommen diese drei Bausteine dazu. Am letzten Tag der Woche schreibst du einen Wenn-dann-Satz in der App, zum Beispiel: „Wenn ich Kaffee koche, kommt Leinsamen ins Müsli.“"), gap="4.4mm", mt="9mm")
     return page(2, p1, 1) + page(2, p2, 2)
 
 # ---------------- Woche 3 ----------------
@@ -211,9 +216,9 @@ def h3():
     ticks = "".join(f'<span class="tk" style="left:{X(h):.2f}%">{h}</span>' for h in range(6, 24, 2))
     clock = f'<div class="clock"><span class="ax"></span><span class="eat" style="left:{X(7.5):.2f}%;width:{X(19.5)-X(7.5):.2f}%"></span><span class="gap3" style="left:{X(19.5):.2f}%;width:{X(22.5)-X(19.5):.2f}%"></span>{ticks}{mk}</div>'
     legend = '<div style="display:flex;gap:7mm;font-size:8.8pt;color:var(--muted);margin-top:-2mm"><span style="display:flex;align-items:center;gap:1.6mm"><i style="width:8mm;height:3mm;border-radius:1.5mm;background:#CFE3D6;display:block"></i>Essensfenster, etwa 12 Stunden</span><span style="display:flex;align-items:center;gap:1.6mm"><i style="width:8mm;height:3mm;border-radius:1.5mm;display:block;background:repeating-linear-gradient(90deg,#C9D8EA 0 1.2mm,transparent 1.2mm 2.4mm)"></i>3 Stunden ohne Essen vor dem Schlafen</span></div>'
-    fill = '<div style="display:grid;grid-template-columns:auto repeat(4,1fr);gap:5mm;align-items:end;font-size:9.6pt"><b>Meine Zeiten</b>' + "".join(f'<span style="display:flex;align-items:flex-end;gap:2mm;white-space:nowrap">{x}<span style="flex:1;border-bottom:.35mm solid #A9B4C0;height:5mm"></span></span>' for x in ["Aufstehen", "Küche zu", "Bildschirm aus", "Schlafen"]) + "</div>"
-    p1 = hero(3) + BODY(sec("01", "Deine drei Bausteine", "im Check-in abhaken") + bausteine(3) +
-        sec("02", "Dein Tag als Uhr", "Beispiel, Uhrzeiten anpassen") + clock + legend + fill +
+    fill = '<p class="bsp"><b>Die Zeiten sind ein Beispiel.</b> In der App legst du deine eigenen fest: Aufstehzeit, „Küche zu“ und Bildschirm-Stopp. Der Rest richtet sich danach.</p>'
+    p1 = hero(3) + BODY(sec("01", "Deine drei Bausteine", "ab dieser Woche im Check-in") + bausteine(3) +
+        sec("02", "Dein Tag als Uhr", "ein Beispieltag") + clock + legend + fill +
         f'<div class="strip" style="{pv("schlaf")}"><span>{ico("bulb",15)}</span><span><b>Fang hinten an.</b> Leg zuerst deine Schlafenszeit fest. Alles andere ergibt sich daraus: Bildschirm aus eine Stunde vorher, Küche zu drei Stunden vorher.</span></div>', gap="4.6mm")
     yes = ["Naturjoghurt und Kefir", "Frisches Sauerkraut aus dem Kühlregal", "Kimchi, ungekocht", "Miso, in die nicht mehr kochende Suppe", "Ungekühlter Hinweis: steht „lebende Kulturen“ drauf?"][:4]
     no = ["Sauerkraut aus Dose, Glas oder Beutel, ungekühlt", "Joghurt mit dem Hinweis „wärmebehandelt“", "Essiggurken und Mixed Pickles", "Alles, was du mitkochst oder überbackst"]
@@ -229,8 +234,8 @@ def h3():
         f'<div class="scale" style="{pv("beweg")}"><div><b>Zu locker</b><span>Du könntest dabei singen. Gut zum Aufwärmen.</span></div><div class="on"><b>Zone 2</b><span>Du atmest schneller, sprichst aber noch in ganzen Sätzen. Hier bleibst du.</span></div><div><b>Zu schnell</b><span>Nur einzelne Wörter gehen. Nimm Tempo heraus.</span></div></div>' +
         '<p style="font-size:9.4pt;color:var(--muted);margin-top:-1.5mm"><b style="color:var(--ink)">Dein Einstieg:</b> 3 × 20 Minuten pro Woche, zügig gehen oder locker Rad fahren. <b style="color:var(--ink)">Fernziel:</b> 150 Minuten pro Woche.</p>' +
         sec("05", "Wenn es hakt") + qa(stolper) +
-        sec("06", "Deine Woche", "zum Abhaken") + tracker(["Fermentiertes", "Letzte Mahlzeit 3 Std. vorher", "Zone-2-Minuten"]) +
-        '<div class="fill">Mein erster Schritt nach einem schlechten Tag: <span class="l w"></span></div>', gap="4.2mm", mt="9mm")
+        sec("06", "Jeden Abend im Check-in", "dauert etwa eine Minute") +
+        checkin(ci_bausteine(3), "Diese drei Bausteine kommen zu deinen Routinen dazu. Am letzten Tag legst du in der App fest, was dein erster Schritt nach einem schlechten Tag ist, zum Beispiel: morgens raus ins Licht."), gap="4.2mm", mt="9mm")
     return page(3, p1, 1) + page(3, p2, 2)
 
 # ---------------- Woche 4 ----------------
@@ -255,7 +260,7 @@ def h4():
 {T(X(10), y0-12, "Kaffee um 10 Uhr", "#2F5A42", 9, "middle")}{T(X(15), y0-12, "Kaffee um 15 Uhr", "#8E3A26", 9, "middle")}</svg>'''
     kof = [("Filterkaffee", "200 ml", 90), ("Espresso", "1 Tasse", 80), ("Energy-Drink", "250 ml", 80), ("Schwarztee", "220 ml", 50), ("Cola", "330 ml", 35), ("Grüntee", "220 ml", 30)]
     kt = "".join(f'<tr><td><b>{a}</b></td><td>{b}</td><td class="r"><b>{c} mg</b></td></tr>' for a, b, c in kof)
-    p1 = hero(4) + BODY(sec("01", "Deine drei Bausteine", "im Check-in abhaken") + bausteine(4) +
+    p1 = hero(4) + BODY(sec("01", "Deine drei Bausteine", "ab dieser Woche im Check-in") + bausteine(4) +
         sec("02", "Wie lange Koffein wirkt", "Rest im Blut", "schlaf") +
         f'<div class="split" style="grid-template-columns:1fr 62mm;gap:8mm;align-items:start"><div>{svg}<p style="font-size:8.6pt;color:var(--muted);line-height:1.4;margin-top:1mm">Gerechnet mit einer Halbwertszeit von 5 Stunden. Je nach Person sind es 3 bis 7 Stunden.</p></div><div><table class="t"><tr><th>Getränk</th><th>Menge</th><th class="r">Koffein, ca.</th></tr>{kt}</table><p style="font-size:7.6pt;color:var(--soft);margin-top:1.5mm">Richtwerte nach EFSA</p></div></div>' +
         f'<div class="strip" style="{pv("schlaf")}"><span>{ico("bulb",15)}</span><span><b>Faustregel.</b> Der letzte Kaffee um 12 Uhr. Danach entkoffeiniert, Kräutertee oder die goldene Milch aus dem Goodie.</span></div>', gap="4.4mm")
@@ -263,17 +268,20 @@ def h4():
              ("2 Minuten raus", "Ans offene Fenster oder vor die Tür. Blick in die Ferne, Schultern fallen lassen, Kiefer lockern."),
              ("Treppe hoch", "Ein Stockwerk zügig hoch und wieder herunter, oder 20 Kniebeugen. Bewegung baut Anspannung am schnellsten ab.")]
     th = "".join(f'<div><span class="nr">Werkzeug {k+1}</span><b>{a}</b><p>{b}</p></div>' for k, (a, b) in enumerate(tools))
-    tests = [("Aufsteh-Test", "Wiederholungen in 30 Sekunden"), ("Treppe", "Sekunden für 3 Stockwerke"), ("Griffkraft", "Kilogramm, falls du ein Messgerät hast")]
-    tt = "".join(f'<tr><td><b>{a}</b><br><span style="color:var(--muted);font-size:8.6pt">{b}</span></td><td><span class="ln" style="height:7mm;width:22mm"></span></td><td><span class="ln" style="height:7mm;width:22mm"></span></td><td><span class="ln" style="height:7mm;width:22mm"></span></td></tr>' for a, b in tests)
-    plan = '''<div class="plan"><span class="mono" style="color:#C9D8EA">Zum Ausfüllen und Aufhängen</span><h3>Mein Loop-Plan</h3>
-<div class="q">Meine Basis bleibt: Bunt gegessen · Morgenlicht · 30 Min bewegt · Abendroutine</div>
-<div class="g"><div><div class="q">Meine drei Bausteine</div><span class="ln"></span><span class="ln"></span><span class="ln"></span></div>
-<div><div class="q">Mein Stress-Werkzeug</div><span class="ln"></span><div class="q" style="margin-top:3mm">Wenn es eng wird, bleibt mindestens</div><span class="ln"></span></div></div>
-<div class="q">Mein Warum</div><span class="ln"></span></div>'''
+    tests = [("Aufsteh-Test", "Wiederholungen in 30 Sekunden", "Kraft und Ausdauer der Beine"),
+             ("Treppe", "Sekunden für 3 Stockwerke", "Kondition im Alltag"),
+             ("Griffkraft", "Kilogramm, falls du ein Messgerät hast", "gilt als Marker für die Gesamtkraft")]
+    tt = "".join(f'<tr><td style="width:36mm"><b>{a}</b></td><td style="width:52mm;color:var(--muted)">{b}</td><td>{c}</td></tr>' for a, b, c in tests)
+    plan = '''<div class="plan"><span class="mono" style="color:#C9D8EA">Nach Video 4.10 in der App</span><h3>Dein Loop-Plan</h3>
+<p style="font-size:10pt;line-height:1.5;color:#D3DEEA;max-width:120mm;position:relative;z-index:1">Neun Bausteine hält auf Dauer niemand durch. Am letzten Tag wählst du in der App drei aus, die bleiben, dazu ein Stress-Werkzeug und den einen Baustein, der auch in einer vollen Woche nicht ausfällt.</p>
+<div class="g" style="margin-top:.5mm;position:relative;z-index:1"><div><div class="q">Vier Angaben</div><p style="font-size:9.6pt;line-height:1.5;color:#D3DEEA">Deine Basis bleibt · drei Bausteine · ein Stress-Werkzeug · dein Warum</p></div>
+<div><div class="q">So könnte er aussehen</div><p style="font-size:9.6pt;line-height:1.5;color:#D3DEEA">Booster, Bildschirm-Stopp und Kraft. Werkzeug: länger ausatmen. Wenn es eng wird, bleibt der Bildschirm-Stopp.</p></div></div></div>'''
     p2 = BODY(sec("03", "Drei Werkzeuge für zwischendurch", "je unter 2 Minuten", "recap") + f'<div class="tool" style="{pv("recap")}">{th}</div>' +
-        sec("04", "Deine Selbsttests", "gleiche Bedingungen wie beim ersten Mal", "beweg") + f'<table class="t"><tr><th>Test</th><th>Woche 1</th><th>Woche 4</th><th>Woche 8</th></tr>{tt}</table>' +
-        sec("05", "Was bleibt", "deine Entscheidung") + plan +
-        sec("06", "Deine Woche", "zum Abhaken") + tracker(["In Ruhe gegessen", "Kein Koffein nach dem Mittag", "Runterfahr-Routine"]), gap="4.4mm", mt="9mm")
+        sec("04", "Deine Selbsttests", "Werte stehen in der App", "beweg") + f'<table class="t"><tr><th>Test</th><th>Gemessen wird</th><th>Das sagt er dir</th></tr>{tt}</table>' +
+        '<p class="bsp">Den Startwert hast du in Woche 1 gemacht, jetzt kommt der zweite. Wichtig ist der Vergleich mit dir selbst: gleicher Stuhl, gleiche Treppe, gleiche Tageszeit. Schon zwei Wiederholungen mehr sind ein echter Fortschritt.</p>' +
+        sec("05", "Was bleibt", "deine Entscheidung am Ende der Woche") + plan +
+        sec("06", "Jeden Abend im Check-in", "dauert etwa eine Minute") +
+        checkin(ci_bausteine(4), "Die letzten drei Bausteine. Am Ende der Woche entscheidest du in der App, welche davon bleiben."), gap="4.4mm", mt="9mm")
     return page(4, p1, 1) + page(4, p2, 2)
 
 if __name__ == "__main__":
