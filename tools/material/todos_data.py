@@ -2,14 +2,21 @@
 # eingabe: (Art, Vorschläge)   Art: Uhrzeit | Text | Zahl | Abhaken
 WEEKS = {
  1: dict(title="Deine", acc="Basis", theme="Vier Routinen bilden dein Fundament. Jeden Tag kommt ein kleiner Schritt dazu, der eine davon leichter macht.",
+         lead='Diese Woche legst du das Fundament: vier Routinen, die du jeden Abend im Check-in abhakst. Auf den nächsten Seiten steht zu jedem Tag ein kleiner Schritt, der eine davon leichter macht. Jedes To-do wird frei, sobald du das passende Video gesehen hast.',
          need=["Wecker oder Handy","Einkaufszettel","Stabiler Stuhl ohne Rollen","Kalender für diese Woche"]),
  2: dict(title="Deine ersten", acc="Bausteine", theme="Die Basis läuft. Jetzt kommen drei Bausteine dazu: mehr Ballaststoffe, ein Abend ohne Bildschirm und zwei Krafteinheiten.",
+         lead='Deine vier Routinen laufen weiter, sie sind die Grundlage. Darauf kommen diese Woche drei Bausteine, einer je Bereich. Auf den nächsten Seiten steht zu jedem Tag ein To-do, das einen davon in deinen Alltag bringt: erst entscheiden, dann einmal ausprobieren, am Ende festhalten, was bleibt.',
          need=["Dein Booster: Leinsamen, Haferflocken oder Linsen","Getrocknete Hülsenfrüchte oder rote Linsen","Matte oder großes Handtuch","Mini-Karten „15 Minuten Kraft“ und „Bohnen & Linsen“"]),
  3: dict(title="Dein", acc="Timing", theme="Diese Woche geht es darum, wann du etwas tust: früher essen, gleichmäßig aufstehen, im richtigen Tempo bewegen.",
+         lead='Routinen und Bausteine aus Woche 2 laufen weiter. Diese Woche kommt die Uhrzeit dazu: wann du isst, wann du aufstehst, in welchem Tempo du dich bewegst. Die drei neuen Bausteine verschieben nichts, was du schon tust, sie geben ihm nur einen festen Platz im Tag.',
          need=["Ein fermentiertes Lebensmittel aus dem Kühlregal","1 kg Weißkohl, Salz und ein 1-Liter-Glas oder Zutaten fürs Meal-Prep","Bequeme Schuhe","Mini-Karten „Sauerkraut“ und „Meal-Prep“"]),
  4: dict(title="Ruhe und dein", acc="Loop-Plan", theme="Stress wirkt auf Bauch und Schlaf. Diese Woche übst du drei Wege, herunterzufahren, und legst fest, was nach dem Kurs bleibt.",
+         lead='Alles bisherige läuft weiter. Diese Woche geht es um Stress, weil er Bauch und Schlaf direkt trifft. Du übst drei Wege, herunterzufahren, misst deinen Fortschritt nach und entscheidest am letzten Tag, welche Bausteine nach dem Kurs bleiben.',
          need=["Koffeinfreie Alternative: Kräutertee oder entkoffeinierter Kaffee","Ein ruhiger Platz zum Essen","Stabiler Stuhl für den Aufsteh-Test","Handout Woche 4 für deinen Loop-Plan"]),
 }
+# Die vier Routinen aus Woche 1, für den Kopf des Wochenplans
+BASIS = [('Bunt gegessen', '1.1'), ('Morgenlicht', '1.2'), ('30 Min bewegt', '1.3'), ('Abendroutine', '1.2')]
+
 T = lambda **k: k
 TODOS = [
  # ---------- Woche 1 ----------
@@ -71,7 +78,7 @@ TODOS = [
    eingabe=("Abhaken", []), link="Mini-Karte „Bohnen & Linsen“"),
  T(week=2, day=5, pillar="schlaf", title="Ändere eine Sache in deinem Schlafzimmer", after="2.7", min="5 Minuten",
    why="Dunkel, kühl und ruhig: Das ist der Rahmen für guten Schlaf. Eine einzige Veränderung reicht für heute.",
-   steps=["Geh abends bei ausgeschaltetem Licht ins Schlafzimmer und schau dich um: Was leuchtet, was stört?","Wähl eine Sache: Lichtquellen abkleben, vor dem Schlafen 10 Minuten lüften oder das Handy auslagern.","Setz sie heute um und trag ein, was du geändert hast."],
+   steps=["Geh abends bei ausgeschaltetem Licht ins Schlafzimmer und schau dich um: Was leuchtet, was stört?","Wähl eine Sache: Lichtquellen abkleben, vor dem Schlafen 10 Minuten lüften oder das Handy auslagern.","Setz sie heute um und halte in der App fest, was du geändert hast."],
    done="Eine Veränderung ist umgesetzt.", tip="Als Richtwert gelten 16 bis 18 °C im Schlafzimmer. Ein Wecker ersetzt das Handy am Bett.",
    eingabe=("Text", ["Abdunkeln","Kühler lüften","Handy raus"])),
  T(week=2, day=6, pillar="beweg", title="Mach die 15 Minuten Kraft einmal mit", after="2.4", min="15 Minuten",
@@ -81,7 +88,7 @@ TODOS = [
    eingabe=("Abhaken", []), link="Mini-Karte „15 Minuten Kraft“"),
  T(week=2, day=7, pillar="recap", title="Schreib deinen Wenn-dann-Satz", after="2.12", min="1 Minute",
    why="Neue Gewohnheiten halten am besten, wenn sie an etwas hängen, das du ohnehin jeden Tag tust.",
-   steps=["Wähl den Baustein, der dir diese Woche am schwersten fiel.","Such einen festen Auslöser im Alltag: Kaffee kochen, Zähne putzen, Laptop zuklappen.","Schreib den Satz nach dem Muster „Wenn ich …, dann …“ und trag ihn ein."],
+   steps=["Wähl den Baustein, der dir diese Woche am schwersten fiel.","Such einen festen Auslöser im Alltag: Kaffee kochen, Zähne putzen, Laptop zuklappen.","Schreib den Satz nach dem Muster „Wenn ich …, dann …“ und trag ihn in der App ein."],
    done="Dein Satz steht in der App.", tip="Beispiel: „Wenn ich den Laptop zuklappe, lege ich das Handy in den Flur.“",
    eingabe=("Text", [])),
  # ---------- Woche 3 ----------

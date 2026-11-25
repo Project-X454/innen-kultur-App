@@ -1,6 +1,6 @@
 // Offline-Betrieb: App-Dateien werden auf dem Gerät zwischengespeichert.
 // Nutzerdaten liegen im Browser-Speicher (localStorage) und werden nie an den Server geschickt.
-const VERSION="ik-v44";
+const VERSION="ik-v45";
 // Vorab geladen wird nur, was die App zum Starten braucht. Die PDFs im Ordner pdf/ sind zusammen rund 14 MB;
 // sie landen erst im Cache, wenn man sie öffnet, und sind danach offline da (siehe fetch unten).
 const CORE = ["./", "index.html", "app.js", "logic.js", "videos.js", "inhalte.js", "manifest.webmanifest",
